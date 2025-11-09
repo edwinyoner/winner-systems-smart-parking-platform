@@ -1,0 +1,74 @@
+:host {
+  .legend {
+    small {
+      font-size: x-small;
+    }
+  }
+
+  // Estilos personalizados para Smart Parking Dashboard
+  .progress-group {
+    margin-bottom: 1rem;
+
+    .progress-group-prepend {
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+
+    .progress-group-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+
+      fa-icon {
+        color: var(--cui-primary);
+      }
+    }
+  }
+
+  // Badges personalizados
+  c-badge {
+    font-weight: 600;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.75rem;
+  }
+
+  // Iconos en la tabla
+  fa-icon {
+    &.text-danger {
+      color: var(--cui-danger) !important;
+    }
+    &.text-success {
+      color: var(--cui-success) !important;
+    }
+    &.text-warning {
+      color: var(--cui-warning) !important;
+    }
+  }
+
+  // Cards de estadísticas
+  .border-start {
+    border-left-width: 4px !important;
+    
+    &.border-start-info {
+      border-left-color: var(--cui-info) !important;
+    }
+    
+    &.border-start-success {
+      border-left-color: var(--cui-success) !important;
+    }
+    
+    &.border-start-warning {
+      border-left-color: var(--cui-warning) !important;
+    }
+    
+    &.border-start-danger {
+      border-left-color: var(--cui-danger) !important;
+    }
+  }
+
+  // Footer personalizado
+  .text-body-secondary {
+    opacity: 0.7;
+  }
+}

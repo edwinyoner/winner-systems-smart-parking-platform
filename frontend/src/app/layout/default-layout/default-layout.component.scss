@@ -1,0 +1,350 @@
+:host::ng-deep {
+  .ng-scrollbar {
+    --scrollbar-padding: 1px;
+    --scrollbar-size: 5px;
+    --scrollbar-thumb-color: var(--cui-gray-500, #aab3c5);
+    --scrollbar-thumb-hover-color: var(--cui-gray-400, #cfd4de);
+    --scrollbar-hover-size: calc(var(--scrollbar-size) * 1.5);
+    --scrollbar-border-radius: 5px;
+  }
+
+  .ng-scroll-content {
+    display: flex;
+    min-height: 100%;
+  }
+
+  .sidebar-nav {
+    scrollbar-color: var(--cui-gray-500, #444) transparent;
+  }
+
+  // ========================================
+  // FONT AWESOME ICONS SUPPORT
+  // ========================================
+  
+  .nav-icon {
+    font-family: "Font Awesome 6 Free" !important;
+    font-weight: 900;
+    font-size: 1rem;
+    
+    &::before {
+      font-family: "Font Awesome 6 Free" !important;
+      font-weight: 900;
+    }
+  }
+
+  .nav-icon svg {
+    display: none;
+  }
+
+  // ========================================
+  // ESPACIADO DE ITEMS DE NAVEGACIÓN
+  // ========================================
+
+  .nav-item {
+    // Ajustar margen entre items
+    margin: 0.10rem 0rem !important;
+    
+    .nav-link {
+      // Ajustar padding interno de cada item
+      padding: 0.5rem 0.50rem !important;
+      
+      // Ajustar espacio entre icono y texto
+      .nav-icon {
+        margin-right: 0.75rem !important;
+      }
+    }
+  }
+
+  // ========================================
+  // TÍTULOS DE SECCIÓN DE NAVEGACIÓN
+  // ========================================
+  
+  .nav-title {
+    font-weight: 500 !important;
+    font-size: 0.75rem !important;
+    text-align: center !important;
+    border-radius: 5px !important;
+    padding: 0.5rem 0.25rem !important;
+    margin: 0.5rem 0rem !important;
+    // Background que funciona en ambos modos
+    background: linear-gradient(145deg, rgba(116, 144, 171, 0.5) 0%, rgba(52, 71, 103, 0.5) 100%) !important;
+    color: #ffffff !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+    letter-spacing: 0.5px !important;
+  }
+
+  // ITEMS DE NAVEGACIÓN CON COLORES DE ICONOS
+
+  // Dashboard
+  .nav-item-dashboard {
+    .nav-icon {
+      color: #1976D2 !important;
+    }
+    &:hover .nav-icon {
+      color: #2196F3 !important;
+    }
+  }
+
+  // Gestión de Accesos
+  .nav-item-users {
+    .nav-icon {
+      color: #42A5F5 !important;
+    }
+    &:hover .nav-icon {
+      color: #1E88E5 !important;
+    }
+  }
+
+  .nav-item-roles {
+    .nav-icon {
+      color: #5C6BC0 !important;
+    }
+    &:hover .nav-icon {
+      color: #3F51B5 !important;
+    }
+  }
+
+  .nav-item-permissions {
+    .nav-icon {
+      color: #7E57C2 !important;
+    }
+    &:hover .nav-icon {
+      color: #673AB7 !important;
+    }
+  }
+
+  // Gestión de Estacionamiento
+  .nav-item-spaces {
+    .nav-icon {
+      color: #4CAF50 !important;
+    }
+    &:hover .nav-icon {
+      color: #66BB6A !important;
+    }
+  }
+
+  .nav-item-vehicles {
+    .nav-icon {
+      color: #388E3C !important;
+    }
+    &:hover .nav-icon {
+      color: #4CAF50 !important;
+    }
+  }
+
+  .nav-item-rates {
+    .nav-icon {
+      color: #66BB6A !important;
+    }
+    &:hover .nav-icon {
+      color: #81C784 !important;
+    }
+  }
+
+  .nav-item-violations {
+    .nav-icon {
+      color: #EF5350 !important;
+    }
+    &:hover .nav-icon {
+      color: #E53935 !important;
+    }
+  }
+
+  // Clientes y Pagos
+  .nav-item-clients {
+    .nav-icon {
+      color: #FF7043 !important;
+    }
+    &:hover .nav-icon {
+      color: #FF5722 !important;
+    }
+  }
+
+  .nav-item-payments {
+    .nav-icon {
+      color: #FFA726 !important;
+    }
+    &:hover .nav-icon {
+      color: #FF9800 !important;
+    }
+  }
+
+  .nav-item-billing {
+    .nav-icon {
+      color: #FFCA28 !important;
+    }
+    &:hover .nav-icon {
+      color: #FFC107 !important;
+    }
+  }
+
+  // Monitoreo IOT
+  .nav-item-sensors {
+    .nav-icon {
+      color: #AB47BC !important;
+    }
+    &:hover .nav-icon {
+      color: #9C27B0 !important;
+    }
+  }
+
+  .nav-item-cameras {
+    .nav-icon {
+      color: #EC407A !important;
+    }
+    &:hover .nav-icon {
+      color: #E91E63 !important;
+    }
+  }
+
+  .nav-item-barriers {
+    .nav-icon {
+      color: #8E24AA !important;
+    }
+    &:hover .nav-icon {
+      color: #7B1FA2 !important;
+    }
+  }
+
+  .nav-item-device-status {
+    .nav-icon {
+      color: #BA68C8 !important;
+    }
+    &:hover .nav-icon {
+      color: #AB47BC !important;
+    }
+  }
+
+  // Reportes
+  .nav-item-executive,
+  .nav-item-general-reports,
+  .nav-item-occupancy,
+  .nav-item-financial,
+  .nav-item-export {
+    .nav-icon {
+      color: #26C6DA !important;
+    }
+    &:hover .nav-icon {
+      color: #00BCD4 !important;
+    }
+  }
+
+  // Configuración
+  .nav-item-general-settings,
+  .nav-item-zones,
+  .nav-item-notifications,
+  .nav-item-integrations,
+  .nav-item-backup {
+    .nav-icon {
+      color: #78909C !important;
+    }
+    &:hover .nav-icon {
+      color: #607D8B !important;
+    }
+  }
+
+  // Documentación
+  .nav-item-manual,
+  .nav-item-support,
+  .nav-item-about {
+    .nav-icon {
+      color: #A1887F !important;
+    }
+    &:hover .nav-icon {
+      color: #8D6E63 !important;
+    }
+  }
+
+  // ESTILOS ADICIONALES PARA MEJORAR LA NAVEGACIÓN
+
+  .nav-item {
+    transition: all 0.3s ease;
+  }
+
+  // ESTADO ACTIVO - MÁS VISIBLE
+  .nav-link.active {
+    // Background más visible con gradiente azul
+    //background: linear-gradient(90deg, rgba(30, 143, 235, 0.212) 0%, rgba(33, 149, 243, 0.318) 100%) !important;
+    // Más sutil
+    //background: linear-gradient(90deg, rgba(33, 150, 243, 0.15) 0%, rgba(33, 150, 243, 0.03) 100%) !important;
+
+    // Más intenso
+    background: linear-gradient(90deg, rgba(33, 150, 243, 0.35) 0%, rgba(33, 150, 243, 0.1) 100%) !important;
+    // Borde izquierdo más grueso y colorido
+    border-left: 4px solid #2196F3 !important;
+    
+    .nav-icon {
+      transform: scale(1.1);
+      // Icono más brillante cuando está activo
+      filter: brightness(1.3);
+    }
+  }
+
+  .badge {
+    font-weight: 600;
+    font-size: 0.65rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+  }
+
+  .nav-group-items {
+    border-left: 2px solid rgba(255, 255, 255, 0.1);
+    margin-left: 1rem;
+    padding-left: 0.5rem;
+  }
+
+  .nav-icon {
+    transition: all 0.3s ease;
+  }
+
+  .nav-item:hover .nav-icon {
+    transform: scale(1.15) rotate(5deg);
+  }
+}
+
+
+
+// src/app/layout/default-layout/default-footer/default-footer.component.scss
+:host::ng-deep {
+  // ========================================
+  // FOOTER ADAPTATIVO
+  // ========================================
+  
+  .footer-custom {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    z-index: 1020 !important;
+    transition: all 0.15s ease-in-out !important;
+  }
+  
+  // Cuando el sidebar está visible (desktop)
+  .sidebar.show ~ * .footer-custom,
+  .sidebar:not(.sidebar-narrow):not(.hide) ~ * .footer-custom {
+    left: 256px !important;
+    width: calc(100% - 256px) !important;
+  }
+  
+  // Cuando el sidebar está en modo narrow (colapsado pero visible)
+  .sidebar.sidebar-narrow.show ~ * .footer-custom {
+    left: 64px !important;
+    width: calc(100% - 64px) !important;
+  }
+  
+  // Cuando el sidebar está oculto
+  .sidebar.hide ~ * .footer-custom,
+  .sidebar:not(.show) ~ * .footer-custom {
+    left: 0 !important;
+    width: 100% !important;
+  }
+  
+  // Responsive: En móviles el sidebar es overlay
+  @media (max-width: 991.98px) {
+    .footer-custom {
+      left: 0 !important;
+      width: 100% !important;
+    }
+  }
+}
