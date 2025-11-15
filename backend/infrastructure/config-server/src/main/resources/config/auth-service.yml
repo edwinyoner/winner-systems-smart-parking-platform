@@ -1,0 +1,36 @@
+# ================================================================================
+# ARCHIVO 4: auth-service.yml
+# ================================================================================
+
+server:
+  port: 8081
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/auth_db
+    username: root
+    password: edwinyoner
+
+  jpa:
+    hibernate:
+      ddl-auto: update # En dev: update, en prod: validate
+
+# JWT configuration
+jwt:
+  secret: secret-key-xyz
+  expiration: 3600000 # 1 hora en milisegundos
+  refresh-expiration: 604800000 # 7 días
+
+# RabbitMQ
+spring.rabbitmq:
+  host: localhost
+  port: 5672
+  username: guest
+  password: guest
+
+eureka:
+  client:
+    serviceUrl:
+    defaultZone: http://localhost:8761/eureka/
+  instance:
+    preferIpAddress: true
