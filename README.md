@@ -88,7 +88,7 @@ Transformar la gestión de estacionamientos municipales mediante una solución t
 
 ### ✨ Características Principales
 
-✅ **Monitoreo en Tiempo Real** - Estado de ocupación de espacios de estacionamiento 
+✅ **Monitoreo en Tiempo Real** - Estado de ocupación de espacios de estacionamiento  
 ✅ **Gestión de Pagos** - Pagos digitales seguros y automatizados  
 ✅ **Aplicación Móvil** - App nativa para iOS y Android con Flutter  
 ✅ **Dashboard Web** - Panel administrativo completo para autoridades  
@@ -523,7 +523,8 @@ _Full Stack Developer_
 ### 🏛️ Institución Académica
 
 **Universidad Nacional Santiago Antúnez de Mayolo (UNASAM)**  
-Facultad de Ingeniería de Sistemas e Informática  
+Facultad De Ciencias
+Escuela Ingeniería de Sistemas e Informática  
 Huaraz, Ancash, Perú
 
 ---
