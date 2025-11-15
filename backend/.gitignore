@@ -14,9 +14,10 @@ out/
 Thumbs.db
 Desktop.ini
 
-# IDEs a nivel workspace
-.vscode/
+# IDEs
 .idea/
+.vscode/
+*.iml
 
-# Logs generales
+# Logs
 *.log
