@@ -523,7 +523,7 @@ _Full Stack Developer_
 ### 🏛️ Institución Académica
 
 **Universidad Nacional Santiago Antúnez de Mayolo (UNASAM)**  
-Facultad De Ciencias
+Facultad De Ciencias  
 Escuela Ingeniería de Sistemas e Informática  
 Huaraz, Ancash, Perú
 
