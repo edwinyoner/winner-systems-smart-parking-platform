@@ -1,0 +1,22 @@
+# =============================================================================
+# GITIGNORE - Backend Level
+# winner-systems-smart-parking-platform/backend/.gitignore
+# =============================================================================
+
+# Compilación de IntelliJ a nivel backend
+out/
+.out/
+
+# Sistema Operativo
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+Desktop.ini
+
+# IDEs a nivel workspace
+.vscode/
+.idea/
+
+# Logs generales
+*.log

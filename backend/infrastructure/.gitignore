@@ -1,0 +1,26 @@
+# =============================================================================
+# GITIGNORE GENERAL - Infrastructure Level
+# winner-systems-smart-parking-platform/backend/infrastructure/.gitignore
+# =============================================================================
+
+# Sistema Operativo
+.DS_Store
+Thumbs.db
+
+# Archivos Temporales
+*.log
+*.tmp
+*.backup
+*.old
+
+# Configuración Sensible (si llegaras a tener)
+.env
+.env.local
+secrets.yml
+credentials.yml
+*.pem
+*.key
+
+# IDEs
+.vscode/
+.idea/

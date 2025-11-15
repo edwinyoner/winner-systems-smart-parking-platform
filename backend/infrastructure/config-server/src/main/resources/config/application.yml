@@ -1,0 +1,35 @@
+# ================================================================================
+# ARCHIVO 1: application.yml (Configuración global para todos los servicios)
+# ================================================================================
+
+spring:
+  application:
+    name: default-config
+
+# Configuración común de base de datos (se sobrescribe en cada servicio)
+spring.datasource:
+  driver-class-name: org.postgresql.Driver
+  hikari:
+    maximum-pool-size: 10
+    minimum-idle: 5
+    connection-timeout: 30000
+
+# Configuración común de JPA
+spring.jpa:
+  show-sql: true
+  hibernate:
+    ddl-auto: validate
+  properties:
+    hibernate:
+      dialect: org.hibernate.dialect.PostgreSQLDialect
+      format_sql: true
+
+# Actuator común
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always

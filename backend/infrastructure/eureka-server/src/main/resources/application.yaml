@@ -1,0 +1,50 @@
+spring:
+  application:
+    name: eureka-server
+
+  config:
+    import: "optional:configserver:http://localhost:8888"
+
+  cloud:
+    config:
+      uri: http://localhost:8888
+      fail-fast: true
+      retry:
+        initial-interval: 1000
+        max-attempts: 6
+        max-interval: 2000
+        multiplier: 1.1
+
+# application.yaml - Configuración local (fallback si Config Server falla)
+server:
+  port: 8761
+
+# Configuración de Eureka Server
+eureka:
+  instance:
+    hostname: localhost
+  client:
+    register-with-eureka: false
+    fetch-registry: false
+    service-url:
+      defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
+  server:
+    enable-self-preservation: false # Desactivar en desarrollo
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,matrics
+  endpoint:
+    health:
+      show-details: always
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.winnersystems: DEBUG
+    com.netflix.eureka: DEBUG
+    com.netflix.discovery: DEBUG
