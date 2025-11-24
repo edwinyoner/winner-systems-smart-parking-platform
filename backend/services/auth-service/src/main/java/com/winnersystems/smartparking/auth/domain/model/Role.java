@@ -121,7 +121,7 @@ public class Role {
       return this.status;
    }
 
-   /***
+   /**
     * Verifica si es un rol administrativo
     * @return true si es ADMIN o AUTORIDAD
     */
@@ -129,7 +129,7 @@ public class Role {
       return roleType != null && roleType.isAdministrative();
    }
 
-   /***
+   /**
     * Verifica si es un rol operativo
     * @return true si es OPERADOR o ADMIN
     */
@@ -137,7 +137,7 @@ public class Role {
       return roleType != null && roleType.isOperational();
    }
 
-   /***
+   /**
     * Obtiene el conteo de permisos
     */
    public int getPermissionsCount() {
@@ -186,19 +186,19 @@ public class Role {
       this.permissions = permissions;
    }
 
-   public LocalDateTime getCreateAt() {
+   public LocalDateTime getCreatedAt() {
       return createAt;
    }
 
-   public void setCreateAt(LocalDateTime createAt) {
+   public void setCreatedAt(LocalDateTime createAt) {
       this.createAt = createAt;
    }
 
-   public LocalDateTime getUpdateAt() {
+   public LocalDateTime getUpdatedAt() {
       return updateAt;
    }
 
-   public void setUpdateAt(LocalDateTime updateAt) {
+   public void setUpdatedAt(LocalDateTime updateAt) {
       this.updateAt = updateAt;
    }
 

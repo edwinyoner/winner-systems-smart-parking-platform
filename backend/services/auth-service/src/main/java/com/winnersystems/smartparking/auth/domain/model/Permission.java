@@ -104,19 +104,19 @@ public class Permission {
       this.module = module;
    }
 
-   public LocalDateTime getCreateAt() {
+   public LocalDateTime getCreatedAt() {
       return createAt;
    }
 
-   public void setCreateAt(LocalDateTime createAt) {
+   public void setCreatedAt(LocalDateTime createAt) {
       this.createAt = createAt;
    }
 
-   public LocalDateTime getUpdateAt() {
+   public LocalDateTime getUpdatedAt() {
       return updateAt;
    }
 
-   public void setUpdateAt(LocalDateTime updateAt) {
+   public void setUpdatedAt(LocalDateTime updateAt) {
       this.updateAt = updateAt;
    }
 

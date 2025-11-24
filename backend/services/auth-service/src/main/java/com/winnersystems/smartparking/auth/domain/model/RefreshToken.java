@@ -141,11 +141,11 @@ public class RefreshToken {
       this.revoked = revoked;
    }
 
-   public LocalDateTime getCreateAt() {
+   public LocalDateTime getCreatedAt() {
       return createAt;
    }
 
-   public void setCreateAt(LocalDateTime createAt) {
+   public void setCreatedAt(LocalDateTime createAt) {
       this.createAt = createAt;
    }
 
