@@ -1,14 +1,31 @@
 package com.winnersystems.smartparking.auth.infrastructure.adapter.input.rest.user.dto.request;
 
-import com.winnersystems.smartparking.auth.domain.enums.RoleType;
-import com.winnersystems.smartparking.auth.domain.enums.UserStatus;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 
 import java.util.Set;
 
 /**
- * DTO REST para actualizar un usuario existente.
+ * Request DTO para actualizar un usuario existente.
+ *
+ * <p>Usado en: PUT /api/users/{id}</p>
+ *
+ * <p><b>Seguridad:</b></p>
+ * <ul>
+ *   <li>Solo usuarios con rol ADMIN pueden actualizar usuarios</li>
+ *   <li>No se permite cambiar el email (es identificador único)</li>
+ *   <li>No se permite cambiar el password (usar endpoint específico)</li>
+ * </ul>
+ *
+ * <p><b>Status válidos:</b></p>
+ * <ul>
+ *   <li>true - Usuario ACTIVO (puede iniciar sesión)</li>
+ *   <li>false - Usuario INACTIVO (bloqueado temporalmente)</li>
+ * </ul>
+ *
+ * @author Edwin Yoner Winner Systems - Smart Parking Platform
+ * @version 1.0
  */
 public record UpdateUserRequest(
       @NotBlank(message = "Nombre es requerido")
@@ -22,8 +39,9 @@ public record UpdateUserRequest(
       @Size(max = 20, message = "Teléfono no debe exceder 20 caracteres")
       String phoneNumber,
 
-      UserStatus status,
+      Boolean status,  // ✅ Boolean en lugar de UserStatus enum
 
-      Set<RoleType> roles
+      @NotEmpty(message = "Debe asignar al menos un rol")
+      Set<String> roles  // ✅ String en lugar de RoleType
 ) {
 }

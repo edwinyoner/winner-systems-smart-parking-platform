@@ -1,0 +1,155 @@
+<!-- Login Form - Diseño Futurista -->
+<div class="login-container">
+  
+  <!-- Header con icono animado -->
+  <div class="form-header">
+    <!-- <div class="icon-container">
+      <i class="fas fa-parking"></i>
+      <div class="icon-glow"></div>
+    </div> -->
+    <h2>Iniciar Sesión</h2>
+    <p class="subtitle">Accede al sistema de estacionamiento inteligente</p>
+  </div>
+
+  <!-- Error Alert -->
+  <app-alert-message 
+    *ngIf="errorMessage" 
+    type="error" 
+    [message]="errorMessage"
+    [dismissible]="true"
+    (onDismiss)="dismissError()">
+  </app-alert-message>
+
+  <!-- Login Form -->
+  <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+    <!-- Role Selector (NUEVO) -->
+    <div class="form-group">
+      <label for="selectedRole" style="color: white;">
+        <i class="fas fa-user-tag"></i>
+        Perfil
+      </label>
+      <div class="input-wrapper">
+        <div class="select-icon">
+          <i [class]="getSelectedRoleIcon()"></i>
+        </div>
+        <select
+          id="selectedRole"
+          class="form-control select-control"
+          [class.error]="hasError('selectedRole', 'required')"
+          formControlName="selectedRole">
+          <option value="" disabled >Selecciona tu rol</option>
+          <option *ngFor="let role of availableRoles" [value]="role.value">
+            {{ role.label }}
+          </option>
+        </select>
+        <div class="select-arrow">
+          <i class="fas fa-chevron-down"></i>
+        </div>
+        <div class="input-border"></div>
+      </div>
+      <span class="error-message" *ngIf="hasError('selectedRole', 'required')">
+        {{ getErrorMessage('selectedRole') }}
+      </span>
+    </div>
+    
+    <!-- Email Field -->
+    <div class="form-group">
+      <label for="email" style="color: white;">
+        <i class="fas fa-envelope"></i>
+        Correo Electrónico
+      </label>
+      <div class="input-wrapper">
+        <input
+          type="email"
+          id="email"
+          class="form-control"
+          [class.error]="hasError('email', 'required') || hasError('email', 'email')"
+          formControlName="email"
+          placeholder="correo@ejemplo.com"
+          autocomplete="email">
+        <div class="input-border"></div>
+      </div>
+      <span class="error-message" *ngIf="hasError('email', 'required') || hasError('email', 'email')">
+        {{ getErrorMessage('email') }}
+      </span>
+    </div>
+
+    <!-- Password Field -->
+    <div class="form-group">
+      <label for="password" style="color: white;">
+        <i class="fas fa-lock"></i>
+        Contraseña
+      </label>
+      <div class="input-wrapper">
+        <input
+          [type]="showPassword ? 'text' : 'password'"
+          id="password"
+          class="form-control"
+          [class.error]="hasError('password', 'required') || hasError('password', 'minlength')"
+          formControlName="password"
+          placeholder="••••••••"
+          autocomplete="current-password">
+        <button
+          type="button"
+          class="toggle-password"
+          (click)="togglePasswordVisibility()">
+          <i [class]="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+        </button>
+        <div class="input-border"></div>
+      </div>
+      <span class="error-message" *ngIf="hasError('password', 'required') || hasError('password', 'minlength')">
+        {{ getErrorMessage('password') }}
+      </span>
+    </div>
+
+    
+
+    <!-- Remember Me & Forgot Password -->
+    <div class="form-options">
+      <label class="checkbox-container" *ngIf="showRememberMe">
+        <input type="checkbox" formControlName="rememberMe">
+        <span class="checkmark"></span>
+        <span class="checkbox-label" style="color: white;">Recordarme</span>
+      </label>
+
+      <a routerLink="/forgot-password" class="link-forgot">
+        ¿Olvidaste tu contraseña?
+      </a>
+    </div>
+
+    <!-- reCAPTCHA Badge Info -->
+    <div class="captcha-info" *ngIf="enableCaptcha">
+      <i class="fas fa-shield-alt"></i>
+      <span>Protegido por reCAPTCHA</span>
+    </div>
+
+    <!-- Submit Button -->
+    <button
+      type="submit"
+      class="btn-submit"
+      [disabled]="isLoading">
+      <span class="btn-content" *ngIf="!isLoading">
+        <i class="fas fa-sign-in-alt"></i>
+        <span>Iniciar Sesión</span>
+      </span>
+      <span class="btn-content" *ngIf="isLoading">
+        <i class="fas fa-spinner fa-spin"></i>
+        <span>Autenticando...</span>
+      </span>
+      <div class="btn-glow"></div>
+    </button>
+
+  </form>
+
+  <!-- Divider -->
+  <!-- <div class="divider" *ngIf="showRegistration">
+    <span>¿No tienes cuenta?</span>
+  </div> -->
+
+  <!-- Register Link -->
+  <!-- <a routerLink="/register" class="link-register" *ngIf="showRegistration">
+    <i class="fas fa-user-plus"></i>
+    <span>Crear cuenta nueva</span>
+  </a> -->
+
+</div>

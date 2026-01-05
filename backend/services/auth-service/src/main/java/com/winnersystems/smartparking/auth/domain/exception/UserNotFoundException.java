@@ -8,6 +8,9 @@ package com.winnersystems.smartparking.auth.domain.exception;
  * - Al buscar un usuario por ID y no existe
  * - Al buscar un usuario por email y no existe
  * - Al intentar actualizar/eliminar un usuario inexistente
+ *
+ * @author Edwin Yoner - Winner Systems - Smart Parking Platform
+ * @version 1.0
  */
 public class UserNotFoundException extends RuntimeException {
 

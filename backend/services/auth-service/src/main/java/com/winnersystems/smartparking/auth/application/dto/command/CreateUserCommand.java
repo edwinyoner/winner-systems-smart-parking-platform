@@ -1,11 +1,26 @@
 package com.winnersystems.smartparking.auth.application.dto.command;
 
-import com.winnersystems.smartparking.auth.domain.enums.RoleType;
-
 import java.util.Set;
 
 /**
- * Command para crear un nuevo usuario.
+ * Comando para crear un nuevo usuario interno del sistema.
+ *
+ * <p>Este comando es parte de la capa de Application y NO contiene validaciones
+ * de framework. Las validaciones se realizan en la capa de Infrastructure
+ * mediante CreateUserRequest.java con Jakarta Validation.</p>
+ *
+ * @param firstName Nombre del usuario
+ * @param lastName Apellido del usuario
+ * @param email Email único del usuario
+ * @param password Contraseña en texto plano (se hasheará con BCrypt)
+ * @param phoneNumber Teléfono del usuario (opcional)
+ * @param roleIds IDs de roles a asignar al usuario
+ * @param captchaToken Token de reCAPTCHA v3 para validación anti-bot
+ * @param ipAddress IP desde donde se realiza la solicitud (auditoría)
+ * @param createdBy ID del usuario administrador que crea este usuario
+ *
+ * @author Edwin Yoner Winner Systems - Smart Parking Platform
+ * @version 1.0
  */
 public record CreateUserCommand(
       String firstName,
@@ -13,24 +28,9 @@ public record CreateUserCommand(
       String email,
       String password,
       String phoneNumber,
-      Set<RoleType> roles,      // Roles a asignar
-      String captchaToken
+      Set<Long> roleIds,
+      String captchaToken,
+      String ipAddress,
+      Long createdBy
 ) {
-   public void validate() {
-      if (firstName == null || firstName.isBlank()) {
-         throw new IllegalArgumentException("Nombre es requerido");
-      }
-      if (lastName == null || lastName.isBlank()) {
-         throw new IllegalArgumentException("Apellido es requerido");
-      }
-      if (email == null || email.isBlank()) {
-         throw new IllegalArgumentException("Email es requerido");
-      }
-      if (password == null || password.length() < 8) {
-         throw new IllegalArgumentException("Password debe tener al menos 8 caracteres");
-      }
-      if (roles == null || roles.isEmpty()) {
-         throw new IllegalArgumentException("Debe asignar al menos un rol");
-      }
-   }
 }

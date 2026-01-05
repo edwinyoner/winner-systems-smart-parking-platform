@@ -10,28 +10,34 @@ import java.util.stream.Collectors;
 
 /**
  * Mapper que convierte entre Role (domain) y RoleEntity (infrastructure).
+ *
+ * @author Edwin Yoner Winner Systems - Smart Parking Platform
+ * @version 1.0
  */
 @Component
 public class RolePersistenceMapper {
 
-   /**
-    * Convierte de Domain → Entity (para guardar en BD)
-    */
+   // ======================================================
+   // DOMAIN → ENTITY
+   // ======================================================
    public RoleEntity toEntity(Role role) {
-      if (role == null) {
-         return null;
-      }
+      if (role == null) return null;
 
       RoleEntity entity = new RoleEntity();
       entity.setId(role.getId());
-      entity.setRoleType(role.getRoleType());
+      entity.setName(role.getName());
       entity.setDescription(role.getDescription());
-      entity.setStatus(role.isStatus());
-      entity.setCreatedAt(role.getCreatedAt());
-      entity.setUpdatedAt(role.getUpdatedAt());
+      entity.setStatus(role.getStatus());   // Mantener estado real del dominio
 
-      // Mapear permisos (si existen)
-      if (role.getPermissions() != null && !role.getPermissions().isEmpty()) {
+      entity.setCreatedAt(role.getCreatedAt());
+      entity.setCreatedBy(role.getCreatedBy());
+      entity.setUpdatedAt(role.getUpdatedAt());
+      entity.setUpdatedBy(role.getUpdatedBy());
+      entity.setDeletedAt(role.getDeletedAt());
+      entity.setDeletedBy(role.getDeletedBy());
+
+      // Mapear permisos
+      if (role.getPermissions() != null) {
          entity.setPermissions(
                role.getPermissions().stream()
                      .map(this::permissionToEntity)
@@ -42,24 +48,33 @@ public class RolePersistenceMapper {
       return entity;
    }
 
-   /**
-    * Convierte de Entity → Domain (al leer de BD)
-    */
+   // ======================================================
+   // ENTITY → DOMAIN
+   // ======================================================
    public Role toDomain(RoleEntity entity) {
-      if (entity == null) {
-         return null;
-      }
+      if (entity == null) return null;
 
       Role role = new Role();
       role.setId(entity.getId());
-      role.setRoleType(entity.getRoleType());
+      role.setName(entity.getName());
       role.setDescription(entity.getDescription());
-      role.setStatus(entity.isStatus());
-      role.setCreatedAt(entity.getCreatedAt());
-      role.setUpdatedAt(entity.getUpdatedAt());
 
-      // Mapear permisos (si existen y están cargados)
-      if (entity.getPermissions() != null && !entity.getPermissions().isEmpty()) {
+      // IMPORTANTE: respetar estado real del entity (no activar automáticamente)
+      if (entity.isStatus()) {
+         role.activate();
+      } else {
+         role.deactivate();
+      }
+
+      role.setCreatedAt(entity.getCreatedAt());
+      role.setCreatedBy(entity.getCreatedBy());
+      role.setUpdatedAt(entity.getUpdatedAt());
+      role.setUpdatedBy(entity.getUpdatedBy());
+      role.setDeletedAt(entity.getDeletedAt());
+      role.setDeletedBy(entity.getDeletedBy());
+
+      // Mapear permisos
+      if (entity.getPermissions() != null) {
          role.setPermissions(
                entity.getPermissions().stream()
                      .map(this::permissionToDomain)
@@ -70,7 +85,9 @@ public class RolePersistenceMapper {
       return role;
    }
 
-   // ========== HELPER: Mapeo de Permission ==========
+   // ======================================================
+   // HELPERS: PERMISSION MAPPING
+   // ======================================================
 
    private PermissionEntity permissionToEntity(Permission permission) {
       if (permission == null) return null;
@@ -79,7 +96,7 @@ public class RolePersistenceMapper {
       entity.setId(permission.getId());
       entity.setName(permission.getName());
       entity.setDescription(permission.getDescription());
-      entity.setModule(permission.getModule());
+      entity.setStatus(permission.getStatus());
       return entity;
    }
 
@@ -90,7 +107,14 @@ public class RolePersistenceMapper {
       permission.setId(entity.getId());
       permission.setName(entity.getName());
       permission.setDescription(entity.getDescription());
-      permission.setModule(entity.getModule());
+
+      // Mantener estado real
+      if (entity.isStatus()) {
+         permission.activate();
+      } else {
+         permission.deactivate();
+      }
+
       return permission;
    }
 }

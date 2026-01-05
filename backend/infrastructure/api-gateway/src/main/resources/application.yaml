@@ -1,27 +1,12 @@
 spring:
   application:
     name: api-gateway
-
   config:
-    import: "optional:configserver:http://localhost:8888"
+    import: configserver:http://localhost:8888
 
-  cloud:
-    config:
-      uri: http://localhost:8888
-      fail-fast: false
-
-    # Configuración bàsica de rutas (el resto en Config Server)
-    gateway:
-      discovery:
-        locator:
-          enabled: true
-          lower-case-service-id: true
-
-# Configuración local (fallback)
 server:
   port: 8080
 
-# Eureka Client - Registro en Eureka
 eureka:
   client:
     service-url:
@@ -32,23 +17,19 @@ eureka:
     prefer-ip-address: true
     instance-id: ${spring.application.name}:${server.port}
 
-# Actuator
 management:
   endpoints:
     web:
       exposure:
         include: "*"
-      base-path: /actuator
   endpoint:
     health:
       show-details: always
     gateway:
       enabled: true
 
-# Logging
 logging:
   level:
-    root: INFO
-    com.winnersystems: DEBUG
     org.springframework.cloud.gateway: DEBUG
-    org.springframework.cloud.netflix: DEBUG
+    reactor.netty: DEBUG
+    com.winnersystems: DEBUG

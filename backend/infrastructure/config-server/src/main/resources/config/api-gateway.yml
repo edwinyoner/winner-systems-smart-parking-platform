@@ -1,5 +1,5 @@
 # ================================================================================
-# ARCHIVO 3: api-gateway.yml
+# ARCHIVO: api-gateway.yml (Config Server)
 # ================================================================================
 
 server:
@@ -11,52 +11,19 @@ spring:
 
   cloud:
     gateway:
-      # Configuración de rutas
       routes:
         - id: auth-service
-          uri: lb://auth-service
+          uri: lb://AUTH-SERVICE
           predicates:
             - Path=/api/auth/**
           filters:
-            - RewritePath=/api/auth/(?<segment>.*), /$\{segment}
+            - RewritePath=/api/auth/(?<segment>.*), /${segment}
 
-        - id: user-service
-          uri: lb://user-service
-          predicates:
-            - Path=/api/users/**
-          filters:
-            - RewritePath=/api/users/(?<segment>.*), /$\{segment}
-
-        # Ruta para Eureka Dashboard (opcional)
-        - id: eureka-server
-          uri: http://localhost:8761
-          predicates:
-            - Path=/eureka/**
-
-      # configuración global CORS
-      globalcors:
-        cors-configurations:
-          '[/**]':
-            allowedOrigins:
-              - "http://localhost:4200"   # Angular
-              - "http://localhost:3000"   # Flutter
-            allowedMethods:
-              - GET
-              - POST
-              - PUT
-              - DELETE
-              - OPTIONS
-            allowedHeaders: "*"
-            allowCredentials: true
-            max-age: 3600
-
-      # Descubrimiento automático de servicios
       discovery:
         locator:
           enabled: true
           lower-case-service-id: true
 
-# Eureka client
 eureka:
   client:
     service-url:
@@ -66,23 +33,22 @@ eureka:
   instance:
     prefer-ip-address: true
     instance-id: ${spring.application.name}:${server.port}
-    lease-renewal-interval-in-seconds: 10
-    lease-expiration-duration-in-seconds: 30
 
-# Actuator
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,gateway,routes
+        include: health,info,gateway,routes
   endpoint:
     health:
       show-details: always
     gateway:
       enabled: true
 
-# Logging
 logging:
   level:
-    org.springframework.clou.gateway: DEBUG
-    reactor.netty: INFO
+    org.springframework.cloud.gateway: DEBUG
+    reactor.netty: DEBUG
+    com.winnersystems: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"

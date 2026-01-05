@@ -3,71 +3,150 @@ package com.winnersystems.smartparking.auth.domain.model;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-/***
- * Entidad de dominio que representa un PERMISO en el sistema.
+/**
+ * Entidad de dominio que representa un PERMISO en el sistema Smart Parking.
+ *
+ * <p>Los permisos implementan control de acceso granular (PBAC - Permission-Based Access Control).
+ * Se asignan a roles y definen acciones específicas que los usuarios pueden realizar.</p>
+ *
+ * <p><b>Estructura simplificada:</b></p>
+ * <ul>
+ *   <li>name: Identificador único del permiso (ej: "users.create", "parking.update")</li>
+ *   <li>description: Descripción legible para interfaces de usuario</li>
+ * </ul>
+ *
+ * @author Edwin Yoner - Winner Systems - Smart Parking Platform
+ * @version 1.0
  */
 public class Permission {
+
+   // ========================= CAMPOS DE IDENTIDAD =========================
+
    private Long id;
-   private String name;                   // Ejemplo: "users:create"
-   private String description;            // Ejemplo: "Crear usuarios"
-   private String module;                 // Ejemplo: "users", "parking", "reportes"
-   private LocalDateTime createAt;
-   private LocalDateTime updateAt;
+   private String name;                                  // "users.create" (único, inmutable)
+   private String description;                           // "Crear Usuarios" (legible)
+
+   // ========================= CAMPO DE ESTADO =========================
+
+   private boolean status;                               // true = activo, false = inactivo
+
+   // ========================= CAMPOS DE AUDITORÍA =========================
+
+   private LocalDateTime createdAt;                      // Cuándo se creó
+   private Long createdBy;                               // ID del usuario que creó
+   private LocalDateTime updatedAt;                      // Última actualización
+   private Long updatedBy;                               // ID del usuario que actualizó
+   private LocalDateTime deletedAt;                      // Cuándo se eliminó
+   private Long deletedBy;                               // ID del usuario que eliminó
 
    // ========================= CONSTRUCTORES =========================
 
-   /***
-    * Constructor vacío - Inicializa fechas automáticamente
+   /**
+    * Constructor vacío - Inicializa con valores por defecto.
     */
    public Permission() {
-      this.createAt = LocalDateTime.now();
-      this.updateAt = LocalDateTime.now();
+      this.status = true;                               // Activo por defecto
+      this.createdAt = LocalDateTime.now();
+      this.updatedAt = LocalDateTime.now();
    }
 
-   /***
-    * Constructor completo para crear un nuevo permiso
-    * @param name
-    * @param description
-    * @param module
+   /**
+    * Constructor completo para crear un nuevo permiso.
+    *
+    * @param name nombre único del permiso (ej: "users.create")
+    * @param description descripción legible
     */
-   public Permission (String name, String description, String module) {
+   public Permission(String name, String description) {
       this();
       this.name = name;
       this.description = description;
-      this.module = module;
    }
 
-   // ========================= MÉTODOS DE NEGOCIO =========================
+   // ========================= MÉTODOS DE NEGOCIO - ACTUALIZACIÓN =========================
 
-   /***
-    * Verifica si este permiso pertenece a un módulo específico
-    * @param moduleName nombre del módulo a verificar
-    * @return true sí pertenece al módulo
+   /**
+    * Actualiza la descripción del permiso.
+    *
+    * @param description nueva descripción
     */
-   public boolean belongsToModule(String moduleName) {
-      return this.module != null && this.module.equalsIgnoreCase(moduleName);
-   }
-
-   /***
-    * Actualiza los datos del permiso
-    * Este método actualiza la fecha de modificación automáticamente
-    * @param name
-    * @param description
-    * @param module
-    */
-   public void update(String name, String description, String module) {
+   public void updateDescription(String description, String name) {
       this.name = name;
       this.description = description;
-      this.module = module;
-      this.updateAt = LocalDateTime.now();
+      this.updatedAt = LocalDateTime.now();
    }
 
-   /***
-    * Verifica si el permiso es de tipo administrativo
-    * @return true si el módulo es "admin" o "system"
+   /**
+    * Actualiza el usuario que modificó este registro.
+    * Útil para auditoría.
+    *
+    * @param userId ID del usuario que modifica
     */
-   public boolean isAdministrative() {
-      return module != null && (module.equalsIgnoreCase("admin") || module.equalsIgnoreCase("system"));
+   public void updateModifiedBy(Long userId) {
+      this.updatedBy = userId;
+      this.updatedAt = LocalDateTime.now();
+   }
+
+   // ========================= MÉTODOS DE NEGOCIO - ACTIVACIÓN =========================
+
+   /**
+    * Activa el permiso.
+    */
+   public void activate() {
+      this.status = true;
+      this.updatedAt = LocalDateTime.now();
+   }
+
+   /**
+    * Desactiva el permiso.
+    * Los permisos inactivos no se consideran en validaciones de roles.
+    */
+   public void deactivate() {
+      this.status = false;
+      this.updatedAt = LocalDateTime.now();
+   }
+
+   /**
+    * Verifica si el permiso está activo.
+    *
+    * @return true si status = true y no está eliminado
+    */
+   public boolean isActive() {
+      return this.status;
+   }
+
+   /**
+    * Verifica si el permiso está inactivo.
+    *
+    * @return true si status = false
+    */
+   public boolean isInactive() {
+      return !this.status;
+   }
+
+   // ========================= MÉTODOS DE NEGOCIO - SOFT DELETE =========================
+
+   /**
+    * Marca el permiso como eliminado (soft delete).
+    * También desactiva el permiso automáticamente.
+    *
+    * @param deletedByUserId ID del usuario administrador que elimina
+    */
+   public void markAsDeleted(Long deletedByUserId) {
+      this.deletedAt = LocalDateTime.now();
+      this.deletedBy = deletedByUserId;
+      this.status = false;                              // Desactivar al eliminar
+      this.updatedAt = LocalDateTime.now();
+   }
+
+   /**
+    * Restaura un permiso previamente eliminado.
+    * Reactiva el permiso automáticamente.
+    */
+   public void restore() {
+      this.deletedAt = null;
+      this.deletedBy = null;
+      this.status = true;                           // Reactivar al restaurar
+      this.updatedAt = LocalDateTime.now();
    }
 
    // ========================= GETTERS Y SETTERS =========================
@@ -92,35 +171,70 @@ public class Permission {
       return description;
    }
 
-   public void setDescription(String description){
+   public void setDescription(String description) {
       this.description = description;
    }
 
-   public String getModule() {
-      return module;
+   public boolean getStatus() {
+      return status;
    }
 
-   public void setModule(String module) {
-      this.module = module;
-   }
+   // NO HAY setStatus() público - usar activate() o deactivate()
 
    public LocalDateTime getCreatedAt() {
-      return createAt;
+      return createdAt;
    }
 
-   public void setCreatedAt(LocalDateTime createAt) {
-      this.createAt = createAt;
+   public void setCreatedAt(LocalDateTime createdAt) {
+      this.createdAt = createdAt;
+   }
+
+   public Long getCreatedBy() {
+      return createdBy;
+   }
+
+   public void setCreatedBy(Long createdBy) {
+      this.createdBy = createdBy;
    }
 
    public LocalDateTime getUpdatedAt() {
-      return updateAt;
+      return updatedAt;
    }
 
-   public void setUpdatedAt(LocalDateTime updateAt) {
-      this.updateAt = updateAt;
+   public void setUpdatedAt(LocalDateTime updatedAt) {
+      this.updatedAt = updatedAt;
+   }
+
+   public Long getUpdatedBy() {
+      return updatedBy;
+   }
+
+   public void setUpdatedBy(Long updatedBy) {
+      this.updatedBy = updatedBy;
+   }
+
+   public LocalDateTime getDeletedAt() {
+      return deletedAt;
+   }
+
+   public void setDeletedAt(LocalDateTime deletedAt) {
+      this.deletedAt = deletedAt;
+   }
+
+   public Long getDeletedBy() {
+      return deletedBy;
+   }
+
+   public void setDeletedBy(Long deletedBy) {
+      this.deletedBy = deletedBy;
    }
 
    // ========================= EQUALS, HASHCODE Y TOSTRING =========================
+
+   /**
+    * Dos permisos son iguales si tienen el mismo ID y name.
+    * Solo se usan campos únicos/inmutables.
+    */
    @Override
    public boolean equals(Object o) {
       if (this == o) return true;
@@ -129,18 +243,24 @@ public class Permission {
       return Objects.equals(id, that.id) && Objects.equals(name, that.name);
    }
 
+   /**
+    * HashCode basado en ID y name únicamente.
+    */
    @Override
    public int hashCode() {
       return Objects.hash(id, name);
    }
 
+   /**
+    * ToString simplificado para logging y debugging.
+    */
    @Override
    public String toString() {
       return "Permission{" +
             "id=" + id +
-            ", name=" + name + '\'' +
-            ", description=" + description + '\'' +
-            ", module=" + module + '\'' +
-            "}";
+            ", name='" + name + '\'' +
+            ", description='" + description + '\'' +
+            ", status=" + (status ? "ACTIVO" : "INACTIVO") +
+            '}';
    }
 }

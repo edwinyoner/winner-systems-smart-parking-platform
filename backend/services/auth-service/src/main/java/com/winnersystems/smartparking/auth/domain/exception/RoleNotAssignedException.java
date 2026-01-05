@@ -8,6 +8,9 @@ package com.winnersystems.smartparking.auth.domain.exception;
  * - Intentar remover un rol que el usuario no tiene
  * - Verificar permisos de un rol no asignado
  * - Operaciones que requieren un rol específico que el usuario no posee
+ *
+ * @author Edwin Yoner - Winner Systems - Smart Parking Platform
+ * @version 1.0
  */
 public class RoleNotAssignedException extends RuntimeException {
 

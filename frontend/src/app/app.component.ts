@@ -3,17 +3,25 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { delay, filter, map, tap } from 'rxjs/operators';
-
+import { LoadingSpinnerComponent } from './shared/components/loading-spinner/loading-spinner.component';  // ✅
 import { ColorModeService } from '@coreui/angular';
 import { IconSetService } from '@coreui/icons-angular';
 import { iconSubset } from './icons/icon-subset';
+import { environment } from '../environments/environment';  
 
 @Component({
     selector: 'app-root',
-    template: '<router-outlet />',
-    imports: [RouterOutlet]
+    template: `
+      <router-outlet />
+      <app-loading-spinner />
+    `,
+    imports: [
+      RouterOutlet,
+      LoadingSpinnerComponent  
+    ]
 })
 export class AppComponent implements OnInit {
+
   title = 'Smart Parking';
 
   readonly #destroyRef: DestroyRef = inject(DestroyRef);
@@ -26,14 +34,12 @@ export class AppComponent implements OnInit {
 
   constructor() {
     this.#titleService.setTitle(this.title);
-    // iconSet singleton
     this.#iconSetService.icons = { ...iconSubset };
     this.#colorModeService.localStorageItemName.set('winner-systems-smart-parking-platform-theme-default');
     this.#colorModeService.eventName.set('ColorSchemeChange');
   }
 
   ngOnInit(): void {
-
     this.#router.events.pipe(
         takeUntilDestroyed(this.#destroyRef)
       ).subscribe((evt) => {

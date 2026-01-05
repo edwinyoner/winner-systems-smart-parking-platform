@@ -1,5 +1,6 @@
 package com.winnersystems.smartparking.auth.infrastructure.adapter.output.captcha;
 
+import com.winnersystems.smartparking.auth.application.dto.query.CaptchaValidationResult;
 import com.winnersystems.smartparking.auth.application.port.output.CaptchaPort;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -8,11 +9,15 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.List;
 import java.util.Map;
 
 /**
- * Adaptador para validación de Google reCAPTCHA.
+ * Adaptador para validación de Google reCAPTCHA v3.
  * Implementa CaptchaPort.
+ *
+ * @author Edwin Yoner Winner Systems - Smart Parking Platform
+ * @version 1.0
  */
 @Component
 public class RecaptchaAdapter implements CaptchaPort {
@@ -25,36 +30,51 @@ public class RecaptchaAdapter implements CaptchaPort {
    @Value("${recaptcha.verify-url:https://www.google.com/recaptcha/api/siteverify}")
    private String verifyUrl;
 
-   @Value("${recaptcha.min-score:0.5}")
-   private double minScore;
+   @Value("${recaptcha.enabled:false}")
+   private boolean enabled;
 
    public RecaptchaAdapter(RestTemplate restTemplate) {
       this.restTemplate = restTemplate;
    }
 
    @Override
-   public boolean validateCaptcha(String captchaToken, String remoteIp) {
-      // Si no hay secret key configurado, retornar true (para desarrollo)
-      if (secretKey == null || secretKey.isEmpty()) {
-         return true;
+   public CaptchaValidationResult validate(String captchaToken, String ipAddress) {
+
+      // Si está deshabilitado (modo desarrollo) → devolver éxito por defecto
+      if (!enabled || secretKey == null || secretKey.isEmpty()) {
+         return new CaptchaValidationResult(
+               true,          // success
+               1.0,           // score
+               null,          // action
+               null,          // challengeTs
+               "localhost",   // hostname
+               new String[0]  // errorCodes
+         );
       }
 
-      // Si no hay token, retornar false
+      // Si no se recibió token
       if (captchaToken == null || captchaToken.isEmpty()) {
-         return false;
+         return new CaptchaValidationResult(
+               false,                          // success
+               0.0,                            // score
+               null,                           // action
+               null,                           // challengeTs
+               ipAddress,                      // hostname
+               new String[]{"missing-input-response"} // errorCodes
+         );
       }
 
       try {
-         // Preparar parámetros para la petición a Google
+         // Parámetros de petición
          MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
          params.add("secret", secretKey);
          params.add("response", captchaToken);
 
-         if (remoteIp != null && !remoteIp.isEmpty()) {
-            params.add("remoteip", remoteIp);
+         if (ipAddress != null && !ipAddress.isEmpty()) {
+            params.add("remoteip", ipAddress);
          }
 
-         // Hacer petición a Google reCAPTCHA API
+         // Llamada a la API de Google
          ResponseEntity<Map> response = restTemplate.postForEntity(
                verifyUrl,
                params,
@@ -62,77 +82,59 @@ public class RecaptchaAdapter implements CaptchaPort {
          );
 
          if (response.getBody() == null) {
-            return false;
+            return new CaptchaValidationResult(
+                  false,
+                  0.0,
+                  null,
+                  null,
+                  ipAddress,
+                  new String[]{"invalid-response"}
+            );
          }
 
-         // Verificar respuesta
          Map<String, Object> body = response.getBody();
+
          Boolean success = (Boolean) body.get("success");
 
-         return Boolean.TRUE.equals(success);
+         double score = body.get("score") != null
+               ? ((Number) body.get("score")).doubleValue()
+               : 0.0;
+
+         String action = (String) body.get("action");
+         String hostname = (String) body.get("hostname");
+
+         // Convertir error-codes a String[]
+         List<?> errorList = (List<?>) body.get("error-codes");
+         String[] errorCodes = (errorList != null)
+               ? errorList.stream().map(Object::toString).toArray(String[]::new)
+               : new String[0];
+
+         return new CaptchaValidationResult(
+               Boolean.TRUE.equals(success),
+               score,
+               action,
+               null,         // challengeTs (Google v3 no envía timestamp)
+               hostname,
+               errorCodes
+         );
 
       } catch (Exception e) {
-         // En caso de error al validar, retornar false
+
          System.err.println("Error validando reCAPTCHA: " + e.getMessage());
-         return false;
+
+         return new CaptchaValidationResult(
+               false,
+               0.0,
+               null,
+               null,
+               ipAddress,
+               new String[]{"connection-error"}
+         );
       }
    }
 
    @Override
-   public boolean validateCaptchaWithScore(String captchaToken, String remoteIp, double minScoreParam) {
-      // Si no hay secret key configurado, retornar true (para desarrollo)
-      if (secretKey == null || secretKey.isEmpty()) {
-         return true;
-      }
-
-      // Si no hay token, retornar false
-      if (captchaToken == null || captchaToken.isEmpty()) {
-         return false;
-      }
-
-      try {
-         // Preparar parámetros
-         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-         params.add("secret", secretKey);
-         params.add("response", captchaToken);
-
-         if (remoteIp != null && !remoteIp.isEmpty()) {
-            params.add("remoteip", remoteIp);
-         }
-
-         // Hacer petición a Google reCAPTCHA API
-         ResponseEntity<Map> response = restTemplate.postForEntity(
-               verifyUrl,
-               params,
-               Map.class
-         );
-
-         if (response.getBody() == null) {
-            return false;
-         }
-
-         // Verificar respuesta y score (para reCAPTCHA v3)
-         Map<String, Object> body = response.getBody();
-         Boolean success = (Boolean) body.get("success");
-
-         if (!Boolean.TRUE.equals(success)) {
-            return false;
-         }
-
-         // Verificar score (solo para reCAPTCHA v3)
-         Object scoreObj = body.get("score");
-         if (scoreObj != null) {
-            double score = ((Number) scoreObj).doubleValue();
-            return score >= minScoreParam;
-         }
-
-         // Si no hay score (reCAPTCHA v2), solo verificar success
-         return true;
-
-      } catch (Exception e) {
-         // En caso de error al validar, retornar false
-         System.err.println("Error validando reCAPTCHA con score: " + e.getMessage());
-         return false;
-      }
+   public boolean isEnabled() {
+      return enabled && secretKey != null && !secretKey.isEmpty();
    }
 }

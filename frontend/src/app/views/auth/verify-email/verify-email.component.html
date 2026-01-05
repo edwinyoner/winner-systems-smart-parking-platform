@@ -1,0 +1,153 @@
+<!-- Verify Email Component - Diseño Futurista -->
+<div class="verify-container">
+  
+  <!-- Header -->
+  <div class="form-header">
+    <div class="icon-container">
+      @if (isVerifying) {
+        <i class="fas fa-spinner fa-spin"></i>
+      } @else if (verificationSuccess) {
+        <i class="fas fa-check-circle"></i>
+      } @else {
+        <i class="fas fa-envelope-circle-check"></i>
+      }
+      <div class="icon-glow"></div>
+    </div>
+    
+    @if (isVerifying) {
+      <h2>Verificando Email...</h2>
+      <p class="subtitle">Por favor espera mientras verificamos tu email</p>
+    } @else if (verificationSuccess) {
+      <h2>Email Verificado</h2>
+      <p class="subtitle">Tu cuenta ha sido activada exitosamente</p>
+    } @else {
+      <h2>Verificar Email</h2>
+      <p class="subtitle">Activa tu cuenta para acceder al sistema</p>
+    }
+  </div>
+
+  <!-- Success Alert -->
+  @if (successMessage) {
+    <app-alert-message 
+      type="success" 
+      [message]="successMessage"
+      [dismissible]="true"
+      (onDismiss)="dismissSuccess()">
+    </app-alert-message>
+  }
+
+  <!-- Error Alert -->
+  @if (errorMessage && !isVerifying) {
+    <app-alert-message 
+      type="error" 
+      [message]="errorMessage"
+      [dismissible]="true"
+      (onDismiss)="dismissError()">
+    </app-alert-message>
+  }
+
+  <!-- Loading State -->
+  @if (isVerifying) {
+    <div class="loading-state">
+      <div class="spinner-container">
+        <div class="spinner-circle"></div>
+        <div class="spinner-circle"></div>
+        <div class="spinner-circle"></div>
+      </div>
+      <p>Verificando tu email...</p>
+    </div>
+  }
+
+  <!-- Success State -->
+  @if (verificationSuccess && !isVerifying) {
+    <div class="success-state">
+      <div class="success-icon">
+        <i class="fas fa-check"></i>
+      </div>
+      <h3>¡Verificación Exitosa!</h3>
+      <p>Tu cuenta ha sido activada. Serás redirigido al login en unos segundos...</p>
+      
+      <div class="info-box">
+        <i class="fas fa-info-circle"></i>
+        <span>Ya puedes iniciar sesión con tu email y contraseña.</span>
+      </div>
+
+      <!-- Manual Redirect Button -->
+      <a routerLink="/login" class="btn-redirect">
+        <i class="fas fa-sign-in-alt"></i>
+        <span>Ir al Login Ahora</span>
+      </a>
+    </div>
+  }
+
+  <!-- Error State - Resend Form -->
+  @if (verificationError && !isVerifying && !verificationSuccess) {
+    <div class="error-state">
+      <div class="error-icon">
+        <i class="fas fa-exclamation-circle"></i>
+      </div>
+      <h3>Verificación Fallida</h3>
+      <p>Ingresa tu email para recibir un nuevo link de verificación.</p>
+
+      <!-- Resend Form -->
+      <form [formGroup]="resendForm" (ngSubmit)="onResend()">
+        
+        <!-- Email Field -->
+        <div class="form-group">
+          <label for="email" style="color: white;">
+            <i class="fas fa-envelope"></i>
+            Correo Electrónico
+          </label>
+          <div class="input-wrapper">
+            <input
+              type="email"
+              id="email"
+              class="form-control"
+              [class.error]="hasError('email', 'required') || hasError('email', 'email')"
+              formControlName="email"
+              placeholder="correo@ejemplo.com"
+              autocomplete="email">
+            <div class="input-border"></div>
+          </div>
+          @if (hasError('email', 'required') || hasError('email', 'email')) {
+            <span class="error-message">{{ getErrorMessage('email') }}</span>
+          }
+        </div>
+
+        <!-- Submit Button -->
+        <button
+          type="submit"
+          class="btn-submit"
+          [disabled]="isLoading">
+          @if (!isLoading) {
+            <span class="btn-content">
+              <i class="fas fa-paper-plane"></i>
+              <span>Reenviar Email</span>
+            </span>
+          } @else {
+            <span class="btn-content">
+              <i class="fas fa-spinner fa-spin"></i>
+              <span>Enviando...</span>
+            </span>
+          }
+          <div class="btn-glow"></div>
+        </button>
+
+      </form>
+    </div>
+  }
+
+  <!-- Divider -->
+  @if (!isVerifying) {
+    <div class="divider">
+      <span>¿Ya verificaste tu email?</span>
+    </div>
+
+    <!-- Back to Login Link -->
+    <a routerLink="/login" class="link-back">
+      <i class="fas fa-arrow-left"></i>
+      <span>Volver al Login</span>
+    </a>
+  }
+
+</div>

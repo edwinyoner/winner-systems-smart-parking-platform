@@ -1,4 +1,4 @@
-<!--<c-header class="mb-4 d-print-none" position="sticky">-->
+<!--src/app/layout/default-layout/default-header/default-header.component.html-->
 <ng-container>
   <c-container [fluid]="true" class="border-bottom px-4">
     <button
@@ -11,17 +11,6 @@
     >
       <svg cIcon name="cilMenu" size="lg"></svg>
     </button>
-    <!-- <c-header-nav class="d-none d-md-flex">
-      <c-nav-item>
-        <a cNavLink routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
-      </c-nav-item>
-      <c-nav-item>
-        <a cNavLink routerLink="/users" routerLinkActive="active">Users</a>
-      </c-nav-item>
-      <c-nav-item>
-        <a cNavLink routerLink="/settings" routerLinkActive="active">Settings</a>
-      </c-nav-item>
-    </c-header-nav> -->
 
     <c-header-nav class="d-none d-md-flex ms-auto ">
       <a cNavLink>
@@ -54,7 +43,6 @@
     <c-breadcrumb-router />
   </c-container>
 </ng-container>
-<!--</c-header>-->
 
 <ng-template #userDropdown>
   <c-dropdown [popperOptions]="{ placement: 'bottom-start' }" variant="nav-item">
@@ -62,97 +50,78 @@
       <c-avatar
         shape="rounded-1"
         size="md"
-        src="./assets/images/avatars/8.jpg"
+        [src]="currentUser()?.profilePicture || './assets/images/avatars/8.jpg'"
         status="success"
         textColor="primary"
-        alt="User avatar"
+        [alt]="currentUser()?.firstName || 'User avatar'"
       />
     </button>
     <ul cDropdownMenu class="pt-0 w-auto">
+      <!-- User Info Header -->
       <li>
         <h6 cDropdownHeader class="bg-body-secondary text-body-secondary fw-semibold py-2 rounded-top">
-          Account
+          {{ currentUser()?.firstName }} {{ currentUser()?.lastName }}
         </h6>
       </li>
+      
+      <!-- Profile -->
       <li>
-        <a cDropdownItem routerLink="">
-          <svg cIcon class="me-2" name="cilBell"></svg>
-          Updates
-          <c-badge class="ms-2 float-end" color="info"> 42</c-badge>
-        </a>
-      </li>
-      <li>
-        <a cDropdownItem routerLink="/apps/email/inbox">
-          <svg cIcon class="me-2" name="cilEnvelopeOpen"></svg>
-          Messages
-          <c-badge class="ms-2 float-end" color="success">
-            42
-          </c-badge>
-        </a>
-      </li>
-      <li>
-        <a cDropdownItem routerLink="">
-          <svg cIcon class="me-2" name="cilTask"></svg>
-          Tasks
-          <c-badge class="ms-2 float-end" color="danger"> 42</c-badge>
-        </a>
-      </li>
-      <li>
-        <a cDropdownItem routerLink="">
-          <svg cIcon class="me-2" name="cilCommentSquare"></svg>
-          Comments
-          <c-badge class="ms-auto" color="warning"> 42</c-badge>
-        </a>
-      </li>
-      <li>
-        <h6 cDropdownHeader class="bg-body-secondary text-body-secondary fw-semibold py-2">
-          Settings
-        </h6>
-      </li>
-      <li></li>
-      <li>
-        <a cDropdownItem routerLink="">
+        <a cDropdownItem (click)="goToProfile()" style="cursor: pointer;">
           <svg cIcon class="me-2" name="cilUser"></svg>
-          Profile
+          Mi Perfil
         </a>
       </li>
+      
+      <!-- Edit Profile -->
       <li>
-        <a cDropdownItem routerLink="">
-          <svg cIcon class="me-2" name="cilSettings"></svg>
-          Settings
+        <a cDropdownItem (click)="goToEditProfile()" style="cursor: pointer;">
+          <svg cIcon class="me-2" name="cilPencil"></svg>
+          Editar Perfil
         </a>
       </li>
+
+      <!-- Change Password -->
       <li>
-        <a cDropdownItem routerLink="">
-          <svg cIcon class="me-2" name="cilCreditCard"></svg>
-          Payments
-          <c-badge class="ms-2 float-end" color="secondary">
-            42
-          </c-badge>
+        <a cDropdownItem (click)="goToChangePassword()" style="cursor: pointer;">
+          <svg cIcon class="me-2" name="cilLockLocked"></svg>
+          Cambiar Contraseña
         </a>
       </li>
-      <li>
-        <a cDropdownItem routerLink="">
-          <svg cIcon class="me-2" name="cilFile"></svg>
-          Projects
-          <c-badge class="ms-2 float-end" color="primary">
-            42
-          </c-badge>
-        </a>
-      </li>
+
       <li>
         <hr cDropdownDivider />
       </li>
+
+      <!-- Settings Section -->
       <li>
-        <a cDropdownItem routerLink="">
-          <svg cIcon class="me-2" name="cilLockLocked"></svg>
-          Lock Account
+        <h6 cDropdownHeader class="bg-body-secondary text-body-secondary fw-semibold py-2">
+          Configuración
+        </h6>
+      </li>
+
+      <li>
+        <a cDropdownItem routerLink="/users">
+          <svg cIcon class="me-2" name="cilPeople"></svg>
+          Usuarios
         </a>
       </li>
+
       <li>
-        <a cDropdownItem routerLink="">
+        <a cDropdownItem routerLink="/roles">
+          <svg cIcon class="me-2" name="cilSettings"></svg>
+          Roles
+        </a>
+      </li>
+
+      <li>
+        <hr cDropdownDivider />
+      </li>
+
+      <!-- Logout -->
+      <li>
+        <a cDropdownItem (click)="logout()" style="cursor: pointer;">
           <svg cIcon class="me-2" name="cilAccountLogout"></svg>
-          Logout
+          Cerrar Sesión
         </a>
       </li>
     </ul>

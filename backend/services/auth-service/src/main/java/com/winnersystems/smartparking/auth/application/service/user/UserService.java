@@ -2,227 +2,253 @@ package com.winnersystems.smartparking.auth.application.service.user;
 
 import com.winnersystems.smartparking.auth.application.dto.command.CreateUserCommand;
 import com.winnersystems.smartparking.auth.application.dto.command.UpdateUserCommand;
+import com.winnersystems.smartparking.auth.application.dto.query.PagedResponse;
 import com.winnersystems.smartparking.auth.application.dto.query.UserDto;
+import com.winnersystems.smartparking.auth.application.dto.query.UserSearchCriteria;
 import com.winnersystems.smartparking.auth.application.port.input.user.*;
 import com.winnersystems.smartparking.auth.application.port.output.*;
-import com.winnersystems.smartparking.auth.domain.exception.*;
-import com.winnersystems.smartparking.auth.domain.model.*;
+import com.winnersystems.smartparking.auth.domain.exception.EmailAlreadyExistsException;
+import com.winnersystems.smartparking.auth.domain.exception.UserNotFoundException;
+import com.winnersystems.smartparking.auth.domain.model.Role;
+import com.winnersystems.smartparking.auth.domain.model.User;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Servicio de gestión de usuarios.
- * Implementa TODOS los casos de uso CRUD de usuarios.
+ * Servicio de aplicación para gestión de usuarios.
+ * Implementa los 6 casos de uso de user/.
+ *
+ * @author Edwin Yoner Winner Systems - Smart Parking Platform
+ * @version 1.0
  */
+@Service
+@RequiredArgsConstructor
+@Transactional
 public class UserService implements
       CreateUserUseCase,
       UpdateUserUseCase,
       GetUserUseCase,
       ListUsersUseCase,
-      DeleteUserUseCase {
+      DeleteUserUseCase,
+      RestoreUserUseCase {
 
-   // ========== PUERTOS DE SALIDA ==========
-   private final UserPersistencePort userRepository;
-   private final RolePersistencePort roleRepository;
-   private final TokenPersistencePort tokenRepository;
-   private final PasswordEncoderPort passwordEncoder;
-   private final EmailPort emailService;
-   private final CaptchaPort captchaService;
+   private final UserPersistencePort userPersistencePort;
+   private final RolePersistencePort rolePersistencePort;
+   private final PasswordEncoderPort passwordEncoderPort;
+   private final EmailPort emailPort;
 
-   public UserService(
-         UserPersistencePort userRepository,
-         RolePersistencePort roleRepository,
-         TokenPersistencePort tokenRepository,
-         PasswordEncoderPort passwordEncoder,
-         EmailPort emailService,
-         CaptchaPort captchaService) {
-      this.userRepository = userRepository;
-      this.roleRepository = roleRepository;
-      this.tokenRepository = tokenRepository;
-      this.passwordEncoder = passwordEncoder;
-      this.emailService = emailService;
-      this.captchaService = captchaService;
-   }
-
-   // ========== IMPLEMENTACIÓN: CREATE USER ==========
+   // ========== CREATE USER ==========
 
    @Override
    public UserDto execute(CreateUserCommand command) {
-      // 1. Validar comando
-      command.validate();
-
-      // 2. Validar CAPTCHA (si aplica)
-      if (command.captchaToken() != null) {
-         if (!captchaService.validateCaptcha(command.captchaToken(), null)) {
-            throw new InvalidCaptchaException();
-         }
-      }
-
-      // 3. Verificar que el email NO exista
-      if (userRepository.existsByEmail(command.email())) {
+      // 1. Validar email único
+      if (userPersistencePort.findByEmail(command.email()).isPresent()) {
          throw new EmailAlreadyExistsException(command.email());
       }
 
-      // 4. Encriptar contraseña
-      String encodedPassword = passwordEncoder.encode(command.password());
+      // 2. Validar que roles existen
+      List<Role> roles = rolePersistencePort.findAllByIds(command.roleIds());
+      if (roles.size() != command.roleIds().size()) {
+         throw new IllegalArgumentException("Uno o más roles no existen");
+      }
 
-      // 5. Crear entidad User
+      // 3. Hashear password
+      String hashedPassword = passwordEncoderPort.encode(command.password());
+
+      // 4. Crear usuario
       User user = new User(
             command.firstName(),
             command.lastName(),
             command.email(),
-            encodedPassword
+            hashedPassword
       );
-      user.setPhoneNumber(command.phoneNumber());
 
-      // 6. Asignar roles
-      command.roles().forEach(roleType -> {
-         Role role = roleRepository.findByRoleType(roleType)
-               .orElseThrow(() -> new RuntimeException(
-                     "Rol no encontrado: " + roleType));
-         user.assignRole(role);
-      });
+      // 5. Asignar roles
+      user.setRoles(new HashSet<>(roles));
 
-      // 7. Guardar en BD
-      User savedUser = userRepository.save(user);
+      // 6. Guardar
+      User savedUser = userPersistencePort.save(user);
 
-      // 8. Generar token de verificación de email
-      VerificationToken verificationToken = new VerificationToken(savedUser);
-      tokenRepository.saveVerificationToken(verificationToken);
+      // 7. Enviar email de bienvenida (opcional)
+      try {
+         // TODO: Generar verification token y enviar email
+         // emailPort.sendWelcomeEmail(user.getEmail(), user.getFullName(), verificationLink, 24);
+      } catch (Exception e) {
+         // Log error pero no fallar
+      }
 
-      // 9. Enviar email de bienvenida
-      emailService.sendWelcomeEmail(savedUser, verificationToken.getToken());
-
-      // 10. Retornar DTO
       return mapToDto(savedUser);
    }
 
-   // ========== IMPLEMENTACIÓN: UPDATE USER ==========
+   // ========== UPDATE USER ==========
 
    @Override
    public UserDto execute(UpdateUserCommand command) {
-      // 1. Validar
-      command.validate();
-
-      // 2. Buscar usuario
-      User user = userRepository.findById(command.userId())
+      // 1. Buscar usuario
+      User user = userPersistencePort.findById(command.userId())
             .orElseThrow(() -> new UserNotFoundException(command.userId()));
 
-      // 3. Actualizar datos básicos
-      user.updateProfile(
-            command.firstName(),
-            command.lastName(),
-            command.phoneNumber()
-      );
-
-      // 4. Actualizar status si cambió
-      if (command.status() != user.getStatus()) {
-         user.setStatus(command.status());
+      // 2. Actualizar campos si no son null
+      if (command.firstName() != null) {
+         user.setFirstName(command.firstName());
       }
 
-      // 5. Actualizar roles si cambiaron
-      if (command.roles() != null && !command.roles().isEmpty()) {
-         // Limpiar roles actuales
-         user.getRoles().clear();
-
-         // Agregar nuevos roles
-         command.roles().forEach(roleType -> {
-            Role role = roleRepository.findByRoleType(roleType)
-                  .orElseThrow(() -> new RuntimeException(
-                        "Rol no encontrado: " + roleType));
-            user.assignRole(role);
-         });
+      if (command.lastName() != null) {
+         user.setLastName(command.lastName());
       }
 
-      // 6. Guardar
-      User updatedUser = userRepository.save(user);
+      if (command.phoneNumber() != null) {
+         user.setPhoneNumber(command.phoneNumber());
+      }
 
-      // 7. Retornar DTO
-      return mapToDto(updatedUser);
+      if (command.profilePicture() != null) {
+         user.setProfilePicture(command.profilePicture());
+      }
+
+      // 3. Actualizar roles si se especifican
+      if (command.roleIds() != null) {
+         List<Role> roles = rolePersistencePort.findAllByIds(command.roleIds());
+         if (roles.size() != command.roleIds().size()) {
+            throw new IllegalArgumentException("Uno o más roles no existen");
+         }
+         user.setRoles(new HashSet<>(roles));
+      }
+
+      // 4. Registrar auditoría
+      user.setUpdatedBy(command.updatedBy());
+      user.setUpdatedAt(LocalDateTime.now());
+
+      // 5. Guardar
+      User updated = userPersistencePort.save(user);
+
+      return mapToDto(updated);
    }
 
-   // ========== IMPLEMENTACIÓN: GET USER ==========
+   // ========== GET USER ==========
 
    @Override
-   public UserDto getById(Long userId) {
-      User user = userRepository.findById(userId)
+   public UserDto execute(Long userId) {
+      User user = userPersistencePort.findById(userId)
             .orElseThrow(() -> new UserNotFoundException(userId));
+
       return mapToDto(user);
    }
 
-   @Override
-   public UserDto executeByEmail(String email) {
-      User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new UserNotFoundException(email));
-      return mapToDto(user);
-   }
-
-   // ========== IMPLEMENTACIÓN: LIST USERS ==========
+   // ========== LIST USERS ==========
 
    @Override
-   public List<UserDto> execute() {
-      return userRepository.findAll().stream()
+   public PagedResponse<UserDto> execute(UserSearchCriteria criteria, int page, int size) {
+      // 1. Buscar usuarios con criterios
+      List<User> users = userPersistencePort.findByCriteria(criteria, page, size);
+
+      // 2. Contar total
+      long total = userPersistencePort.countByCriteria(criteria);
+
+      // 3. Mapear a DTOs
+      List<UserDto> userDtos = users.stream()
             .map(this::mapToDto)
-            .collect(Collectors.toList());
+            .toList();
+
+      // 4. Crear respuesta paginada
+      return PagedResponse.of(userDtos, page, size, total);
    }
 
-   @Override
-   public List<UserDto> execute(int page, int size) {
-      return userRepository.findAll(page, size).stream()
-            .map(this::mapToDto)
-            .collect(Collectors.toList());
-   }
+   // ========== DELETE USER (soft delete) ==========
 
    @Override
-   public List<UserDto> executeActiveUsers() {
-      return userRepository.findActiveUsers().stream()
-            .map(this::mapToDto)
-            .collect(Collectors.toList());
-   }
-
-   // ========== IMPLEMENTACIÓN: DELETE USER ==========
-
-   @Override
-   public void deleteById(Long userId) {
+   public void executeDelete(Long userId, Long deletedBy) {
       // 1. Buscar usuario
-      User user = userRepository.findById(userId)
+      User user = userPersistencePort.findById(userId)
             .orElseThrow(() -> new UserNotFoundException(userId));
 
-      // 2. Soft delete
-      user.markAsDeleted();
+      // 2. Marcar como eliminado (soft delete)
+      user.setDeletedBy(deletedBy);
+      user.setDeletedAt(LocalDateTime.now());
 
-      // 3. Revocar tokens
-      tokenRepository.revokeAllRefreshTokensByUser(user);
+      // 3. Guardar
+      userPersistencePort.save(user);
 
-      // 4. Guardar
-      userRepository.save(user);
+      // 4. Enviar email de notificación (opcional)
+      try {
+         emailPort.sendAccountDeactivatedEmail(
+               user.getEmail(),
+               user.getFullName(),
+               "Eliminación solicitada"
+         );
+      } catch (Exception e) {
+         // Log error pero no fallar
+      }
    }
+
+   // ========== RESTORE USER ==========
 
    @Override
-   public void executePermanent(Long userId) {
-      // Hard delete - eliminar permanentemente
-      // USAR CON CUIDADO
-      userRepository.deleteById(userId);
+   public UserDto executeRestore(Long userId, Long restoredBy) {
+      // 1. Buscar usuario
+      User user = userPersistencePort.findById(userId)
+            .orElseThrow(() -> new UserNotFoundException(userId));
+
+      // 2. Validar que esté eliminado
+      if (user.getDeletedAt() == null) {
+         throw new IllegalStateException("Usuario no está eliminado");
+      }
+
+      // 3. Restaurar
+      user.setDeletedAt(null);
+      user.setDeletedBy(null);
+
+      // 4. Registrar auditoría
+      user.setUpdatedBy(restoredBy);
+      user.setUpdatedAt(LocalDateTime.now());
+
+      // 5. Guardar
+      User restored = userPersistencePort.save(user);
+
+      // 6. Enviar email de notificación (opcional)
+      try {
+         emailPort.sendAccountActivatedEmail(user.getEmail(), user.getFullName());
+      } catch (Exception e) {
+         // Log error pero no fallar
+      }
+
+      return mapToDto(restored);
    }
 
-   // ========== HELPER: Mapeo a DTO ==========
+   // ========== HELPER ==========
 
    private UserDto mapToDto(User user) {
       return new UserDto(
             user.getId(),
             user.getFirstName(),
             user.getLastName(),
-            user.getFullName(),
             user.getEmail(),
             user.getPhoneNumber(),
             user.getProfilePicture(),
             user.getStatus(),
             user.isEmailVerified(),
-            null, // roles (lazy loading - se pueden cargar aparte si se necesitan)
-            user.getLastLoginAt(),
+            getRoleNames(user),
             user.getCreatedAt(),
             user.getUpdatedAt()
       );
+   }
+
+   private Set<String> getRoleNames(User user) {
+      return user.getRoles().stream()
+            .map(Role::getName)
+            .collect(Collectors.toSet());
+   }
+
+   private Set<String> getPermissionNames(User user) {
+      return user.getRoles().stream()
+            .flatMap(role -> role.getPermissions().stream())
+            .map(permission -> permission.getName())
+            .collect(Collectors.toSet());
    }
 }

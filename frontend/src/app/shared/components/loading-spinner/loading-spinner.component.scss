@@ -1,0 +1,88 @@
+/**
+ * Estilos para Loading Spinner
+ */
+
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.spinner-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+// Spinner doble rebote
+.spinner {
+  width: 60px;
+  height: 60px;
+  position: relative;
+}
+
+.double-bounce1,
+.double-bounce2 {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: #667eea;
+  opacity: 0.6;
+  position: absolute;
+  top: 0;
+  left: 0;
+  animation: bounce 2s infinite ease-in-out;
+}
+
+.double-bounce2 {
+  background-color: #764ba2;
+  animation-delay: -1s;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: scale(0);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.loading-text {
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}

@@ -11,26 +11,21 @@ import java.util.stream.Collectors;
 /**
  * Mapper que convierte entre User (domain) y UserEntity (infrastructure).
  *
- * ESTE ES EL PUENTE entre las capas:
- * - User (domain): Lógica de negocio, sin JPA
- * - UserEntity (infra): Persistencia en BD, con JPA
- *
- * ¿Por qué separar?
- * - Si cambias de BD (MySQL → MongoDB), solo cambias Entity y Mapper
- * - Domain permanece PURO, sin dependencias de frameworks
+ * @author Edwin Yoner Winner Systems - Smart Parking Platform
+ * @version 1.0
  */
 @Component
 public class UserPersistenceMapper {
 
-   /**
-    * Convierte de Domain → Entity (para guardar en BD)
-    */
+   // ============================================================
+   // DOMAIN → ENTITY
+   // ============================================================
+
    public UserEntity toEntity(User user) {
-      if (user == null) {
-         return null;
-      }
+      if (user == null) return null;
 
       UserEntity entity = new UserEntity();
+
       entity.setId(user.getId());
       entity.setFirstName(user.getFirstName());
       entity.setLastName(user.getLastName());
@@ -40,14 +35,17 @@ public class UserPersistenceMapper {
       entity.setProfilePicture(user.getProfilePicture());
       entity.setStatus(user.getStatus());
       entity.setEmailVerified(user.isEmailVerified());
-      entity.setDeleted(user.isDeleted());
-      entity.setDeletedAt(user.getDeletedAt());
-      entity.setLastLoginAt(user.getLastLoginAt());
-      entity.setCreatedAt(user.getCreatedAt());
-      entity.setUpdatedAt(user.getUpdatedAt());
 
-      // Mapear roles (si existen)
-      if (user.getRoles() != null && !user.getRoles().isEmpty()) {
+      // Auditoría
+      entity.setCreatedAt(user.getCreatedAt());
+      entity.setCreatedBy(user.getCreatedBy());
+      entity.setUpdatedAt(user.getUpdatedAt());
+      entity.setUpdatedBy(user.getUpdatedBy());
+      entity.setDeletedAt(user.getDeletedAt());
+      entity.setDeletedBy(user.getDeletedBy());
+
+      // Roles
+      if (user.getRoles() != null) {
          entity.setRoles(
                user.getRoles().stream()
                      .map(this::roleToEntity)
@@ -58,15 +56,15 @@ public class UserPersistenceMapper {
       return entity;
    }
 
-   /**
-    * Convierte de Entity → Domain (al leer de BD)
-    */
+   // ============================================================
+   // ENTITY → DOMAIN
+   // ============================================================
+
    public User toDomain(UserEntity entity) {
-      if (entity == null) {
-         return null;
-      }
+      if (entity == null) return null;
 
       User user = new User();
+
       user.setId(entity.getId());
       user.setFirstName(entity.getFirstName());
       user.setLastName(entity.getLastName());
@@ -74,16 +72,29 @@ public class UserPersistenceMapper {
       user.setPassword(entity.getPassword());
       user.setPhoneNumber(entity.getPhoneNumber());
       user.setProfilePicture(entity.getProfilePicture());
-      user.setStatus(entity.getStatus());
-      user.setEmailVerified(entity.isEmailVerified());
-      user.setDeleted(entity.isDeleted());
-      user.setDeletedAt(entity.getDeletedAt());
-      user.setLastLoginAt(entity.getLastLoginAt());
-      user.setCreatedAt(entity.getCreatedAt());
-      user.setUpdatedAt(entity.getUpdatedAt());
 
-      // Mapear roles (si existen y están cargados)
-      if (entity.getRoles() != null && !entity.getRoles().isEmpty()) {
+      // Estado - usar métodos de dominio
+      if (entity.isStatus()) {
+         user.activate();
+      } else {
+         user.deactivate();
+      }
+
+      // Email verificado - usar método de dominio
+      if (entity.isEmailVerified()) {
+         user.verifyEmail();
+      }
+
+      // Auditoría
+      user.setCreatedAt(entity.getCreatedAt());
+      user.setCreatedBy(entity.getCreatedBy());
+      user.setUpdatedAt(entity.getUpdatedAt());
+      user.setUpdatedBy(entity.getUpdatedBy());
+      user.setDeletedAt(entity.getDeletedAt());
+      user.setDeletedBy(entity.getDeletedBy());
+
+      // Roles
+      if (entity.getRoles() != null) {
          user.setRoles(
                entity.getRoles().stream()
                      .map(this::roleToDomain)
@@ -94,17 +105,19 @@ public class UserPersistenceMapper {
       return user;
    }
 
-   // ========== HELPER: Mapeo de Role ==========
+   // ============================================================
+   // HELPERS: ROLE MAPPING
+   // ============================================================
 
    private RoleEntity roleToEntity(Role role) {
       if (role == null) return null;
 
       RoleEntity entity = new RoleEntity();
       entity.setId(role.getId());
-      entity.setRoleType(role.getRoleType());
+      entity.setName(role.getName());
       entity.setDescription(role.getDescription());
-      entity.setStatus(role.isStatus());
-      // Permisos se mapean aparte si es necesario
+      entity.setStatus(role.getStatus());
+
       return entity;
    }
 
@@ -113,10 +126,16 @@ public class UserPersistenceMapper {
 
       Role role = new Role();
       role.setId(entity.getId());
-      role.setRoleType(entity.getRoleType());
+      role.setName(entity.getName());
       role.setDescription(entity.getDescription());
-      role.setStatus(entity.isStatus());
-      // Permisos se mapean aparte si es necesario
+
+      // Status - usar método de dominio
+      if (entity.isStatus()) {
+         role.activate();
+      } else {
+         role.deactivate();
+      }
+
       return role;
    }
 }

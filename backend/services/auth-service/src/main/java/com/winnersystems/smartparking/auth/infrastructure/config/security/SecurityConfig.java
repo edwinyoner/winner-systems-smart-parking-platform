@@ -2,23 +2,32 @@ package com.winnersystems.smartparking.auth.infrastructure.config.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
- * Configuración de Spring Security.
+ * Configuración de Spring Security para auth-service.
  *
- * Define:
- * - Qué endpoints están protegidos y cuáles no
- * - Cómo se autentica (JWT)
- * - Encriptación de contraseñas (BCrypt)
- * - CORS y CSRF
+ * <p><b>IMPORTANTE - Arquitectura Microservicios:</b></p>
+ * <ul>
+ *   <li>CORS se maneja en API Gateway, NO aquí</li>
+ *   <li>Paths son relativos (sin /api/auth) por RewritePath del Gateway</li>
+ *   <li>Este servicio NO es accesible directamente desde el navegador</li>
+ * </ul>
+ *
+ * @author Edwin Yoner Winner Systems - Smart Parking Platform
+ * @version 1.0
  */
 @Configuration
 @EnableWebSecurity
@@ -26,56 +35,70 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
    private final JwtAuthenticationFilter jwtAuthFilter;
+   private final UserDetailsService userDetailsService;
 
-   public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter) {
+   public SecurityConfig(
+         JwtAuthenticationFilter jwtAuthFilter,
+         UserDetailsService userDetailsService) {
       this.jwtAuthFilter = jwtAuthFilter;
+      this.userDetailsService = userDetailsService;
+   }
+
+   @Bean
+   public PasswordEncoder passwordEncoder() {
+      return new BCryptPasswordEncoder();
    }
 
    @Bean
    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
       http
-            // Deshabilitar CSRF (no necesario en API REST con JWT)
+            // Deshabilitar CSRF (API REST stateless)
             .csrf(csrf -> csrf.disable())
 
             // Configurar autorización de endpoints
             .authorizeHttpRequests(auth -> auth
-                  // Endpoints públicos (sin autenticación)
+                  // Endpoints públicos (paths DESPUÉS del rewrite del Gateway)
                   .requestMatchers(
-                        "/api/auth/login",
-                        "/api/auth/register",
-                        "/api/auth/refresh",
-                        "/api/auth/forgot-password",
-                        "/api/auth/reset-password",
-                        "/api/auth/verify-email"
+                        "/login",              // POST /api/auth/login → /login
+                        "/refresh",            // POST /api/auth/refresh → /refresh
+                        "/forgot-password",    // POST /api/auth/forgot-password → /forgot-password
+                        "/reset-password",     // POST /api/auth/reset-password → /reset-password
+                        "/verify-email",        // GET  /api/auth/verify-email → /verify-email
+                        "/resend-verification"
                   ).permitAll()
 
-                  // Documentación Swagger (si usas)
-                  .requestMatchers(
-                        "/v3/api-docs/**",
-                        "/swagger-ui/**",
-                        "/swagger-ui.html"
-                  ).permitAll()
+                  .requestMatchers("/change-password").authenticated()
+                  // Actuator (health check para Eureka)
+                  .requestMatchers("/actuator/health").permitAll()
 
                   // Todos los demás endpoints requieren autenticación
                   .anyRequest().authenticated()
             )
 
-            // Política de sesiones: STATELESS (sin sesiones, solo JWT)
+            // Política de sesiones: STATELESS
             .sessionManagement(session -> session
                   .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
 
-            // Agregar filtro JWT antes del filtro de autenticación estándar
+            // Provider de autenticación
+            .authenticationProvider(authenticationProvider())
+
+            // Filtro JWT
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
       return http.build();
    }
 
-   /**
-    * Bean para encriptar contraseñas con BCrypt
-    */
    @Bean
-   public PasswordEncoder passwordEncoder() {
-      return new BCryptPasswordEncoder();
+   public AuthenticationProvider authenticationProvider() {
+      DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+      provider.setUserDetailsService(userDetailsService);
+      provider.setPasswordEncoder(passwordEncoder());
+      return provider;
+   }
+
+   @Bean
+   public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+      return config.getAuthenticationManager();
    }
 }

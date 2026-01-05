@@ -4,31 +4,61 @@ import com.winnersystems.smartparking.auth.application.dto.command.CreateUserCom
 import com.winnersystems.smartparking.auth.application.dto.query.UserDto;
 
 /**
- * Caso de uso: CREAR USUARIO
+ * Caso de uso: Crear usuario interno.
  *
- * Puede ser usado para:
- * - Registro de usuarios (auto-registro)
- * - Creación de usuarios por admin
+ * <p>Este caso de uso permite registrar usuarios del staff interno del
+ * sistema Smart Parking. Los tipos de usuario interno incluyen:</p>
+ *
+ * <ul>
+ *   <li>ADMIN – Administradores del sistema</li>
+ *   <li>AUTORIDAD – Personal de supervisión</li>
+ *   <li>OPERADOR – Personal operativo</li>
+ * </ul>
+ *
+ * <p><b>Nota:</b> Los ciudadanos (usuarios finales de la app móvil)
+ * se autentican mediante Google OAuth y son administrados
+ * en un servicio independiente.</p>
+ *
+ * <h3>Autorización requerida</h3>
+ * <ul>
+ *   <li>Rol: <b>ADMIN</b></li>
+ *   <li>Permiso: <b>users.create</b></li>
+ * </ul>
+ *
+ * <h3>Funcionalidades incluidas</h3>
+ * <ul>
+ *   <li>Validación de captcha anti-bot</li>
+ *   <li>Verificación de unicidad del email</li>
+ *   <li>Protección de contraseña con BCrypt</li>
+ *   <li>Asignación de roles</li>
+ *   <li>Generación de token de verificación (24 horas)</li>
+ *   <li>Envío de email de bienvenida</li>
+ *   <li>Registro de auditoría</li>
+ * </ul>
+ *
+ * <h3>Estado inicial del usuario creado</h3>
+ * <ul>
+ *   <li><b>status:</b> false (inactivo hasta verificar email)</li>
+ *   <li><b>emailVerified:</b> false</li>
+ *   <li><b>deleted:</b> false</li>
+ * </ul>
+ *
+ * <h3>Excepciones</h3>
+ * <ul>
+ *   <li><b>EmailAlreadyExistsException</b> – email ya registrado</li>
+ *   <li><b>InvalidCaptchaException</b> – captcha inválido</li>
+ *   <li><b>RoleNotAssignedException</b> – rol no existe o inactivo</li>
+ * </ul>
+ *
+ * @author Edwin Yoner Winner Systems - Smart Parking Platform
+ * @version 1.0
  */
 public interface CreateUserUseCase {
-
    /**
-    * Crea un nuevo usuario en el sistema
+    * Ejecuta el proceso de creación de un usuario interno.
     *
-    * Flujo:
-    * 1. Validar captcha (si aplica)
-    * 2. Validar que el email NO exista
-    * 3. Encriptar la contraseña
-    * 4. Crear entidad User
-    * 5. Asignar roles
-    * 6. Guardar en BD
-    * 7. Generar token de verificación de email
-    * 8. Enviar email de bienvenida
-    * 9. Retornar UserDto
-    *
-    * @param command datos del nuevo usuario
-    * @return usuario creado
-    * @throws EmailAlreadyExistsException si el email ya existe
+    * @param command datos necesarios para crear el usuario
+    * @return datos del usuario recién creado
     */
    UserDto execute(CreateUserCommand command);
 }

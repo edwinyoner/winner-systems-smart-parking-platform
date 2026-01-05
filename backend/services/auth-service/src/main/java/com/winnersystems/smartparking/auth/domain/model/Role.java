@@ -1,147 +1,267 @@
 package com.winnersystems.smartparking.auth.domain.model;
 
-import com.winnersystems.smartparking.auth.domain.enums.RoleType;
-
 import java.time.LocalDateTime;
 import java.util.HashSet;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
-/***
- * Entidad de dominio que representa un ROL en el sistema.
- * Un rol agrupa permisos y define lo que un usuario puede hacer
+/**
+ * Entidad de dominio que representa un ROL en el sistema Smart Parking.
+ *
+ * <p>Los roles agrupan permisos y definen las capacidades de los usuarios.
+ * El sistema maneja 3 roles internos: ADMIN, AUTORIDAD, OPERADOR.</p>
+ *
+ * <p><b>Características:</b></p>
+ * <ul>
+ *   <li>Relación Many-to-Many con Permission</li>
+ *   <li>Soft delete para auditoría</li>
+ *   <li>Roles de sistema (ADMIN) no pueden desactivarse</li>
+ * </ul>
+ *
+ * @author Edwin Yoner - Winner Systems - Smart Parking Platform
+ * @version 1.0
  */
 public class Role {
+
+   // ========================= CAMPOS DE IDENTIDAD =========================
+
    private Long id;
-   private RoleType roleType;               // ADMIN, AUTORIDAD, OPERADOR, USER
-   private  String description;
-   private boolean status;                   // true = activo, false = inactivo
-   private Set<Permission> permissions;      // Permisos asociados al rol
-   private LocalDateTime createAt;
-   private LocalDateTime updateAt;
+   private String name;                                  // Nombre legible del rol
+   private String description;                           // Descripción del rol
+
+   // ========================= CAMPO DE ESTADO =========================
+
+   private boolean status;                               // true = activo, false = inactivo
+
+   // ========================= RELACIONES =========================
+
+   private Set<Permission> permissions;                  // Permisos asociados al rol (M:N)
+
+   // ========================= CAMPOS DE AUDITORÍA =========================
+
+   private LocalDateTime createdAt;                      // Cuándo se creó
+   private Long createdBy;                               // ID del usuario que creó
+   private LocalDateTime updatedAt;                      // Última actualización
+   private Long updatedBy;                               // ID del usuario que actualizó
+   private LocalDateTime deletedAt;                      // Cuándo se eliminó (soft delete)
+   private Long deletedBy;                               // ID del usuario que eliminó
 
    // ========================= CONSTRUCTORES =========================
 
-   /***
-    * Constructor vacío - Inicializa con valores por defecto
+   /**
+    * Constructor vacío - Inicializa con valores por defecto.
+    * Rol empieza activo con conjunto de permisos vacío.
     */
    public Role() {
       this.permissions = new HashSet<>();
-      this.status = true;                    // Por defecto activo
-      this.createAt = LocalDateTime.now();
-      this.updateAt = LocalDateTime.now();
+      this.status = true;                               // Por defecto activo
+      this.createdAt = LocalDateTime.now();
+      this.updatedAt = LocalDateTime.now();
    }
 
-   /***
-    * Constructor con tipo de rol
-    * @param roleType
+   /**
+    * Constructor con nombre y descripción.
+    *
+    * @param name nombre del rol
+    * @param description descripción del rol
     */
-   public Role(RoleType roleType) {
+   public Role(String name, String description) {
       this();
-      this.roleType = roleType;
-      this.description = roleType.getDescription();
-   }
-
-   /***
-    * Constructor completo
-    * @param roleType
-    * @param description
-    */
-   public Role(RoleType roleType, String description) {
-      this();
-      this.roleType = roleType;
+      this.name = name;
       this.description = description;
    }
 
-   // ========================= MÉTODOS DE NEGOCIO =========================
+   // ========================= MÉTODOS DE NEGOCIO - PERMISOS =========================
 
-   /***
-    * Agrega un permiso al rol
-    * solo agrega si el permiso no es nulo
-    * @param permission
+   /**
+    * Agrega un permiso al rol si el permiso está activo.
+    *
+    * @param permission permiso a agregar
     */
    public void addPermission(Permission permission) {
-      if (permission != null) {
+      if (permission != null && permission.isActive()) {
          this.permissions.add(permission);
-         this.updateAt = LocalDateTime.now();
+         this.updatedAt = LocalDateTime.now();
       }
    }
 
-   /***
-    * Remueve un permiso del rol
-    * @param permission
+   /**
+    * Remueve un permiso del rol.
+    *
+    * @param permission permiso a remover
     */
    public void removePermission(Permission permission) {
       if (permission != null) {
          this.permissions.remove(permission);
-         this.updateAt = LocalDateTime.now();
+         this.updatedAt = LocalDateTime.now();
       }
    }
 
-   /***
-    * Verifica si el rol tiene un permiso específico por nombre
-    * @param permissionName nombre del permiso (ejemplo: "users.create")
+   /**
+    * Limpia todos los permisos del rol.
+    * Útil para reconfigurar permisos desde cero.
+    */
+   public void clearPermissions() {
+      this.permissions.clear();
+      this.updatedAt = LocalDateTime.now();
+   }
+
+   /**
+    * Verifica si el rol tiene un permiso específico por nombre.
+    *
+    * @param permissionName nombre del permiso (ejemplo: "USERS_CREATE")
     * @return true si el rol tiene ese permiso
     */
    public boolean hasPermission(String permissionName) {
-      return permissions.stream().anyMatch(p -> p.getName().equals(permissionName));
+      return permissions.stream()
+            .anyMatch(p -> p.getName().equalsIgnoreCase(permissionName));
    }
 
-   /***
-    * Verifica si el rol tiene permisos de un módulo específico
-    * @param moduleName nombre del módulo (ejemplo: "users")
-    * @return true si tiene al menos un permiso del módulo
+
+   /**
+    * Obtiene todos los permisos activos del rol.
+    * Filtra permisos inactivos o eliminados.
+    *
+    * @return conjunto de permisos activos
     */
-   public boolean hasModuleAccess(String moduleName) {
-      return permissions.stream().anyMatch(p-> p.belongsToModule(moduleName));
+   public Set<Permission> getActivePermissions() {
+      Set<Permission> activePerms = new HashSet<>();
+      for (Permission p : permissions) {
+         if (p.isActive()) {
+            activePerms.add(p);
+         }
+      }
+      return activePerms;
    }
 
-   /***
-    * Activa el rol (cambia status a true)
+   // ========================= MÉTODOS DE NEGOCIO - ACTIVACIÓN =========================
+
+   /**
+    * Activa el rol (cambia status a true).
     */
    public void activate() {
       this.status = true;
-      this.updateAt = LocalDateTime.now();
+      this.updatedAt = LocalDateTime.now();
    }
 
-   /***
-    * Desactiva el rol (cambia status a false)
+   /**
+    * Desactiva el rol (cambia status a false).
     */
-   public void desactivate() {
+   public void deactivate() {
       this.status = false;
-      this.updateAt = LocalDateTime.now();
+      this.updatedAt = LocalDateTime.now();
    }
 
-   /***
-    * Verifica si el rol está activo
-    * @return true o false
+   /**
+    * Verifica si el rol está activo.
+    *
+    * @return true si status = true
     */
    public boolean isActive() {
       return this.status;
    }
 
    /**
-    * Verifica si es un rol administrativo
-    * @return true si es ADMIN o AUTORIDAD
+    * Verifica si el rol está inactivo.
+    *
+    * @return true si status = false
     */
-   public boolean isAdministrative() {
-      return roleType != null && roleType.isAdministrative();
+   public boolean isInactive() {
+      return !this.status;
+   }
+
+   // ========================= MÉTODOS DE NEGOCIO - SOFT DELETE =========================
+
+   /**
+    * Marca el rol como eliminado (soft delete).
+    * También desactiva el rol automáticamente.
+    *
+    * @param deletedByUserId ID del usuario que elimina
+    */
+   public void markAsDeleted(Long deletedByUserId) {
+      this.deletedAt = LocalDateTime.now();
+      this.deletedBy = deletedByUserId;
+      this.status = false;                              // Desactivar al eliminar
+      this.updatedAt = LocalDateTime.now();
    }
 
    /**
-    * Verifica si es un rol operativo
-    * @return true si es OPERADOR o ADMIN
+    * Restaura un rol previamente eliminado.
+    * Reactiva el rol automáticamente.
     */
-   public boolean isOperational() {
-      return roleType != null && roleType.isOperational();
+   public void restore() {
+      this.deletedAt = null;
+      this.deletedBy = null;
+      this.status = true;
+      this.updatedAt = LocalDateTime.now();
+   }
+
+   // ========================= MÉTODOS DE NEGOCIO - VALIDACIONES =========================
+
+   /**
+    * Verifica si el rol es de sistema (no modificable).
+    *
+    * @return true si es ADMIN
+    */
+   public boolean isSystemRole() {
+      return name != null && name.equalsIgnoreCase("ADMIN");
    }
 
    /**
-    * Obtiene el conteo de permisos
+    * Verifica si el rol puede ser modificado.
+    *
+    * @return true si puede modificarse
+    */
+   public boolean canBeModified() {
+      return !isSystemRole();
+   }
+
+   /**
+    * Obtiene el conteo total de permisos.
+    *
+    * @return cantidad de permisos
     */
    public int getPermissionsCount() {
       return permissions.size();
+   }
+
+   /**
+    * Obtiene el conteo de permisos activos.
+    *
+    * @return cantidad de permisos activos
+    */
+   public int getActivePermissionsCount() {
+      return (int) permissions.stream()
+            .filter(Permission::isActive)
+            .count();
+   }
+
+   // ========================= MÉTODOS DE NEGOCIO - ACTUALIZACIÓN =========================
+
+   /**
+    * Actualiza el nombre y descripción del rol.
+    * No permite modificar roles de sistema.
+    *
+    * @param name nuevo nombre
+    * @param description nueva descripción
+    */
+   public void updateDetails(String name, String description) {
+      if (isSystemRole()) {
+         throw new IllegalStateException("Los roles de sistema no pueden modificar su nombre o descripción");
+      }
+      this.name = name;
+      this.description = description;
+      this.updatedAt = LocalDateTime.now();
+   }
+
+   /**
+    * Actualiza el usuario que modificó este registro.
+    *
+    * @param userId ID del usuario que modifica
+    */
+   public void updateModifiedBy(Long userId) {
+      this.updatedBy = userId;
+      this.updatedAt = LocalDateTime.now();
    }
 
    // ========================= GETTERS Y SETTERS =========================
@@ -154,12 +274,12 @@ public class Role {
       this.id = id;
    }
 
-   public RoleType getRoleType() {
-      return roleType;
+   public String getName() {
+      return name;
    }
 
-   public void setRoleType(RoleType roleType) {
-      this.roleType = roleType;
+   public void setName(String name) {
+      this.name = name;
    }
 
    public String getDescription() {
@@ -170,12 +290,8 @@ public class Role {
       this.description = description;
    }
 
-   public boolean isStatus() {
+   public boolean getStatus() {
       return status;
-   }
-
-   public void setStatus(boolean status) {
-      this.status = status;
    }
 
    public Set<Permission> getPermissions() {
@@ -187,46 +303,86 @@ public class Role {
    }
 
    public LocalDateTime getCreatedAt() {
-      return createAt;
+      return createdAt;
    }
 
-   public void setCreatedAt(LocalDateTime createAt) {
-      this.createAt = createAt;
+   public void setCreatedAt(LocalDateTime createdAt) {
+      this.createdAt = createdAt;
+   }
+
+   public Long getCreatedBy() {
+      return createdBy;
+   }
+
+   public void setCreatedBy(Long createdBy) {
+      this.createdBy = createdBy;
    }
 
    public LocalDateTime getUpdatedAt() {
-      return updateAt;
+      return updatedAt;
    }
 
-   public void setUpdatedAt(LocalDateTime updateAt) {
-      this.updateAt = updateAt;
+   public void setUpdatedAt(LocalDateTime updatedAt) {
+      this.updatedAt = updatedAt;
+   }
+
+   public Long getUpdatedBy() {
+      return updatedBy;
+   }
+
+   public void setUpdatedBy(Long updatedBy) {
+      this.updatedBy = updatedBy;
+   }
+
+   public LocalDateTime getDeletedAt() {
+      return deletedAt;
+   }
+
+   public void setDeletedAt(LocalDateTime deletedAt) {
+      this.deletedAt = deletedAt;
+   }
+
+   public Long getDeletedBy() {
+      return deletedBy;
+   }
+
+   public void setDeletedBy(Long deletedBy) {
+      this.deletedBy = deletedBy;
    }
 
    // ========================= EQUALS, HASHCODE Y TOSTRING =========================
 
+   /**
+    * Dos roles son iguales si tienen el mismo ID y nombre.
+    */
    @Override
    public boolean equals(Object o) {
       if (this == o) return true;
       if (o == null || getClass() != o.getClass()) return false;
       Role role = (Role) o;
-      return status == role.status && Objects.equals(id, role.id) && roleType == role.roleType && Objects.equals(description, role.description) && Objects.equals(permissions, role.permissions) && Objects.equals(createAt, role.createAt) && Objects.equals(updateAt, role.updateAt);
+      return Objects.equals(id, role.id) &&
+            Objects.equals(name, role.name);
    }
 
+   /**
+    * HashCode basado en ID y nombre.
+    */
    @Override
    public int hashCode() {
-      return Objects.hash(id, roleType, description, status, permissions, createAt, updateAt);
+      return Objects.hash(id, name);
    }
 
+   /**
+    * ToString simplificado para logging y debugging.
+    */
    @Override
    public String toString() {
       return "Role{" +
-            "createAt=" + createAt +
-            ", id=" + id +
-            ", roleType=" + roleType +
-            ", description='" + description + '\'' +
-            ", status=" + status +
-            ", permissions=" + permissions +
-            ", updateAt=" + updateAt +
+            "id=" + id +
+            ", name='" + name + '\'' +
+            ", status=" + (status ? "ACTIVO" : "INACTIVO") +
+            ", permissionsCount=" + permissions.size() +
+            ", isSystemRole=" + isSystemRole() +
             '}';
    }
 }

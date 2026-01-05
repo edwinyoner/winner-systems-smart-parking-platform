@@ -1,29 +1,40 @@
 package com.winnersystems.smartparking.auth.application.dto.command;
 
 /**
- * Command para hacer login.
- * Los Commands son objetos inmutables que representan una INTENCIÓN del usuario.
+ * Comando para autenticación de usuarios internos.
  *
- * ¿Por qué usar Commands?
- * - Validación centralizada
- * - Registro de auditoría
- * - Separación entre capa web y aplicación
+ * <p>Encapsula los datos necesarios para ejecutar el login.
+ * Este comando es parte de la capa de Application y NO contiene validaciones
+ * de framework. Las validaciones se realizan en la capa de Infrastructure
+ * mediante LoginRequest.java con Jakarta Validation.</p>
+ *
+ * <h3>Flujo de Login</h3>
+ * <ol>
+ *   <li>Usuario ingresa email + password en frontend</li>
+ *   <li>Frontend resuelve reCAPTCHA v3</li>
+ *   <li>Backend valida captcha (score mínimo 0.5)</li>
+ *   <li>Backend valida credenciales con BCrypt</li>
+ *   <li>Backend genera access token (JWT) + refresh token</li>
+ *   <li>Backend actualiza lastLoginAt</li>
+ *   <li>Backend retorna tokens + información del usuario</li>
+ * </ol>
+ *
+ * @param email email del usuario
+ * @param password contraseña (será verificada con BCrypt)
+ * @param captchaToken token de reCAPTCHA v3
+ * @param rememberMe true=sesión extendida (30 días), false=sesión normal (7 días)
+ * @param deviceInfo User-Agent del navegador/dispositivo (auditoría)
+ * @param ipAddress IP del cliente (auditoría)
+ *
+ * @author Edwin Yoner Winner Systems - Smart Parking Platform
+ * @version 1.0
  */
 public record LoginCommand(
       String email,
       String password,
       String captchaToken,
-      boolean rememberMe
+      boolean rememberMe,
+      String deviceInfo,
+      String ipAddress
 ) {
-   /**
-    * Validación básica (también se puede hacer con Bean Validation)
-    */
-   public void validate() {
-      if (email == null || email.isBlank()) {
-         throw new IllegalArgumentException("Email es requerido");
-      }
-      if (password == null || password.isBlank()) {
-         throw new IllegalArgumentException("Password es requerido");
-      }
-   }
 }

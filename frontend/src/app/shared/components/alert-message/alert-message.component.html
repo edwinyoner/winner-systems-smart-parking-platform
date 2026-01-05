@@ -1,0 +1,27 @@
+<!-- Alert Message -->
+<div 
+  *ngIf="visible" 
+  class="alert alert-{{ type }}" 
+  role="alert"
+  [@slideDown]>
+  
+  <div class="alert-content">
+    <!-- Icono -->
+    <i [class]="getIcon()" class="alert-icon"></i>
+    
+    <!-- Mensaje -->
+    <div class="alert-message">
+      <ng-content>{{ message }}</ng-content>
+    </div>
+    
+    <!-- Botón cerrar -->
+    <button 
+      *ngIf="dismissible" 
+      type="button" 
+      class="alert-close" 
+      (click)="dismiss()"
+      aria-label="Cerrar">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+</div>

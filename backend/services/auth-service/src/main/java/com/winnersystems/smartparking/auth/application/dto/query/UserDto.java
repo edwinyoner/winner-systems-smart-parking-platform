@@ -1,40 +1,38 @@
 package com.winnersystems.smartparking.auth.application.dto.query;
 
-import com.winnersystems.smartparking.auth.domain.enums.UserStatus;
-
 import java.time.LocalDateTime;
 import java.util.Set;
 
 /**
- * DTO que representa un Usuario para respuestas.
+ * DTO de consulta para Usuario.
+ * Contiene información completa del usuario para respuestas.
  *
- * ¿Por qué NO devolver la entidad User directamente?
- * 1. Seguridad: No exponemos el password
- * 2. Desacoplamiento: La API puede cambiar sin afectar el dominio
- * 3. Optimización: Solo enviamos los datos necesarios
+ * @param id ID del usuario
+ * @param firstName Nombre
+ * @param lastName Apellido
+ * @param email Email único
+ * @param phoneNumber Teléfono (opcional)
+ * @param profilePicture URL foto perfil (opcional)
+ * @param status true=activo, false=inactivo
+ * @param emailVerified true=verificado, false=pendiente
+ * @param roles Conjunto de nombres de roles
+ * @param createdAt Fecha creación
+ * @param updatedAt Fecha última actualización
+ *
+ * @author Edwin Yoner Winner Systems - Smart Parking Platform
+ * @version 1.0
  */
 public record UserDto(
       Long id,
       String firstName,
       String lastName,
-      String fullName,
       String email,
       String phoneNumber,
       String profilePicture,
-      UserStatus status,
+      boolean status,
       boolean emailVerified,
-      Set<RoleDto> roles,
-      LocalDateTime lastLoginAt,
+      Set<String> roles,
       LocalDateTime createdAt,
       LocalDateTime updatedAt
 ) {
-   // Constructor adicional sin roles (lazy loading)
-   public UserDto(Long id, String firstName, String lastName, String email,
-                  String phoneNumber, String profilePicture, UserStatus status,
-                  boolean emailVerified, LocalDateTime lastLoginAt,
-                  LocalDateTime createdAt, LocalDateTime updatedAt) {
-      this(id, firstName, lastName, firstName + " " + lastName, email,
-            phoneNumber, profilePicture, status, emailVerified, Set.of(),
-            lastLoginAt, createdAt, updatedAt);
-   }
 }

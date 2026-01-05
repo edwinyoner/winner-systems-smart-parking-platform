@@ -1,13 +1,24 @@
 package com.winnersystems.smartparking.auth.infrastructure.adapter.output.persistence.permission.entity;
 
 import jakarta.persistence.*;
+import lombok.*;
+
 import java.time.LocalDateTime;
 
 /**
  * Entidad JPA que representa un PERMISO en la base de datos.
+ * Mapea directamente con el modelo de dominio Permission.
+ *
+ * @author Edwin Yoner Winner Systems - Smart Parking Platform
+ * @version 1.0
  */
 @Entity
 @Table(name = "permissions")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class PermissionEntity {
 
    @Id
@@ -15,23 +26,41 @@ public class PermissionEntity {
    private Long id;
 
    @Column(name = "name", nullable = false, unique = true, length = 100)
-   private String name;  // Ejemplo: "users.create"
+   private String name;  // Ejemplo: "users.create", "parking.update"
 
    @Column(name = "description", length = 255)
-   private String description;
+   private String description;  // Ejemplo: "Crear Usuarios"
 
-   @Column(name = "module", length = 50)
-   private String module;  // Ejemplo: "users", "parking", "reports"
+   @Column(name = "status", nullable = false)
+   private boolean status = true;  // true = activo, false = inactivo
+
+   // ========== AUDITORÍA ==========
 
    @Column(name = "created_at", nullable = false, updatable = false)
    private LocalDateTime createdAt;
 
+   @Column(name = "created_by")
+   private Long createdBy;
+
    @Column(name = "updated_at", nullable = false)
    private LocalDateTime updatedAt;
 
+   @Column(name = "updated_by")
+   private Long updatedBy;
+
+   @Column(name = "deleted_at")
+   private LocalDateTime deletedAt;
+
+   @Column(name = "deleted_by")
+   private Long deletedBy;
+
+   // ========== LIFECYCLE CALLBACKS ==========
+
    @PrePersist
    protected void onCreate() {
-      createdAt = LocalDateTime.now();
+      if (createdAt == null) {
+         createdAt = LocalDateTime.now();
+      }
       updatedAt = LocalDateTime.now();
    }
 
@@ -40,62 +69,7 @@ public class PermissionEntity {
       updatedAt = LocalDateTime.now();
    }
 
-   // Constructors
-   public PermissionEntity() {
-   }
+   // ========== CONSTRUCTORES =========
 
-   public PermissionEntity(String name, String description, String module) {
-      this.name = name;
-      this.description = description;
-      this.module = module;
-   }
-
-   // Getters y Setters
-   public Long getId() {
-      return id;
-   }
-
-   public void setId(Long id) {
-      this.id = id;
-   }
-
-   public String getName() {
-      return name;
-   }
-
-   public void setName(String name) {
-      this.name = name;
-   }
-
-   public String getDescription() {
-      return description;
-   }
-
-   public void setDescription(String description) {
-      this.description = description;
-   }
-
-   public String getModule() {
-      return module;
-   }
-
-   public void setModule(String module) {
-      this.module = module;
-   }
-
-   public LocalDateTime getCreatedAt() {
-      return createdAt;
-   }
-
-   public void setCreatedAt(LocalDateTime createdAt) {
-      this.createdAt = createdAt;
-   }
-
-   public LocalDateTime getUpdatedAt() {
-      return updatedAt;
-   }
-
-   public void setUpdatedAt(LocalDateTime updatedAt) {
-      this.updatedAt = updatedAt;
-   }
+   // ========== GETTERS Y SETTERS ==========
 }

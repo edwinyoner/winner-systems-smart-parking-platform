@@ -9,6 +9,9 @@ import {
   withViewTransitions
 } from '@angular/router';
 
+// ✅ AGREGAR ESTE IMPORT
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+
 import { DropdownModule, SidebarModule } from '@coreui/angular';
 import { IconSetService } from '@coreui/icons-angular';
 
@@ -16,6 +19,11 @@ import { IconSetService } from '@coreui/icons-angular';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 
 import { routes } from './app.routes';
+
+// Importar interceptors
+import { loadingInterceptor } from './core/interceptors/loading.interceptor';
+import { authInterceptor } from './core/interceptors/auth.interceptor';
+import { errorInterceptor } from './core/interceptors/error.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -29,7 +37,7 @@ export const appConfig: ApplicationConfig = {
       }),
       withEnabledBlockingInitialNavigation(),
       withViewTransitions(),
-      //withHashLocation() // URL con hash (#
+      //withHashLocation() // URL con hash (#)
     ),
     // Module Providers
     importProvidersFrom(
@@ -38,6 +46,16 @@ export const appConfig: ApplicationConfig = {
       FontAwesomeModule  // Font Awesome Module
     ),
     IconSetService,
-    provideAnimationsAsync()
+    provideAnimationsAsync(),
+
+    // ✅ Configurar HttpClient con interceptors
+    provideHttpClient(
+      withInterceptors([
+        loadingInterceptor,  // 1. Primero loading (empieza a contar)
+        authInterceptor,     // 2. Luego agregar token
+        errorInterceptor     // 3. Finalmente manejar errores
+      ])
+    )
   ]
 };
+

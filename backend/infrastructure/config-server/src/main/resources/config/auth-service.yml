@@ -1,36 +1,128 @@
 # ================================================================================
-# ARCHIVO 4: auth-service.yml
+# CONFIGURACIÓN DEL MICROSERVICIO: auth-service
+# resources/config/auth-service.yml
+# Smart Parking Platform - Winner Systems
 # ================================================================================
 
 server:
   port: 8081
+  error:
+    include-message: always
+    include-binding-errors: always
 
 spring:
+  application:
+    name: auth-service  # ✅ AGREGAR ESTA LÍNEA
+
+  # ========== DATASOURCE (Base de Datos) ==========
   datasource:
-    url: jdbc:postgresql://localhost:5432/auth_db
-    username: root
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/qa_smartparking_auth_service
+    username: postgres
     password: edwinyoner
 
+  # ========== JPA / HIBERNATE ==========
   jpa:
     hibernate:
-      ddl-auto: update # En dev: update, en prod: validate
+      ddl-auto: create-drop   # Desarrollo: update | Producción: validate  --- update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        use_sql_comments: true
 
-# JWT configuration
-jwt:
-  secret: secret-key-xyz
-  expiration: 3600000 # 1 hora en milisegundos
-  refresh-expiration: 604800000 # 7 días
+  # ========== EMAIL CONFIGURATION (Gmail SMTP) ==========
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: edwinyoner@gmail.com
+    password: cozkdjrftyqocbtx
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+    default-encoding: UTF-8
 
-# RabbitMQ
-spring.rabbitmq:
-  host: localhost
-  port: 5672
-  username: guest
-  password: guest
+  # ========== FILE UPLOAD (Profile Pictures) ==========
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 5MB
+      max-request-size: 5MB
 
+# ========== EUREKA CLIENT ==========
 eureka:
   client:
-    serviceUrl:
-    defaultZone: http://localhost:8761/eureka/
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+    registry-fetch-interval-seconds: 10
   instance:
-    preferIpAddress: true
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
+
+# ========== JWT CONFIGURATION ==========
+jwt:
+  secret: "SmartParkingWinnerSystemsSecureKeyForJWTAuthentication2025MinimumRequired256Bits"
+  access-token-expiration: 1800000      # 30 minutos
+  refresh-token-expiration: 604800000   # 7 días
+  refresh-token-expiration-remember-me: 2592000000  # 30 días
+
+# ========== EMAIL TEMPLATES ==========
+email:
+  from: noreply@smartparking.com
+  from-name: Smart Parking System
+  base-url: http://localhost:4200  # URL del frontend Angular
+  templates:
+    password-reset-subject: "Restablecer contraseña - Smart Parking"
+    verification-subject: "Verificar email - Smart Parking"
+
+# ========== RECAPTCHA v3 CONFIGURATION ==========
+recaptcha:
+  enabled: false  # Cambiar a true cuando tengas las keys
+  secret-key: TU_RECAPTCHA_V3_SECRET_KEY_AQUI
+  verify-url: https://www.google.com/recaptcha/api/siteverify
+  min-score: 0.5
+
+# ========== ACTUATOR (Health Checks) ==========
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+  health:
+    db:
+      enabled: true
+    mail:
+      enabled: true
+
+# ========== LOGGING ==========
+logging:
+  level:
+    root: INFO
+    com.winnersystems.smartparking: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.springframework.security: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+# ========== APPLICATION INFO ==========
+info:
+  app:
+    name: Auth Service
+    description: Microservicio de autenticación y gestión de usuarios
+    version: 1.0.0
+    author: Edwin Yoner - Winner Systems Corporation

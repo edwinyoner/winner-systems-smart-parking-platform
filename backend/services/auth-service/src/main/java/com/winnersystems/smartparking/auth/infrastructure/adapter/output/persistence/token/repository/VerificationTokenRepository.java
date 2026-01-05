@@ -1,43 +1,45 @@
 package com.winnersystems.smartparking.auth.infrastructure.adapter.output.persistence.token.repository;
 
 import com.winnersystems.smartparking.auth.infrastructure.adapter.output.persistence.token.entity.VerificationTokenEntity;
-import com.winnersystems.smartparking.auth.infrastructure.adapter.output.persistence.user.entity.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
 
 /**
- * Repository para VerificationToken (token de verificación de email)
+ * Repositorio JPA para VerificationToken.
+ *
+ * @author Edwin Yoner - Winner Systems
+ * @version 1.0
  */
 @Repository
 public interface VerificationTokenRepository extends JpaRepository<VerificationTokenEntity, Long> {
 
    /**
-    * Busca verification token por el token string
+    * Busca verification token por UUID.
+    * Búsqueda O(1) con índice único.
+    *
+    * @param token valor UUID del token
+    * @return Optional con el token si existe
     */
    Optional<VerificationTokenEntity> findByToken(String token);
 
    /**
-    * Busca verification token por usuario (el último)
+    * Cuenta verification tokens creados desde cierta fecha.
+    * Usado para rate limiting (máx 3 por hora).
+    *
+    * @param userId ID del usuario
+    * @param since fecha desde la cual contar
+    * @return cantidad de tokens creados después de 'since'
     */
-   Optional<VerificationTokenEntity> findFirstByUserOrderByCreatedAtDesc(UserEntity user);
+   long countByUserIdAndCreatedAtAfter(Long userId, LocalDateTime since);
 
    /**
-    * Elimina tokens expirados (limpieza periódica)
+    * Elimina todos los verification tokens de un usuario.
+    * Usado al reenviar verificación (limpiar tokens previos).
+    *
+    * @param userId ID del usuario
     */
-   @Modifying
-   @Query("DELETE FROM VerificationTokenEntity vt WHERE vt.expiresAt < :now")
-   void deleteExpiredTokens(@Param("now") LocalDateTime now);
-
-   /**
-    * Elimina tokens usados antiguos (más de 30 días)
-    */
-   @Modifying
-   @Query("DELETE FROM VerificationTokenEntity vt WHERE vt.used = true AND vt.usedAt < :threshold")
-   void deleteOldUsedTokens(@Param("threshold") LocalDateTime threshold);
+   void deleteByUserId(Long userId);
 }

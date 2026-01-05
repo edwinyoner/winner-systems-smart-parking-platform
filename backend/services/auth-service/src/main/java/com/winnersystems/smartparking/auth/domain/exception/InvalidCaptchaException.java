@@ -10,10 +10,8 @@ package com.winnersystems.smartparking.auth.domain.exception;
  * - La puntuación de reCAPTCHA v3 es muy baja (posible bot)
  * - Error al comunicarse con Google reCAPTCHA
  *
- * Se usa en:
- * - Registro de usuarios
- * - Login (opcional, si hay muchos intentos fallidos)
- * - Recuperación de contraseña
+ * @author Edwin Yoner - Winner Systems - Smart Parking Platform
+ * @version 1.0
  */
 public class InvalidCaptchaException extends RuntimeException {
 

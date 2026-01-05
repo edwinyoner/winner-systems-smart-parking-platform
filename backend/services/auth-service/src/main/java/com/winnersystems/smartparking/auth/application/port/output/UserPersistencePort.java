@@ -1,5 +1,6 @@
 package com.winnersystems.smartparking.auth.application.port.output;
 
+import com.winnersystems.smartparking.auth.application.dto.query.UserSearchCriteria;
 import com.winnersystems.smartparking.auth.domain.model.User;
 
 import java.util.List;
@@ -8,84 +9,86 @@ import java.util.Optional;
 /**
  * Puerto de salida para persistencia de usuarios.
  *
- * ¿Qué es un "Puerto"?
- * Es una INTERFACE que define las operaciones que necesita la aplicación
- * sin importar CÓMO se implementan (podría ser MySQL, PostgreSQL, MongoDB, etc.)
- *
- * Este puerto será implementado en la capa INFRASTRUCTURE.
+ * @author Edwin Yoner Winner Systems - Smart Parking Platform
+ * @version 1.0
  */
 public interface UserPersistencePort {
 
    /**
-    * Guarda un nuevo usuario o actualiza uno existente
+    * Guarda un nuevo usuario o actualiza uno existente.
+    *
+    * <p>Usado en:</p>
+    * <ul>
+    *   <li>CreateUserUseCase - Crear nuevo usuario</li>
+    *   <li>UpdateUserUseCase - Actualizar usuario existente</li>
+    *   <li>DeleteUserUseCase - Marcar como eliminado (soft delete)</li>
+    *   <li>RestoreUserUseCase - Restaurar usuario eliminado</li>
+    * </ul>
+    *
     * @param user usuario a guardar
     * @return usuario guardado con ID generado
     */
    User save(User user);
 
    /**
-    * Busca un usuario por su ID
+    * Busca un usuario por su ID.
+    *
+    * <p>Usado en:</p>
+    * <ul>
+    *   <li>GetUserUseCase - Obtener usuario específico</li>
+    *   <li>UpdateUserUseCase - Cargar usuario antes de actualizar</li>
+    *   <li>DeleteUserUseCase - Cargar usuario antes de eliminar</li>
+    *   <li>RestoreUserUseCase - Cargar usuario antes de restaurar</li>
+    * </ul>
+    *
     * @param id identificador del usuario
     * @return Optional con el usuario si existe, empty si no
     */
    Optional<User> findById(Long id);
 
    /**
-    * Busca un usuario por su email
-    * @param email email del usuario
+    * Busca un usuario por su email único.
+    *
+    * <p>Usado en:</p>
+    * <ul>
+    *   <li>LoginUseCase - Autenticación por email</li>
+    *   <li>CreateUserUseCase - Validar que email no existe</li>
+    *   <li>ForgotPasswordUseCase - Buscar usuario para reset</li>
+    * </ul>
+    *
+    * @param email email del usuario (único en sistema)
     * @return Optional con el usuario si existe, empty si no
     */
    Optional<User> findByEmail(String email);
 
    /**
-    * Verifica si existe un usuario con el email dado
-    * @param email email a verificar
-    * @return true si existe, false si no
-    */
-   boolean existsByEmail(String email);
-
-   /**
-    * Lista todos los usuarios (no eliminados)
-    * @return lista de usuarios
-    */
-   List<User> findAll();
-
-   /**
-    * Lista usuarios con paginación
+    * Busca usuarios con criterios de búsqueda y paginación.
+    *
+    * <p>Usado en ListUsersUseCase para búsqueda avanzada con filtros:</p>
+    * <ul>
+    *   <li>searchTerm - Búsqueda en firstName, lastName, email</li>
+    *   <li>status - Filtrar por activo/inactivo</li>
+    *   <li>emailVerified - Filtrar por email verificado</li>
+    *   <li>includeDeleted - Incluir usuarios eliminados</li>
+    *   <li>roleName - Filtrar por rol específico</li>
+    *   <li>sortBy, sortDirection - Ordenamiento personalizado</li>
+    * </ul>
+    *
+    * @param criteria criterios de búsqueda (puede ser null para listar todos)
     * @param page número de página (0-based)
     * @param size tamaño de página
-    * @return lista paginada de usuarios
+    * @return lista de usuarios que coinciden con los criterios
     */
-   List<User> findAll(int page, int size);
+   List<User> findByCriteria(UserSearchCriteria criteria, int page, int size);
 
    /**
-    * Busca usuarios por rol
-    * @param roleName nombre del rol (ADMIN, USER, etc.)
-    * @return lista de usuarios con ese rol
+    * Cuenta usuarios que coinciden con los criterios.
+    *
+    * <p>Usado en ListUsersUseCase para calcular total de páginas
+    * en la respuesta paginada.</p>
+    *
+    * @param criteria criterios de búsqueda (mismos que findByCriteria)
+    * @return total de usuarios que coinciden
     */
-   List<User> findByRole(String roleName);
-
-   /**
-    * Busca usuarios activos
-    * @return lista de usuarios con status ACTIVE
-    */
-   List<User> findActiveUsers();
-
-   /**
-    * Elimina un usuario (soft delete o hard delete según implementación)
-    * @param id ID del usuario a eliminar
-    */
-   void deleteById(Long id);
-
-   /**
-    * Cuenta el total de usuarios
-    * @return total de usuarios
-    */
-   long count();
-
-   /**
-    * Cuenta usuarios activos
-    * @return total de usuarios con status ACTIVE
-    */
-   long countActive();
+   long countByCriteria(UserSearchCriteria criteria);
 }

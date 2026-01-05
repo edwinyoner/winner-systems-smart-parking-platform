@@ -9,6 +9,9 @@ package com.winnersystems.smartparking.auth.domain.exception;
  * Cuándo se lanza:
  * - Al registrar un nuevo usuario con email duplicado
  * - Al actualizar el email de un usuario a uno que ya existe
+ *
+ * @author Edwin Yoner - Winner Systems - Smart Parking Platform
+ * @version 1.0
  */
 public class EmailAlreadyExistsException extends RuntimeException {
 

@@ -1,0 +1,250 @@
+<!-- Register Form - Diseño Futurista -->
+<div class="register-container">
+  
+  <!-- Header -->
+  <div class="form-header">
+    <h2>Crear Cuenta</h2>
+    <p class="subtitle">Regístrate para acceder a Smart Parking Platform</p>
+  </div>
+
+  <!-- Success Alert -->
+  @if (successMessage) {
+    <app-alert-message 
+      type="success" 
+      [message]="successMessage"
+      [dismissible]="true"
+      (onDismiss)="dismissSuccess()">
+    </app-alert-message>
+  }
+
+  <!-- Error Alert -->
+  @if (errorMessage) {
+    <app-alert-message 
+      type="error" 
+      [message]="errorMessage"
+      [dismissible]="true"
+      (onDismiss)="dismissError()">
+    </app-alert-message>
+  }
+
+  <!-- Register Form -->
+  <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+    
+    <!-- Nombres y Apellidos (2 columnas) -->
+    <div class="form-row">
+      <!-- First Name -->
+      <div class="form-group">
+        <label for="firstName" style="color: white;">
+          <i class="fas fa-user"></i>
+          Nombres
+        </label>
+        <div class="input-wrapper">
+          <input
+            type="text"
+            id="firstName"
+            class="form-control"
+            [class.error]="hasError('firstName', 'required') || hasError('firstName', 'minlength')"
+            formControlName="firstName"
+            placeholder="Juan"
+            autocomplete="given-name">
+          <div class="input-border"></div>
+        </div>
+        @if (hasError('firstName', 'required') || hasError('firstName', 'minlength')) {
+          <span class="error-message">{{ getErrorMessage('firstName') }}</span>
+        }
+      </div>
+
+      <!-- Last Name -->
+      <div class="form-group">
+        <label for="lastName" style="color: white;">
+          <i class="fas fa-user"></i>
+          Apellidos
+        </label>
+        <div class="input-wrapper">
+          <input
+            type="text"
+            id="lastName"
+            class="form-control"
+            [class.error]="hasError('lastName', 'required') || hasError('lastName', 'minlength')"
+            formControlName="lastName"
+            placeholder="Pérez"
+            autocomplete="family-name">
+          <div class="input-border"></div>
+        </div>
+        @if (hasError('lastName', 'required') || hasError('lastName', 'minlength')) {
+          <span class="error-message">{{ getErrorMessage('lastName') }}</span>
+        }
+      </div>
+    </div>
+
+    <!-- Email Field -->
+    <div class="form-group">
+      <label for="email" style="color: white;">
+        <i class="fas fa-envelope"></i>
+        Correo Electrónico
+      </label>
+      <div class="input-wrapper">
+        <input
+          type="email"
+          id="email"
+          class="form-control"
+          [class.error]="hasError('email', 'required') || hasError('email', 'email')"
+          formControlName="email"
+          placeholder="correo@ejemplo.com"
+          autocomplete="email">
+        <div class="input-border"></div>
+      </div>
+      @if (hasError('email', 'required') || hasError('email', 'email')) {
+        <span class="error-message">{{ getErrorMessage('email') }}</span>
+      }
+    </div>
+
+    <!-- Phone Number Field (Opcional) -->
+    <div class="form-group">
+      <label for="phoneNumber" style="color: white;">
+        <i class="fas fa-phone"></i>
+        Teléfono
+        <span class="optional">(opcional)</span>
+      </label>
+      <div class="input-wrapper">
+        <input
+          type="tel"
+          id="phoneNumber"
+          class="form-control"
+          [class.error]="hasError('phoneNumber', 'pattern')"
+          formControlName="phoneNumber"
+          placeholder="987654321"
+          autocomplete="tel">
+        <div class="input-border"></div>
+      </div>
+      @if (hasError('phoneNumber', 'pattern')) {
+        <span class="error-message">{{ getErrorMessage('phoneNumber') }}</span>
+      }
+    </div>
+
+    <!-- Password Fields (2 columnas) -->
+    <div class="form-row">
+      <!-- Password -->
+      <div class="form-group">
+        <label for="password" style="color: white;">
+          <i class="fas fa-lock"></i>
+          Contraseña
+        </label>
+        <div class="input-wrapper">
+          <input
+            [type]="showPassword ? 'text' : 'password'"
+            id="password"
+            class="form-control"
+            [class.error]="hasError('password', 'required') || hasError('password', 'minlength') || hasError('password', 'pattern')"
+            formControlName="password"
+            placeholder="••••••••"
+            autocomplete="new-password">
+          <button
+            type="button"
+            class="toggle-password"
+            (click)="togglePasswordVisibility('password')">
+            <i [class]="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+          </button>
+          <div class="input-border"></div>
+        </div>
+        @if (hasError('password', 'required') || hasError('password', 'minlength') || hasError('password', 'pattern')) {
+          <span class="error-message">{{ getErrorMessage('password') }}</span>
+        }
+      </div>
+
+      <!-- Confirm Password -->
+      <div class="form-group">
+        <label for="confirmPassword" style="color: white;">
+          <i class="fas fa-lock"></i>
+          Confirmar
+        </label>
+        <div class="input-wrapper">
+          <input
+            [type]="showConfirmPassword ? 'text' : 'password'"
+            id="confirmPassword"
+            class="form-control"
+            [class.error]="hasError('confirmPassword', 'required') || hasPasswordMismatch()"
+            formControlName="confirmPassword"
+            placeholder="••••••••"
+            autocomplete="new-password">
+          <button
+            type="button"
+            class="toggle-password"
+            (click)="togglePasswordVisibility('confirmPassword')">
+            <i [class]="showConfirmPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+          </button>
+          <div class="input-border"></div>
+        </div>
+        @if (hasPasswordMismatch()) {
+          <span class="error-message">Las contraseñas no coinciden</span>
+        }
+      </div>
+    </div>
+
+    <!-- Password Requirements Info -->
+    <div class="password-requirements">
+      <i class="fas fa-info-circle"></i>
+      <span>La contraseña debe tener mínimo 8 caracteres, incluir mayúsculas, minúsculas, números y caracteres especiales (@$!%*?&)</span>
+    </div>
+
+    <!-- Accept Terms -->
+    <div class="form-group">
+      <label class="checkbox-container" for="acceptTerms">
+        <input 
+          type="checkbox" 
+          id="acceptTerms"
+          formControlName="acceptTerms">
+        <span class="checkmark"></span>
+        <span class="checkbox-label" style="color: white;">
+          Acepto los 
+          <a href="#" class="link-inline" (click)="$event.preventDefault()">Términos y Condiciones</a> 
+          y la 
+          <a href="#" class="link-inline" (click)="$event.preventDefault()">Política de Privacidad</a>
+        </span>
+      </label>
+      @if (hasError('acceptTerms', 'required')) {
+        <span class="error-message">Debes aceptar los términos y condiciones</span>
+      }
+    </div>
+
+    <!-- reCAPTCHA Badge Info -->
+    @if (enableCaptcha) {
+      <div class="captcha-info">
+        <i class="fas fa-shield-alt"></i>
+        <span>Protegido por reCAPTCHA</span>
+      </div>
+    }
+
+    <!-- Submit Button -->
+    <button
+      type="submit"
+      class="btn-submit"
+      [disabled]="isLoading">
+      @if (!isLoading) {
+        <span class="btn-content">
+          <i class="fas fa-user-plus"></i>
+          <span>Crear Cuenta</span>
+        </span>
+      } @else {
+        <span class="btn-content">
+          <i class="fas fa-spinner fa-spin"></i>
+          <span>Creando cuenta...</span>
+        </span>
+      }
+      <div class="btn-glow"></div>
+    </button>
+
+  </form>
+
+  <!-- Divider -->
+  <div class="divider">
+    <span>¿Ya tienes cuenta?</span>
+  </div>
+
+  <!-- Login Link -->
+  <a routerLink="/login" class="link-login">
+    <i class="fas fa-sign-in-alt"></i>
+    <span>Iniciar Sesión</span>
+  </a>
+
+</div>

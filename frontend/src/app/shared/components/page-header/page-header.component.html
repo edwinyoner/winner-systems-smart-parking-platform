@@ -1,0 +1,42 @@
+<!-- Page Header -->
+<div class="page-header">
+  
+  <!-- Breadcrumbs -->
+  <nav class="breadcrumb-nav" *ngIf="breadcrumbs.length > 0" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li 
+        *ngFor="let crumb of breadcrumbs; let last = last" 
+        class="breadcrumb-item"
+        [class.active]="last || crumb.active">
+        
+        <a *ngIf="!last && !crumb.active && crumb.url" [routerLink]="crumb.url">
+          {{ crumb.label }}
+        </a>
+        
+        <span *ngIf="last || crumb.active || !crumb.url">
+          {{ crumb.label }}
+        </span>
+      </li>
+    </ol>
+  </nav>
+
+  <!-- Header content -->
+  <div class="header-content">
+    
+    <!-- Left: Title + Subtitle -->
+    <div class="header-left">
+      <div class="title-container">
+        <i *ngIf="icon" [class]="icon" class="page-icon"></i>
+        <h1 class="page-title">{{ title }}</h1>
+      </div>
+      <p *ngIf="subtitle" class="page-subtitle">{{ subtitle }}</p>
+    </div>
+
+    <!-- Right: Actions (content projection) -->
+    <div class="header-right" *ngIf="true">
+      <ng-content></ng-content>
+    </div>
+
+  </div>
+
+</div>

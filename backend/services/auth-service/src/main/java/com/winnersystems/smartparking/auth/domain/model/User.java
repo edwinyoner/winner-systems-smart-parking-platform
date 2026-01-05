@@ -1,47 +1,72 @@
 package com.winnersystems.smartparking.auth.domain.model;
 
-import com.winnersystems.smartparking.auth.domain.enums.UserStatus;
-
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
-/***
- * Entidad de dominio que representa un USUARIO del sistema Smart Parking.
- * Contiene toda la información del usuario y sus relaciones con roles.
+/**
+ * Entidad de dominio que representa un USUARIO interno del sistema Smart Parking.
+ *
+ * Los usuarios internos son personal de TI, administrativo y operativo de la municipalidad:
+ * ADMIN, AUTORIDAD, OPERADOR. Los ciudadanos (usuarios móviles) se gestionan en
+ * un servicio separado con autenticación Google.
+ *
+ * @author Edwin - Yoner Winner Systems - Smart Parking Platform
+ * @version 1.0
  */
 public class User {
+
+   // ========================= CAMPOS DE IDENTIDAD =========================
+
    private Long id;
    private String firstName;
    private String lastName;
-   private String email;
-   private String password;                              // Encriptado con (BCrypt)
+   private String email;                                  // Único en el sistema
+   private String password;                               // Hasheado con BCrypt
    private String phoneNumber;
-   private String profilePicture;                        // URL de la foto de perfil
-   private UserStatus status;                            // ACTIVE, INACTIVE, PENDING, SUSPENDED
-   private boolean emailVerified;                        // ¿Email verificado?
-   private boolean deleted;                              // Soft delete
-   private Set<Role> roles;                              // Roles asignado al usuario
-   private LocalDateTime lastLoginAt;                    // Último login
-   private LocalDateTime createAt;                       // Cuándo se creó
-   private LocalDateTime updateAt;                       // Cuándo se actualizó
-   private LocalDateTime deletedAt;                      // Cuándo se eliminó
+   private String profilePicture;                         // URL de foto de perfil (opcional)
+
+   // ========================= CAMPOS DE ESTADO =========================
+
+   private boolean status;                                // true = activo, false = inactivo
+   private boolean emailVerified;                         // ¿Email verificado?
+
+   // ========================= RELACIONES =========================
+
+   private Set<Role> roles;                               // Roles asignados (M:N)
+
+   // ========================= CAMPOS DE AUDITORÍA =========================
+
+   private LocalDateTime createdAt;                       // Cuándo se creó
+   private Long createdBy;                                // ID del usuario que creó
+   private LocalDateTime updatedAt;                       // Última actualización
+   private Long updatedBy;                                // ID del usuario que actualizó
+   private LocalDateTime deletedAt;                       // Cuándo se eliminó (soft delete)
+   private Long deletedBy;                                // ID del usuario que eliminó
 
    // ========================= CONSTRUCTORES =========================
 
-   /***
-    * Constructor vacío - Inicializa con valores por defecto
+   /**
+    * Constructor vacío - Inicializa con valores por defecto seguros.
+    * Usuario empieza inactivo hasta verificar email.
     */
    public User() {
       this.roles = new HashSet<>();
       this.emailVerified = false;
-      this.status = UserStatus.PENDING;   // Por defecto pendiente hasta verificar email
-      this.deleted = false;
-      this.createAt = LocalDateTime.now();
-      this.updateAt = LocalDateTime.now();
+      this.status = false;                               // Inactivo hasta verificar email
+      this.createdAt = LocalDateTime.now();
+      this.updatedAt = LocalDateTime.now();
    }
 
+   /**
+    * Constructor con campos básicos.
+    *
+    * @param firstName nombre del usuario
+    * @param lastName apellido del usuario
+    * @param email email único (será validado)
+    * @param password contraseña (debe venir YA hasheada con BCrypt)
+    */
    public User(String firstName, String lastName, String email, String password) {
       this();
       this.firstName = firstName;
@@ -50,202 +75,252 @@ public class User {
       this.password = password;
    }
 
-   // ========================= MÉTODOS DE NEGOCIO =========================
+   // ========================= MÉTODOS DE NEGOCIO - INFORMACIÓN =========================
 
-   /***
-    * Obtiene el nombre completo del usuario
+   /**
+    * Obtiene el nombre completo del usuario.
+    *
     * @return nombre completo (firstName + lastName)
     */
    public String getFullName() {
       return firstName + " " + lastName;
    }
 
-   /***
-    * Asigna un rol al usuario
-    * @param role
+   /**
+    * Obtiene las iniciales del usuario para avatares.
+    *
+    * @return iniciales (ej: "ED" para Edwin Yoner)
+    */
+   public String getInitials() {
+      String first = firstName != null && !firstName.isEmpty()
+            ? firstName.substring(0, 1).toUpperCase()
+            : "";
+      String last = lastName != null && !lastName.isEmpty()
+            ? lastName.substring(0, 1).toUpperCase()
+            : "";
+      return first + last;
+   }
+
+   // ========================= MÉTODOS DE NEGOCIO - ROLES Y PERMISOS =========================
+
+   /**
+    * Asigna un rol al usuario si el rol está activo.
+    *
+    * @param role rol a asignar
     */
    public void assignRole(Role role) {
       if (role != null && role.isActive()) {
          this.roles.add(role);
-         this.updateAt = LocalDateTime.now();
+         this.updatedAt = LocalDateTime.now();
       }
    }
 
-   /***
-    * Remueve un rol del usuario
-    * @param role
+   /**
+    * Remueve un rol del usuario.
+    *
+    * @param role rol a remover
     */
    public void removeRole(Role role) {
       if (role != null) {
          this.roles.remove(role);
-         this.updateAt = LocalDateTime.now();
+         this.updatedAt = LocalDateTime.now();
       }
    }
 
-   /***
-    * Verifica si el usuario tiene un rol específico por nombre
+   /**
+    * Verifica si el usuario tiene un rol específico por nombre.
+    *
     * @param roleName nombre del rol (ejemplo: "ADMIN")
     * @return true si tiene el rol
     */
    public boolean hasRole(String roleName) {
-      return roles.stream().anyMatch(r -> r.getRoleType().name().equals(roleName));
+      return roles.stream().anyMatch(r -> r.getName().equals(roleName));
    }
 
-   /***
-    * Verifica si el usuario tiene un permiso específico
-    * @param permissionName nombre del permiso (ejemplo: "users.create")
+   /**
+    * Verifica si el usuario tiene un permiso específico a través de sus roles.
+    *
+    * @param permissionName código del permiso (ejemplo: "users.create")
     * @return true si tiene el permiso
     */
    public boolean hasPermission(String permissionName) {
       return roles.stream().anyMatch(role -> role.hasPermission(permissionName));
    }
 
-   /***
-    * Verifica si el usuario es administrador
-    * @return true si tiene rol ADMIN
-    */
-   public boolean isAdmin() {
-      return roles.stream().anyMatch(Role::isAdministrative);
-   }
+   // ========================= MÉTODOS DE NEGOCIO - VERIFICACIÓN Y ACTIVACIÓN =========================
 
-   /***
-    * Verifica el email (cuando hace click en el link de verificación)
-    * Cambia el status a ACTIVE automáticamente
+   /**
+    * Verifica el email del usuario.
+    * Automáticamente activa la cuenta al verificar.
     */
    public void verifyEmail() {
       this.emailVerified = true;
-      this.status = UserStatus.ACTIVE;     // Al verificar, se activa
-      this.updateAt = LocalDateTime.now();
+      this.status = true;                                // Activar al verificar email
+      this.updatedAt = LocalDateTime.now();
    }
 
-   /***
-    * Activa la cuenta del usuario
+   /**
+    * Activa la cuenta del usuario manualmente (solo ADMIN).
     */
    public void activate() {
-      this.status = UserStatus.ACTIVE;
-      this.updateAt = LocalDateTime.now();
+      this.status = true;
+      this.updatedAt = LocalDateTime.now();
    }
 
    /**
-    * Desactiva la cuenta del usuario
+    * Desactiva la cuenta del usuario.
+    * Usuario no podrá hacer login hasta ser reactivado.
     */
-   public void desactivate() {
-      this.status = UserStatus.INACTIVE;
-      this.updateAt = LocalDateTime.now();
+   public void deactivate() {
+      this.status = false;
+      this.updatedAt = LocalDateTime.now();
    }
 
    /**
-    * Suspende la cuenta del usuario (por violación de políticas)
+    * Verifica si el usuario está activo.
+    *
+    * @return true si status = true
     */
-   public void suspend() {
-      this.status = UserStatus.SUSPENDED;
-      this.updateAt = LocalDateTime.now();
+   public boolean isActive() {
+      return status;
    }
 
    /**
-    * Marca el usuario como eliminado (soft delete)
-    * También desactiva la cuenta
+    * Verifica si el usuario está inactivo.
+    *
+    * @return true si status = false
     */
-   public void markAsDeleted() {
-      this.deleted = true;
+   public boolean isInactive() {
+      return !status;
+   }
+
+   // ========================= MÉTODOS DE NEGOCIO - SOFT DELETE =========================
+
+   /**
+    * Marca el usuario como eliminado (soft delete).
+    * También desactiva la cuenta automáticamente.
+    *
+    * @param deletedByUserId ID del usuario administrador que elimina
+    */
+   public void markAsDeleted(Long deletedByUserId) {
       this.deletedAt = LocalDateTime.now();
-      this.status = UserStatus.INACTIVE;
-      this.updateAt = LocalDateTime.now();
+      this.deletedBy = deletedByUserId;
+      this.status = false;                               // Desactivar al eliminar
+      this.updatedAt = LocalDateTime.now();
    }
 
    /**
-    * Restaura un usuario eliminado
+    * Restaura un usuario previamente eliminado.
+    * Reactiva la cuenta pero mantiene emailVerified en su estado actual.
     */
    public void restore() {
-      if (this.deleted) {
-         this.deleted = false;
-         this.deletedAt = null;
-         this.status = UserStatus.ACTIVE;
-         this.updateAt = LocalDateTime.now();
-      }
+      this.deletedAt = null;
+      this.deletedBy = null;
+      this.status = true;                            // Reactivar al restaurar
+      this.updatedAt = LocalDateTime.now();
+
    }
 
-   /**
-    * Actualiza la fecha del último login
-    */
-   public void updateLastLogin() {
-      this.lastLoginAt = LocalDateTime.now();
-   }
+   // ========================= MÉTODOS DE NEGOCIO - ACTUALIZACIÓN DE DATOS =========================
+
 
    /**
-    * Cambia la contraseña del usuario
-    * @param newPassword nueva contraseña (ya debe venir encriptada)
+    * Cambia la contraseña del usuario.
+    *
+    * @param newPassword nueva contraseña (debe venir YA hasheada con BCrypt)
     */
    public void changePassword(String newPassword) {
       this.password = newPassword;
-      this.updateAt = LocalDateTime.now();
+      this.updatedAt = LocalDateTime.now();
    }
 
    /**
-    * Actualiza el perfil del usuario
-    * @param firstName
-    * @param lastName
-    * @param phoneNumber
+    * Actualiza el perfil del usuario.
+    *
+    * @param firstName nuevo nombre
+    * @param lastName nuevo apellido
+    * @param phoneNumber nuevo teléfono
     */
    public void updateProfile(String firstName, String lastName, String phoneNumber) {
       this.firstName = firstName;
       this.lastName = lastName;
       this.phoneNumber = phoneNumber;
-      this.updateAt = LocalDateTime.now();
+      this.updatedAt = LocalDateTime.now();
    }
 
    /**
-    * Actualiza la foto de perfil
+    * Actualiza la foto de perfil.
+    *
     * @param pictureUrl URL de la nueva foto
     */
    public void updateProfilePicture(String pictureUrl) {
       this.profilePicture = pictureUrl;
-      this.updateAt = LocalDateTime.now();
+      this.updatedAt = LocalDateTime.now();
    }
 
    /**
-    * Elimina la foto del perfil
+    * Elimina la foto del perfil.
     */
    public void removeProfilePicture() {
       this.profilePicture = null;
-      this.updateAt = LocalDateTime.now();
+      this.updatedAt = LocalDateTime.now();
    }
 
    /**
-    * Verifica si tiene foto de perfil
-    * @return
+    * Actualiza el usuario que modificó este registro.
+    * Útil para auditoría.
+    *
+    * @param userId ID del usuario que modifica
+    */
+   public void updateModifiedBy(Long userId) {
+      this.updatedBy = userId;
+      this.updatedAt = LocalDateTime.now();
+   }
+
+   // ========================= MÉTODOS DE VALIDACIÓN DE ESTADO =========================
+
+   /**
+    * Verifica si tiene foto de perfil configurada.
+    *
+    * @return true si tiene foto
     */
    public boolean hasProfilePicture() {
       return profilePicture != null && !profilePicture.isEmpty();
    }
 
    /**
-    * Verifica si la cuenta está completamente activa
-    * (activo, email verificado y NO eliminado)
+    * Verifica si la cuenta está completamente activa.
+    * Debe estar: activa, email verificado, no eliminada, no bloqueada.
+    *
     * @return true si puede operar normalmente
     */
    public boolean isFullyActive() {
-      return status == UserStatus.ACTIVE && emailVerified && !deleted;
+      return status
+            && emailVerified;
    }
 
    /**
-    * Verifica si el usuario puede hacer login
-    * @return true si puede hacer login
+    * Verifica si el email está verificado.
+    *
+    * @return true si verificó su email
     */
-   public boolean canLogin() {
-      return status.canOperate() && emailVerified && !deleted;
+   public boolean isEmailVerified() {
+      return emailVerified;
    }
 
    /**
-    * Verifica si el usaurio fue eliminado
-    * @return
+    * Verifica si la cuenta está pendiente de activación.
+    * Usuario no activo y email no verificado = pendiente.
+    *
+    * @return true si está pendiente
     */
-   public boolean isDeleted() {
-      return deleted;
+   public boolean isPending() {
+      return !status && !emailVerified;
    }
 
    // ========================= GETTERS Y SETTERS =========================
-
+   // Nota: Algunos setters se eliminaron para forzar el uso
+   // de métodos de negocio (ej: no hay setStatus, usar activate()/deactivate())
 
    public Long getId() {
       return id;
@@ -303,25 +378,15 @@ public class User {
       this.profilePicture = profilePicture;
    }
 
-   public UserStatus getStatus() {
+   public boolean getStatus() {
       return status;
    }
 
-   public void setStatus(UserStatus status) {
-      this.status = status;
-   }
+   // NO HAY setStatus() público - usar activate() o deactivate()
 
-   public boolean isEmailVerified() {
-      return emailVerified;
-   }
+   // NO HAY setEmailVerified() público - usar verifyEmail()
 
-   public void setEmailVerified(boolean emailVerified) {
-      this.emailVerified = emailVerified;
-   }
-
-   public void setDeleted(boolean deleted) {
-      this.deleted = deleted;
-   }
+   // NO HAY setDeleted() público - usar markAsDeleted() o restore()
 
    public LocalDateTime getDeletedAt() {
       return deletedAt;
@@ -329,6 +394,14 @@ public class User {
 
    public void setDeletedAt(LocalDateTime deletedAt) {
       this.deletedAt = deletedAt;
+   }
+
+   public Long getDeletedBy() {
+      return deletedBy;
+   }
+
+   public void setDeletedBy(Long deletedBy) {
+      this.deletedBy = deletedBy;
    }
 
    public Set<Role> getRoles() {
@@ -339,56 +412,72 @@ public class User {
       this.roles = roles;
    }
 
-   public LocalDateTime getLastLoginAt() {
-      return lastLoginAt;
-   }
-
-   public void setLastLoginAt(LocalDateTime lastLoginAt) {
-      this.lastLoginAt = lastLoginAt;
-   }
-
    public LocalDateTime getCreatedAt() {
-      return createAt;
+      return createdAt;
    }
 
-   public void setCreatedAt(LocalDateTime createAt) {
-      this.createAt = createAt;
+   public void setCreatedAt(LocalDateTime createdAt) {
+      this.createdAt = createdAt;
+   }
+
+   public Long getCreatedBy() {
+      return createdBy;
+   }
+
+   public void setCreatedBy(Long createdBy) {
+      this.createdBy = createdBy;
    }
 
    public LocalDateTime getUpdatedAt() {
-      return updateAt;
+      return updatedAt;
    }
 
-   public void setUpdatedAt(LocalDateTime updateAt) {
-      this.updateAt = updateAt;
+   public void setUpdatedAt(LocalDateTime updatedAt) {
+      this.updatedAt = updatedAt;
+   }
+
+   public Long getUpdatedBy() {
+      return updatedBy;
+   }
+
+   public void setUpdatedBy(Long updatedBy) {
+      this.updatedBy = updatedBy;
    }
 
    // ========================= EQUALS, HASHCODE Y TOSTRING =========================
 
+   /**
+    * Dos usuarios son iguales si tienen el mismo ID y email.
+    * Solo se usan campos inmutables/únicos para equals.
+    */
    @Override
    public boolean equals(Object o) {
       if (this == o) return true;
       if (o == null || getClass() != o.getClass()) return false;
       User user = (User) o;
-      return emailVerified == user.emailVerified && deleted == user.deleted && Objects.equals(id, user.id) && Objects.equals(firstName, user.firstName) && Objects.equals(lastName, user.lastName) && Objects.equals(email, user.email) && Objects.equals(password, user.password) && Objects.equals(phoneNumber, user.phoneNumber) && Objects.equals(profilePicture, user.profilePicture) && status == user.status && Objects.equals(roles, user.roles) && Objects.equals(lastLoginAt, user.lastLoginAt) && Objects.equals(createAt, user.createAt) && Objects.equals(updateAt, user.updateAt) && Objects.equals(deletedAt, user.deletedAt);
+      return Objects.equals(id, user.id) && Objects.equals(email, user.email);
    }
 
+   /**
+    * HashCode basado en ID y email únicamente.
+    */
    @Override
    public int hashCode() {
-      return Objects.hash(id, firstName, lastName, email, password, phoneNumber, profilePicture, status, emailVerified, deleted, roles, lastLoginAt, createAt, updateAt, deletedAt);
+      return Objects.hash(id, email);
    }
 
+   /**
+    * ToString simplificado para logging y debugging.
+    * NO incluye password por seguridad.
+    */
    @Override
    public String toString() {
       return "User{" +
-            "createAt=" + createAt +
-            ", id=" + id +
-            ", firstName='" + firstName + '\'' +
-            ", lastName='" + lastName + '\'' +
+            "id=" + id +
             ", email='" + email + '\'' +
-            ", status=" + status +
+            ", fullName='" + getFullName() + '\'' +
+            ", status=" + (status ? "ACTIVO" : "INACTIVO") +
             ", emailVerified=" + emailVerified +
-            ", deleted=" + deleted +
             ", rolesCount=" + roles.size() +
             '}';
    }

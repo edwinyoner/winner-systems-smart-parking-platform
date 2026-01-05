@@ -1,5 +1,5 @@
 # ================================================================================
-# ARCHIVO 1: application.yml (Configuración global para todos los servicios)
+# ARCHIVO 1: resources/config/application.yml (Configuración global para todos los servicios)
 # ================================================================================
 
 spring:

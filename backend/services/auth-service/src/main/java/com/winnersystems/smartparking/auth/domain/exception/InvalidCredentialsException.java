@@ -9,8 +9,8 @@ package com.winnersystems.smartparking.auth.domain.exception;
  * - Contraseña incorrecta
  * - Combinación email/password no coincide
  *
- * SEGURIDAD: Por seguridad, NO debes especificar si el email o la contraseña
- * es la incorrecta. Solo di "credenciales inválidas".
+ * @author Edwin Yoner - Winner Systems - Smart Parking Platform
+ * @version 1.0
  */
 public class InvalidCredentialsException extends RuntimeException {
 

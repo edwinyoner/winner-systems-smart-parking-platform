@@ -4,33 +4,51 @@ import com.winnersystems.smartparking.auth.application.dto.command.LoginCommand;
 import com.winnersystems.smartparking.auth.application.dto.query.AuthResponseDto;
 
 /**
- * Caso de uso: INICIAR SESIÓN
+ * Caso de uso: Iniciar sesión.
  *
- * ¿Qué es un Use Case?
- * Es una INTERFACE que define una acción específica del sistema.
- * Representa un caso de uso del negocio.
+ * <p>Autentica un usuario interno del sistema y genera tokens de acceso.</p>
  *
- * Este Use Case será implementado por AuthService en la carpeta service.
+ * <h3>Autorización</h3>
+ * <p>Este endpoint es público (no requiere autenticación previa).</p>
+ *
+ * <h3>Funcionalidades</h3>
+ * <ul>
+ *   <li>Validación anti-bot con reCAPTCHA v3</li>
+ *   <li>Verificación de credenciales con BCrypt</li>
+ *   <li>Generación de tokens JWT (access + refresh)</li>
+ *   <li>Multi-device support (múltiples sesiones activas)</li>
+ *   <li>Tracking de dispositivo e IP para auditoría</li>
+ * </ul>
+ *
+ * <h3>Validaciones</h3>
+ * <ul>
+ *   <li>Captcha debe tener score mínimo 0.5</li>
+ *   <li>Usuario debe existir en el sistema</li>
+ *   <li>Contraseña debe coincidir (BCrypt)</li>
+ *   <li>Usuario debe estar activo (status = true)</li>
+ *   <li>Email debe estar verificado</li>
+ * </ul>
+ *
+ * <h3>Tokens generados</h3>
+ * <ul>
+ *   <li><b>Access Token:</b> JWT con validez de 30 minutos</li>
+ *   <li><b>Refresh Token:</b> UUID hasheado, validez 7-30 días según rememberMe</li>
+ * </ul>
+ *
+ * @throws InvalidCredentialsException si credenciales inválidas
+ * @throws InvalidCaptchaException si captcha inválido
+ * @throws UserNotFoundException si usuario no existe
+ * @throws IllegalStateException si usuario inactivo o email no verificado
+ *
+ * @author Edwin Yoner Winner Systems - Smart Parking Platform
+ * @version 1.0
  */
 public interface LoginUseCase {
-
    /**
-    * Autentica un usuario y genera tokens
+    * Autentica un usuario y genera tokens de acceso.
     *
-    * Flujo:
-    * 1. Validar captcha
-    * 2. Buscar usuario por email
-    * 3. Verificar contraseña
-    * 4. Verificar que el usuario esté activo
-    * 5. Generar access token y refresh token
-    * 6. Actualizar última fecha de login
-    * 7. Retornar tokens + info del usuario
-    *
-    * @param command datos de login (email, password, captcha)
+    * @param command datos de login
     * @return respuesta con tokens y datos del usuario
-    * @throws InvalidCredentialsException si credenciales inválidas
-    * @throws InvalidCaptchaException si captcha inválido
-    * @throws UserNotFoundException si usuario no existe
     */
    AuthResponseDto execute(LoginCommand command);
 }

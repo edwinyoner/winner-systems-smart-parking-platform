@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 import java.util.Set;
 
 /**
- * DTO REST para respuesta de usuario.
+ * Response DTO para información de usuario.
  */
 public record UserResponse(
       Long id,
@@ -17,16 +17,18 @@ public record UserResponse(
       String status,
       boolean emailVerified,
       Set<RoleInfo> roles,
-      LocalDateTime lastLoginAt,
       LocalDateTime createdAt,
       LocalDateTime updatedAt
 ) {
    /**
-    * Record interno para información del rol
+    * Información de rol asignado al usuario.
+    *
+    * @param name Nombre del rol: "ADMIN", "AUTORIDAD", "OPERADOR"
+    * @param displayName Nombre para mostrar: "Administrador"
+    * @param description Descripción del rol
     */
    public record RoleInfo(
-         Long id,
-         String roleType,
+         String name,          // ✅ Sin id
          String displayName,
          String description
    ) {

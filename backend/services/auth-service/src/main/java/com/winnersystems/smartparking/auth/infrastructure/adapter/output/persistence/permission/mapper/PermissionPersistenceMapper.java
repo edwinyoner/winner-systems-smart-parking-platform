@@ -6,6 +6,9 @@ import org.springframework.stereotype.Component;
 
 /**
  * Mapper que convierte entre Permission (domain) y PermissionEntity (infrastructure).
+ *
+ * @author Edwin Yoner Winner Systems - Smart Parking Platform
+ * @version 1.0
  */
 @Component
 public class PermissionPersistenceMapper {
@@ -22,9 +25,13 @@ public class PermissionPersistenceMapper {
       entity.setId(permission.getId());
       entity.setName(permission.getName());
       entity.setDescription(permission.getDescription());
-      entity.setModule(permission.getModule());
+      entity.setStatus(permission.getStatus());
       entity.setCreatedAt(permission.getCreatedAt());
+      entity.setCreatedBy(permission.getCreatedBy());
       entity.setUpdatedAt(permission.getUpdatedAt());
+      entity.setUpdatedBy(permission.getUpdatedBy());
+      entity.setDeletedAt(permission.getDeletedAt());
+      entity.setDeletedBy(permission.getDeletedBy());
 
       return entity;
    }
@@ -41,9 +48,19 @@ public class PermissionPersistenceMapper {
       permission.setId(entity.getId());
       permission.setName(entity.getName());
       permission.setDescription(entity.getDescription());
-      permission.setModule(entity.getModule());
       permission.setCreatedAt(entity.getCreatedAt());
+      permission.setCreatedBy(entity.getCreatedBy());
       permission.setUpdatedAt(entity.getUpdatedAt());
+      permission.setUpdatedBy(entity.getUpdatedBy());
+      permission.setDeletedAt(entity.getDeletedAt());
+      permission.setDeletedBy(entity.getDeletedBy());
+
+      // Restaurar el estado usando las reglas del dominio
+      if (entity.isStatus()) {
+         permission.activate();
+      } else {
+         permission.deactivate();
+      }
 
       return permission;
    }

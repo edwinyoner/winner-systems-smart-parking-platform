@@ -1,0 +1,40 @@
+<!-- Confirm Dialog -->
+<div 
+  *ngIf="show" 
+  class="dialog-backdrop" 
+  (click)="onBackdropClick($event)"
+  @fadeIn>
+  
+  <div class="dialog-container" @slideIn>
+    
+    <!-- Header -->
+    <div class="dialog-header">
+      <i [class]="icon" class="dialog-icon"></i>
+      <h3 class="dialog-title">{{ title }}</h3>
+    </div>
+
+    <!-- Body -->
+    <div class="dialog-body">
+      <p class="dialog-message">{{ message }}</p>
+      <ng-content></ng-content>
+    </div>
+
+    <!-- Footer -->
+    <div class="dialog-footer">
+      <button 
+        type="button" 
+        class="btn btn-secondary"
+        (click)="cancel()">
+        {{ cancelText }}
+      </button>
+      
+      <button 
+        type="button" 
+        [class]="'btn btn-' + confirmClass"
+        (click)="confirm()">
+        {{ confirmText }}
+      </button>
+    </div>
+
+  </div>
+</div>
