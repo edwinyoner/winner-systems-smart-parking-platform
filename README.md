@@ -7,13 +7,11 @@
 <br>
 
 ![Java](https://img.shields.io/badge/Java-25-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
-![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.5.7-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white)
-![Spring Cloud](https://img.shields.io/badge/Spring_Cloud-4.3.0-6DB33F?style=for-the-badge&logo=spring&logoColor=white)
+![Spring Framework](https://img.shields.io/badge/Spring_Framework-6.1.14-6DB33F?style=for-the-badge&logo=spring&logoColor=white)
 ![Go](https://img.shields.io/badge/Go-1.23-00ADD8?style=for-the-badge&logo=go&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![C](https://img.shields.io/badge/C-A8B9CC?style=for-the-badge&logo=c&logoColor=white)
 ![C++](https://img.shields.io/badge/C++-00599C?style=for-the-badge&logo=cplusplus&logoColor=white)
-![Maven](https://img.shields.io/badge/Maven-3.9-C71A36?style=for-the-badge&logo=apache-maven&logoColor=white)
 ![Angular](https://img.shields.io/badge/Angular-20-DD0031?style=for-the-badge&logo=angular&logoColor=white)
 ![HTML](https://img.shields.io/badge/HTML-5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
 ![CSS](https://img.shields.io/badge/CSS-3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
@@ -24,6 +22,7 @@
 ![Dart](https://img.shields.io/badge/Dart-3.5-0175C2?style=for-the-badge&logo=dart&logoColor=white)
 ![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![Oracle](https://img.shields.io/badge/Oracle-23c7-F80000?style=for-the-badge&logo=oracle&logoColor=white)
 ![MongoDB](https://img.shields.io/badge/MongoDB-7.0-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-7.2-DC382D?style=for-the-badge&logo=redis&logoColor=white)
 ![TensorFlow](https://img.shields.io/badge/TensorFlow-2.15-FF6F00?style=for-the-badge&logo=tensorflow&logoColor=white)
@@ -124,52 +123,7 @@ Una plataforma tecnológica integral que:
 
 ## 🏗️ Arquitectura del Sistema
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                          USUARIOS FINALES                           │
-│     👤 Ciudadanos     👨‍💼 Operadores     👨‍💻 Administradores           │
-└────────────┬─────────────────────┬────────────────────┬─────────────┘
-             │                     │                    │
-    ┌────────▼────────┐   ┌───────▼───────┐   ┌───────▼───────┐
-    │  Mobile App     │   │  Web Admin    │   │   Panel LED   │
-    │   (Flutter)     │   │   (Angular)   │   │    (Esp32)    │
-    └────────┬────────┘   └───────┬───────┘   └───────┬───────┘
-             │                     │                    │
-             └─────────────────────┼────────────────────┘
-                                   │
-                          ┌────────▼────────┐
-                          │   API Gateway   │
-                          │   (Port: 8080)  │
-                          └────────┬────────┘
-                                   │
-              ┌────────────────────┼────────────────────┐
-              │                    │                    │
-     ┌────────▼────────┐  ┌───────▼───────┐  ┌────────▼────────┐
-     │ Config Server   │  │ Eureka Server │  │  Auth Service   │
-     │  (Port: 8888)   │  │ (Port: 8761)  │  │  (JWT/OAuth2)   │
-     └─────────────────┘  └───────────────┘  └─────────────────┘
-              │
-              │  ┌──────────── MICROSERVICIOS ────────────┐
-              │  │                                         │
-     ┌────────▼──▼──────┐  ┌──────────────┐  ┌───────────▼──────┐
-     │  User Service    │  │   Parking    │  │  Payment Service │
-     │  (Spring Boot)   │  │   Service    │  │  (Spring Boot)   │
-     │   PostgreSQL     │  │(Spring Boot) │  │     MySQL        │
-     └──────────────────┘  │    MySQL     │  └──────────────────┘
-                           └──────┬───────┘
-     ┌──────────────────┐  ┌─────▼────────┐  ┌──────────────────┐
-     │  IoT Service     │  │ Notification │  │  Analytics AI    │
-     │     (Go)         │  │   Service    │  │    (Python)      │
-     │   MongoDB        │  │ (Spring Boot)│  │   TensorFlow     │
-     └─────────┬────────┘  │    Redis     │  └──────────────────┘
-               │           └──────────────┘
-               │
-     ┌─────────▼─────────────────────────────────────┐
-     │           CAPA IoT / SENSORES                 │
-     │  📡 Sensores Ultrasónicos | 📷 Cámaras       │
-     │  🔌 Arduino/ESP32 | 📶 LoRaWAN/WiFi          │
-     └───────────────────────────────────────────────┘
-```
+
 
 ---
 
@@ -201,8 +155,8 @@ Una plataforma tecnológica integral que:
 
 | Base de Datos | Versión | Uso |
 |--------------|---------|-----|
-| **PostgreSQL** | 16 | Datos transaccionales (usuarios, roles) |
-| **MySQL** | 8.0 | Datos de estacionamiento y pagos |
+| **PostgreSQL** | 16 | auth-service (usuarios, roles y permisos) |
+| **Oracle Database** | 23.0 | parking-service |
 | **MongoDB** | 7.0 | Datos IoT y telemetría |
 | **Redis** | 7.2 | Cache y gestión de sesiones |
 
@@ -248,12 +202,10 @@ winner-systems-smart-parking-platform/
 │   │   ├── eureka-server/      # Puerto 8761
 │   │   └── api-gateway/        # Puerto 8080
 │   ├── services/               # Microservicios de negocio
-│   │   ├── auth-service/       # Autenticación
-│   │   ├── user-service/       # Gestión de usuarios
+│   │   ├── auth-service/       # Autenticación y Gestión de usuarios, roles y permisos
 │   │   ├── parking-service/    # Gestión de estacionamientos
-│   │   ├── payment-service/    # Procesamiento de pagos
 │   │   ├── iot-service/        # Gestión IoT (Go)
-│   │   └── analytics-service/  # Analytics y ML (Python)
+│   │   └── ia-service/         # Analytics y ML (Python)
 │   └── README.md               # → Documentación del backend
 │
 ├── 📱 mobile/                    # App móvil Flutter
@@ -408,14 +360,8 @@ docker-compose down
 - ✅ Config Server (Puerto 8888)
 - ✅ Eureka Server (Puerto 8761)
 - ✅ API Gateway (Puerto 8080)
-
-**Próximos Servicios:**
-- 📋 Auth Service (JWT/OAuth2)
-- 📋 User Service
-- 📋 Parking Service
-- 📋 Payment Service
-- 📋 Notification Service
-
+- ✅ Auth Service (Puerto 8081)
+- ✅ Parking Service (Puerto 8082)
 ---
 
 ### 📱 Mobile App (Flutter)
