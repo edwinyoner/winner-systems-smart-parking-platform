@@ -11,6 +11,7 @@ import com.winnersystems.smartparking.auth.infrastructure.adapter.input.rest.use
 import com.winnersystems.smartparking.auth.infrastructure.adapter.input.rest.user.dto.request.UpdateUserRequest;
 import com.winnersystems.smartparking.auth.infrastructure.adapter.input.rest.user.dto.response.UserResponse;
 import com.winnersystems.smartparking.auth.infrastructure.adapter.input.rest.user.mapper.UserRestMapper;
+import com.winnersystems.smartparking.auth.infrastructure.config.security.CustomUserDetails;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,14 +21,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.stream.Collectors;
-
-/**
- * REST Controller para gestión de usuarios (CRUD).
- *
- * @author Edwin Yoner Winner Systems - Smart Parking Platform
- * @version 1.0
- */
 @RestController
 @RequestMapping("/users")
 @RequiredArgsConstructor
@@ -40,18 +33,19 @@ public class UserRestAdapter {
    private final DeleteUserUseCase deleteUserUseCase;
    private final RestoreUserUseCase restoreUserUseCase;
    private final UserRestMapper mapper;
+   private final ResendCredentialsUseCase resendCredentialsUseCase;
 
    /**
     * POST /users - Crear usuario
     */
    @PostMapping
-   @PreAuthorize("hasRole('ADMIN')")
+   @PreAuthorize("hasAuthority('users.create')")  // ✅ Validación por permiso
    public ResponseEntity<UserResponse> createUser(
          @Valid @RequestBody CreateUserRequest request,
          HttpServletRequest httpRequest,
          Authentication authentication) {
 
-      Long createdBy = Long.parseLong(authentication.getName());
+      Long createdBy = getUserIdFromAuthentication(authentication);
       CreateUserCommand command = mapper.toCommand(request, httpRequest, createdBy);
       UserDto userDto = createUserUseCase.execute(command);
       UserResponse response = mapper.toResponse(userDto);
@@ -60,43 +54,43 @@ public class UserRestAdapter {
    }
 
    /**
-    * GET /users - Listar usuarios con paginación
+    * GET /users - Listar usuarios con paginación y filtros
     */
    @GetMapping
-   @PreAuthorize("hasAnyRole('ADMIN', 'AUTORIDAD')")
-   public ResponseEntity<PagedResponse<UserResponse>> listUsers(
+   @PreAuthorize("hasAuthority('users.read')")  // ✅ Validación por permiso
+   public ResponseEntity<PagedResponse<UserResponse>> getUsers(
          @RequestParam(required = false) String search,
+         @RequestParam(required = false) Long roleId,
          @RequestParam(required = false) Boolean status,
-         @RequestParam(required = false) String role,
+         @RequestParam(required = false) Boolean emailVerified,
          @RequestParam(defaultValue = "0") int page,
-         @RequestParam(defaultValue = "10") int size) {
-
-      // Construir criterios
+         @RequestParam(defaultValue = "10") int size,
+         @RequestParam(defaultValue = "id") String sortBy,
+         @RequestParam(defaultValue = "desc") String sortDirection
+   ) {
       UserSearchCriteria criteria = new UserSearchCriteria(
-            search,        // searchTerm
-            status,        // status
-            null,          // emailVerified
-            false,         // includeDeleted
-            role,          // roleName
-            "createdAt",   // sortBy
-            "desc"         // sortDirection
+            search,
+            roleId,
+            status,
+            emailVerified,
+            page,
+            size,
+            sortBy,
+            sortDirection
       );
 
-      PagedResponse<UserDto> pagedDto = listUsersUseCase.execute(criteria, page, size);
+      PagedResponse<UserDto> result = listUsersUseCase.execute(criteria);
 
-      // Convertir a UserResponse
       PagedResponse<UserResponse> response = new PagedResponse<>(
-            pagedDto.content().stream()
-                  .map(mapper::toResponse)
-                  .collect(Collectors.toList()),
-            pagedDto.currentPage(),
-            pagedDto.pageSize(),
-            pagedDto.totalElements(),
-            pagedDto.totalPages(),
-            pagedDto.first(),
-            pagedDto.last(),
-            pagedDto.hasNext(),
-            pagedDto.hasPrevious()
+            result.content().stream().map(mapper::toResponse).toList(),
+            result.number(),
+            result.size(),
+            result.totalElements(),
+            result.totalPages(),
+            result.first(),
+            result.last(),
+            result.hasNext(),
+            result.hasPrevious()
       );
 
       return ResponseEntity.ok(response);
@@ -106,45 +100,38 @@ public class UserRestAdapter {
     * GET /users/active - Solo usuarios activos
     */
    @GetMapping("/active")
-   @PreAuthorize("hasAnyRole('ADMIN', 'AUTORIDAD')")
+   @PreAuthorize("hasAuthority('users.read')")  // ✅ Validación por permiso
    public ResponseEntity<PagedResponse<UserResponse>> listActiveUsers(
          @RequestParam(defaultValue = "0") int page,
          @RequestParam(defaultValue = "10") int size) {
 
       UserSearchCriteria criteria = new UserSearchCriteria(
-            null,
-            true,          // solo activos
-            null,
-            false,
-            null,
-            "createdAt",
-            "desc"
+            null, null, true, null,
+            page, size, "id", "desc"
       );
 
-      PagedResponse<UserDto> pagedDto = listUsersUseCase.execute(criteria, page, size);
+      PagedResponse<UserDto> result = listUsersUseCase.execute(criteria);
 
       PagedResponse<UserResponse> response = new PagedResponse<>(
-            pagedDto.content().stream()
-                  .map(mapper::toResponse)
-                  .collect(Collectors.toList()),
-            pagedDto.currentPage(),
-            pagedDto.pageSize(),
-            pagedDto.totalElements(),
-            pagedDto.totalPages(),
-            pagedDto.first(),
-            pagedDto.last(),
-            pagedDto.hasNext(),
-            pagedDto.hasPrevious()
+            result.content().stream().map(mapper::toResponse).toList(),
+            result.number(),
+            result.size(),
+            result.totalElements(),
+            result.totalPages(),
+            result.first(),
+            result.last(),
+            result.hasNext(),
+            result.hasPrevious()
       );
 
       return ResponseEntity.ok(response);
    }
 
    /**
-    * GET /users/{id} - Obtener usuario
+    * GET /users/{id} - Obtener usuario por ID
     */
    @GetMapping("/{id}")
-   @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
+   @PreAuthorize("hasAuthority('users.read') or #id == authentication.principal.userId")
    public ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
       UserDto userDto = getUserUseCase.execute(id);
       UserResponse response = mapper.toResponse(userDto);
@@ -155,13 +142,13 @@ public class UserRestAdapter {
     * PUT /users/{id} - Actualizar usuario
     */
    @PutMapping("/{id}")
-   @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
+   @PreAuthorize("hasAuthority('users.update') or #id == authentication.principal.userId")
    public ResponseEntity<UserResponse> updateUser(
          @PathVariable Long id,
          @Valid @RequestBody UpdateUserRequest request,
          Authentication authentication) {
 
-      Long updatedBy = Long.parseLong(authentication.getName());
+      Long updatedBy = getUserIdFromAuthentication(authentication);
       UpdateUserCommand command = mapper.toCommand(id, request, updatedBy);
       UserDto userDto = updateUserUseCase.execute(command);
       UserResponse response = mapper.toResponse(userDto);
@@ -173,12 +160,12 @@ public class UserRestAdapter {
     * DELETE /users/{id} - Eliminar usuario (soft delete)
     */
    @DeleteMapping("/{id}")
-   @PreAuthorize("hasRole('ADMIN')")
+   @PreAuthorize("hasAuthority('users.delete')")  // ✅ Solo ADMIN tiene este permiso
    public ResponseEntity<MessageResponse> deleteUser(
          @PathVariable Long id,
          Authentication authentication) {
 
-      Long deletedBy = Long.parseLong(authentication.getName());
+      Long deletedBy = getUserIdFromAuthentication(authentication);
       deleteUserUseCase.executeDelete(id, deletedBy);
 
       return ResponseEntity.ok(
@@ -190,15 +177,43 @@ public class UserRestAdapter {
     * POST /users/{id}/restore - Restaurar usuario
     */
    @PostMapping("/{id}/restore")
-   @PreAuthorize("hasRole('ADMIN')")
+   @PreAuthorize("hasAuthority('users.restore')")  // ✅ Solo ADMIN
    public ResponseEntity<UserResponse> restoreUser(
          @PathVariable Long id,
          Authentication authentication) {
 
-      Long restoredBy = Long.parseLong(authentication.getName());
+      Long restoredBy = getUserIdFromAuthentication(authentication);
       UserDto userDto = restoreUserUseCase.executeRestore(id, restoredBy);
       UserResponse response = mapper.toResponse(userDto);
 
       return ResponseEntity.ok(response);
+   }
+
+   /**
+    * POST /users/{id}/resend-credentials - Reenviar credenciales por email
+    */
+   @PostMapping("/{id}/resend-credentials")
+   @PreAuthorize("hasAuthority('users.create')")  // ✅ Quien puede crear, puede reenviar
+   public ResponseEntity<MessageResponse> resendCredentials(
+         @PathVariable Long id,
+         @RequestParam String password) {
+
+      resendCredentialsUseCase.execute(id, password);
+
+      return ResponseEntity.ok(
+            new MessageResponse("Credenciales enviadas exitosamente por email")
+      );
+   }
+
+   // ========== MÉTODO AUXILIAR ==========
+
+   private Long getUserIdFromAuthentication(Authentication authentication) {
+      Object principal = authentication.getPrincipal();
+
+      if (principal instanceof CustomUserDetails userDetails) {
+         return userDetails.getUserId();
+      }
+
+      throw new IllegalStateException("No se pudo obtener el ID del usuario autenticado");
    }
 }

@@ -1,0 +1,125 @@
+<!-- steps/step3-spaces/step3-spaces.component.html -->
+
+<form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+
+  <!-- ERROR GLOBAL -->
+  @if (errorMessage) {
+    <c-alert color="danger" [dismissible]="true">
+      <c-icon name="cilWarning" class="me-2"></c-icon>{{ errorMessage }}
+    </c-alert>
+  }
+
+  <!-- INFO -->
+  <c-alert color="info" class="mb-4">
+    <c-icon name="cilInfo" class="me-2"></c-icon>
+    Configura el tipo y cantidad de espacios por zona.
+    Los códigos se generarán automáticamente: <strong>CÓDIGO_ZONA-001</strong>, <strong>CÓDIGO_ZONA-002</strong>, etc.
+  </c-alert>
+
+  <!-- UNA CARD POR ZONA -->
+  <div formArrayName="zoneConfigs">
+    @for (zone of zones; track zone.id; let i = $index) {
+      <c-card class="mb-3">
+
+        <c-card-header class="d-flex justify-content-between align-items-center">
+          <strong>
+            <c-icon name="cilMap" class="me-2"></c-icon>
+            {{ zone.name }}
+            <c-badge color="secondary" class="ms-2">{{ zone.code }}</c-badge>
+          </strong>
+          <c-badge color="primary">
+            {{ zoneConfigs.at(i).get('totalSpaces')?.value || 0 }} espacios
+          </c-badge>
+        </c-card-header>
+
+        <c-card-body [formGroupName]="i">
+          <div cRow class="align-items-start">
+
+            <!-- Tipo de espacio -->
+            <div cCol sm="4">
+              <label cLabel>Tipo de Espacio <span class="text-danger">*</span></label>
+              <select
+                cSelect
+                formControlName="spaceType"
+                [class.is-invalid]="isInvalid(i, 'spaceType')"
+                (change)="updatePreview(i)">
+                @for (t of spaceTypes; track t.value) {
+                  <option [value]="t.value">{{ t.label }}</option>
+                }
+              </select>
+              @if (isInvalid(i, 'spaceType')) {
+                <c-form-feedback [valid]="false">{{ getError(i, 'spaceType') }}</c-form-feedback>
+              }
+            </div>
+
+            <!-- Cantidad de espacios -->
+            <div cCol sm="3">
+              <label cLabel>Cantidad <span class="text-danger">*</span></label>
+              <input
+                cFormControl
+                type="number"
+                formControlName="totalSpaces"
+                min="1"
+                max="9999"
+                [class.is-invalid]="isInvalid(i, 'totalSpaces')"
+                (input)="updatePreview(i)"
+              />
+              @if (isInvalid(i, 'totalSpaces')) {
+                <c-form-feedback [valid]="false">{{ getError(i, 'totalSpaces') }}</c-form-feedback>
+              }
+            </div>
+
+            <!-- Preview de códigos -->
+            <div cCol sm="5">
+              <label cLabel>Preview de códigos</label>
+              <div class="preview-box">
+                @for (p of getPreview(i); track p.code) {
+                  <c-badge
+                    color="light"
+                    class="me-1 mb-1 text-dark border preview-badge">
+                    {{ p.code }}
+                  </c-badge>
+                }
+                @if (!getPreview(i).length) {
+                  <span class="text-muted small">Ingresa la cantidad para ver la vista previa</span>
+                }
+              </div>
+            </div>
+
+          </div>
+        </c-card-body>
+
+      </c-card>
+    }
+  </div>
+
+  <!-- RESUMEN TOTAL -->
+  <c-card class="mb-4 summary-card">
+    <c-card-body class="py-2">
+      <div class="d-flex justify-content-between align-items-center">
+        <span class="text-muted">
+          <c-icon name="cilGrid" class="me-1"></c-icon>
+          Se crearán <strong>{{ totalSpacesToCreate }}</strong> espacios
+          en <strong>{{ zones.length }}</strong> zona(s)
+        </span>
+      </div>
+    </c-card-body>
+  </c-card>
+
+  <!-- FOOTER: BOTÓN SIGUIENTE -->
+  <div class="d-flex justify-content-end">
+    <button
+      type="submit"
+      cButton color="primary"
+      [disabled]="loading">
+      @if (loading) {
+        <span class="spinner-border spinner-border-sm me-2"></span>
+        Generando espacios...
+      } @else {
+        <c-icon name="cilArrowRight" class="me-2"></c-icon>
+        Siguiente: Configuración
+      }
+    </button>
+  </div>
+
+</form>

@@ -1,0 +1,105 @@
+.role-detail-container {
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+
+  .page-header {
+    .page-title {
+      font-size: 1.75rem;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+  }
+
+  // Detail Items
+  .detail-item {
+    .detail-label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #6c757d;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .detail-value {
+      font-size: 1rem;
+      color: #2c3e50;
+      font-weight: 500;
+      padding: 0.75rem;
+      background-color: #f8f9fa;
+      border-radius: 0.375rem;
+      border: 1px solid #e9ecef;
+    }
+  }
+
+  // Permission Modules
+  .permission-module {
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    overflow: hidden;
+
+    .module-header {
+      background-color: #f8f9fa;
+      padding: 1rem;
+      border-bottom: 1px solid #dee2e6;
+
+      h6 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #495057;
+      }
+    }
+
+    .module-permissions {
+      padding: 1rem;
+      background-color: #ffffff;
+    }
+  }
+
+  .permission-badge {
+    display: flex;
+    align-items: start;
+    padding: 0.75rem;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+
+    strong {
+      color: #2c3e50;
+    }
+
+    small {
+      display: block;
+      margin-top: 0.25rem;
+    }
+  }
+
+  // Badges
+  .badge {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.75rem;
+    font-weight: 500;
+  }
+
+  // Responsive
+  @media (max-width: 768px) {
+    padding: 1rem;
+
+    .page-header {
+      .page-title {
+        font-size: 1.5rem;
+      }
+
+      .btn-group {
+        width: 100%;
+        
+        .btn {
+          flex: 1;
+        }
+      }
+    }
+  }
+}

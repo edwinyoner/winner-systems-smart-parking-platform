@@ -24,7 +24,7 @@ export const NoAuthGuard: CanActivateFn = (route, state) => {
 
   if (isAuthenticated) {
     if (environment.features.showDebugInfo) {
-      console.log('✅ NoAuthGuard: Usuario ya autenticado, redirigiendo a /dashboard');
+      console.log('NoAuthGuard: Usuario ya autenticado, redirigiendo a /dashboard');
     }
 
     // Usuario ya autenticado, redirigir al dashboard
@@ -33,7 +33,7 @@ export const NoAuthGuard: CanActivateFn = (route, state) => {
   }
 
   if (environment.features.showDebugInfo) {
-    console.log('✅ NoAuthGuard: Acceso permitido a ruta pública');
+    console.log('NoAuthGuard: Acceso permitido a ruta pública');
   }
 
   return true;

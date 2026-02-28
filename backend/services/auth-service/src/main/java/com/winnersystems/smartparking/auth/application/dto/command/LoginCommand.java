@@ -32,6 +32,7 @@ package com.winnersystems.smartparking.auth.application.dto.command;
 public record LoginCommand(
       String email,
       String password,
+      String selectedRole,
       String captchaToken,
       boolean rememberMe,
       String deviceInfo,

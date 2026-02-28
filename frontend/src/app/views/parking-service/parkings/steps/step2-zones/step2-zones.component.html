@@ -1,0 +1,168 @@
+<!-- steps/step2-zones/step2-zones.component.html -->
+
+<form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+
+  <!-- ERROR GLOBAL -->
+  @if (errorMessage) {
+    <c-alert color="danger" [dismissible]="true">
+      <c-icon name="cilWarning" class="me-2"></c-icon>{{ errorMessage }}
+    </c-alert>
+  }
+
+  <!-- UNA CARD POR ZONA -->
+  <div formArrayName="zones">
+    @for (zone of zonesArray.controls; track $index) {
+      <c-card class="mb-3">
+
+        <c-card-header class="d-flex justify-content-between align-items-center">
+          <strong>
+            <c-icon name="cilMap" class="me-2"></c-icon>
+            Zona {{ $index + 1 }}
+          </strong>
+          <div class="d-flex gap-2 align-items-center">
+            <c-badge color="secondary">
+              {{ zone.get('totalSpaces')?.value || 0 }} espacios
+            </c-badge>
+            @if (zonesArray.length > 1) {
+              <button
+                type="button"
+                cButton color="danger" variant="outline" size="sm"
+                (click)="removeZone($index)">
+                <c-icon name="cilTrash"></c-icon>
+              </button>
+            }
+          </div>
+        </c-card-header>
+
+        <c-card-body [formGroupName]="$index">
+
+          <!-- FILA 1: Nombre + Código -->
+          <div cRow class="mb-3">
+            <div cCol sm="8">
+              <label cLabel>Nombre <span class="text-danger">*</span></label>
+              <input
+                cFormControl
+                type="text"
+                formControlName="name"
+                placeholder="Ej: Jr. San Martín"
+                [class.is-invalid]="isInvalid($index, 'name')"
+                (blur)="autoGenerateCode($index)"
+              />
+              @if (isInvalid($index, 'name')) {
+                <c-form-feedback [valid]="false">{{ getError($index, 'name') }}</c-form-feedback>
+              }
+            </div>
+
+            <div cCol sm="4">
+              <label cLabel>Código <span class="text-danger">*</span></label>
+              <input
+                cFormControl
+                type="text"
+                formControlName="code"
+                placeholder="Ej: PSB-Z01"
+                (input)="onCodeInput($event, $index)"
+                [class.is-invalid]="isInvalid($index, 'code')"
+              />
+              @if (isInvalid($index, 'code')) {
+                <c-form-feedback [valid]="false">{{ getError($index, 'code') }}</c-form-feedback>
+              }
+              <div class="form-text">Se genera automáticamente al salir del nombre.</div>
+            </div>
+          </div>
+
+          <!-- FILA 2: Dirección + Total Espacios -->
+          <div cRow class="mb-3">
+            <div cCol sm="9">
+              <label cLabel>Dirección <span class="text-danger">*</span></label>
+              <input
+                cFormControl
+                type="text"
+                formControlName="address"
+                placeholder="Ej: Jr. San Martín cdra. 3, Huaraz"
+                [class.is-invalid]="isInvalid($index, 'address')"
+              />
+              @if (isInvalid($index, 'address')) {
+                <c-form-feedback [valid]="false">{{ getError($index, 'address') }}</c-form-feedback>
+              }
+            </div>
+
+            <div cCol sm="3">
+              <label cLabel>Nº Espacios <span class="text-danger">*</span></label>
+              <input
+                cFormControl
+                type="number"
+                formControlName="totalSpaces"
+                min="1"
+                max="9999"
+                [class.is-invalid]="isInvalid($index, 'totalSpaces')"
+              />
+              @if (isInvalid($index, 'totalSpaces')) {
+                <c-form-feedback [valid]="false">{{ getError($index, 'totalSpaces') }}</c-form-feedback>
+              }
+            </div>
+          </div>
+
+          <!-- FILA 3: Descripción -->
+          <div cRow>
+            <div cCol sm="12">
+              <label cLabel>Descripción</label>
+              <textarea
+                cFormControl
+                formControlName="description"
+                rows="2"
+                placeholder="Descripción de la zona (opcional)"
+                [class.is-invalid]="isInvalid($index, 'description')"
+              ></textarea>
+              @if (isInvalid($index, 'description')) {
+                <c-form-feedback [valid]="false">{{ getError($index, 'description') }}</c-form-feedback>
+              }
+            </div>
+          </div>
+
+        </c-card-body>
+      </c-card>
+    }
+  </div>
+
+  <!-- BOTÓN AGREGAR ZONA -->
+  <div class="mb-4">
+    <button
+      type="button"
+      cButton color="secondary" variant="outline"
+      class="w-100 add-zone-btn"
+      (click)="addZone()">
+      <c-icon name="cilPlus" class="me-2"></c-icon>
+      Agregar otra zona
+    </button>
+  </div>
+
+  <!-- RESUMEN -->
+  <c-card class="mb-3 summary-card">
+    <c-card-body class="py-2">
+      <div class="d-flex justify-content-between align-items-center">
+        <span class="text-muted">
+          <c-icon name="cilInfo" class="me-1"></c-icon>
+          Total: <strong>{{ zonesArray.length }}</strong> zona(s) —
+          <strong>{{ totalSpaces }}</strong> espacios en total
+        </span>
+      </div>
+    </c-card-body>
+  </c-card>
+
+  <!-- FOOTER: BOTÓN SIGUIENTE -->
+  <div class="d-flex justify-content-end">
+    <button
+      type="submit"
+      cButton color="primary"
+      [disabled]="loading">
+      @if (loading) {
+        <span class="spinner-border spinner-border-sm me-2"></span>
+        Guardando zonas...
+      } @else {
+        <c-icon name="cilArrowRight" class="me-2"></c-icon>
+        Siguiente: Espacios
+      }
+    </button>
+  </div>
+
+</form>

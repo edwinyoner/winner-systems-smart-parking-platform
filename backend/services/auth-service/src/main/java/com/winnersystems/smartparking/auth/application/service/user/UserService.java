@@ -11,6 +11,7 @@ import com.winnersystems.smartparking.auth.domain.exception.EmailAlreadyExistsEx
 import com.winnersystems.smartparking.auth.domain.exception.UserNotFoundException;
 import com.winnersystems.smartparking.auth.domain.model.Role;
 import com.winnersystems.smartparking.auth.domain.model.User;
+import com.winnersystems.smartparking.auth.domain.model.VerificationToken;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -37,12 +39,14 @@ public class UserService implements
       GetUserUseCase,
       ListUsersUseCase,
       DeleteUserUseCase,
-      RestoreUserUseCase {
+      RestoreUserUseCase,
+      ResendCredentialsUseCase {
 
    private final UserPersistencePort userPersistencePort;
    private final RolePersistencePort rolePersistencePort;
    private final PasswordEncoderPort passwordEncoderPort;
    private final EmailPort emailPort;
+   private final TokenPersistencePort tokenPersistencePort;
 
    // ========== CREATE USER ==========
 
@@ -59,10 +63,13 @@ public class UserService implements
          throw new IllegalArgumentException("Uno o más roles no existen");
       }
 
-      // 3. Hashear password
-      String hashedPassword = passwordEncoderPort.encode(command.password());
+      // 3. GUARDAR contraseña en texto plano ANTES de hashear
+      String plainPassword = command.password();
 
-      // 4. Crear usuario
+      // 4. Hashear password
+      String hashedPassword = passwordEncoderPort.encode(plainPassword);
+
+      // 5. Crear usuario
       User user = new User(
             command.firstName(),
             command.lastName(),
@@ -70,18 +77,60 @@ public class UserService implements
             hashedPassword
       );
 
-      // 5. Asignar roles
+      // 6. Asignar campos faltantes
+      user.setPhoneNumber(command.phoneNumber());
+      user.setCreatedBy(command.createdBy());
+      user.setCreatedAt(LocalDateTime.now());
+
+      // 7. Asignar roles
       user.setRoles(new HashSet<>(roles));
 
-      // 6. Guardar
+      // 8. Guardar usuario
       User savedUser = userPersistencePort.save(user);
 
-      // 7. Enviar email de bienvenida (opcional)
+      // 9. Generar y GUARDAR token de verificación
       try {
-         // TODO: Generar verification token y enviar email
-         // emailPort.sendWelcomeEmail(user.getEmail(), user.getFullName(), verificationLink, 24);
+         String tokenValue = java.util.UUID.randomUUID().toString();
+
+         VerificationToken verificationToken = new VerificationToken(
+               tokenValue,
+               savedUser.getId(),
+               command.createdBy()
+         );
+
+         verificationToken.setIpAddress(command.ipAddress());
+
+         tokenPersistencePort.saveVerificationToken(verificationToken);
+
+         System.out.println("✅ Token guardado: " + tokenValue);
+         System.out.println("✅ Usuario creado (email NO enviado automáticamente)");
+
+
+         // ✅ Obtener nombres de roles
+         /*
+         String verificationLink = "http://localhost:4200/verify-email?token=" + tokenValue;
+         Set<String> roleNames = savedUser.getRoles().stream()
+               .map(Role::getName)
+               .collect(Collectors.toSet());
+
+         // ✅ Enviar email con credenciales Y roles
+         emailPort.sendWelcomeEmailWithCredentials(
+               savedUser.getEmail(),
+               savedUser.getFullName(),
+               savedUser.getEmail(),
+               plainPassword,
+               roleNames,              // ✅ AGREGAR roles
+               verificationLink,
+               24
+         );
+         */
+
+         System.out.println("✅ Token guardado: " + tokenValue);
+         System.out.println("✅ Email enviado a: " + savedUser.getEmail());
+
       } catch (Exception e) {
-         // Log error pero no fallar
+         System.err.println("❌ Error: " + e.getMessage());
+         e.printStackTrace();
       }
 
       return mapToDto(savedUser);
@@ -144,7 +193,11 @@ public class UserService implements
    // ========== LIST USERS ==========
 
    @Override
-   public PagedResponse<UserDto> execute(UserSearchCriteria criteria, int page, int size) {
+   public PagedResponse<UserDto> execute(UserSearchCriteria criteria) {
+      // ✅ Usar page y size del criteria
+      int page = criteria.page();
+      int size = criteria.size();
+
       // 1. Buscar usuarios con criterios
       List<User> users = userPersistencePort.findByCriteria(criteria, page, size);
 
@@ -219,6 +272,45 @@ public class UserService implements
       }
 
       return mapToDto(restored);
+   }
+
+   // ========== RESEND CREDENTIALS ==========
+
+   @Override
+   public void execute(Long userId, String plainPassword) {
+      // 1. Buscar usuario
+      User user = userPersistencePort.findById(userId)
+            .orElseThrow(() -> new UserNotFoundException(userId));
+
+      // 2. Buscar token de verificación
+      Optional<VerificationToken> tokenOpt = tokenPersistencePort.findVerificationTokenByUserId(userId);
+
+      if (tokenOpt.isEmpty()) {
+         throw new IllegalStateException("No existe token de verificación para este usuario");
+      }
+
+      VerificationToken token = tokenOpt.get();
+
+      // 3. Construir link de verificación
+      String verificationLink = "http://localhost:4200/verify-email?token=" + token.getToken();
+
+      // 4. Obtener nombres de roles
+      Set<String> roleNames = user.getRoles().stream()
+            .map(Role::getName)
+            .collect(Collectors.toSet());
+
+      // 5. Enviar email con credenciales
+      emailPort.sendWelcomeEmailWithCredentials(
+            user.getEmail(),
+            user.getFullName(),
+            user.getEmail(),
+            plainPassword,
+            roleNames,
+            verificationLink,
+            24
+      );
+
+      System.out.println("✅ Credenciales reenviadas a: " + user.getEmail());
    }
 
    // ========== HELPER ==========

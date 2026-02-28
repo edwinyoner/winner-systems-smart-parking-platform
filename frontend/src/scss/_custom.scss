@@ -1,3 +1,4 @@
+//src/scss/_custom.scss
 // Here you can add other styles
 
 // custom .chartjs-tooltip-body-item padding
@@ -16,6 +17,16 @@
   cursor: pointer;
 }
 
+// Sobreescribe globalmente el primary de CoreUI/Bootstrap
+// $primary: #1e88af;
+// $primary-rgb: 12, 88, 175;
+
+// :root {
+//   --cui-primary: #{$primary};
+//   --cui-primary-rgb: #{$primary-rgb};
+//   --bs-primary: #{$primary};
+//   --bs-primary-rgb: #{$primary-rgb};
+// }
 
 // custom styles for ngx-datatable
 /**
@@ -70,8 +81,8 @@
 
   // Primary (morado)
   &.badge-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: #ffffff;
-    border: none;
-  }
+  background-color: #0d6efd;           // Azul primario de Bootstrap
+  color: #ffffff;
+  border: none;
+}
 }

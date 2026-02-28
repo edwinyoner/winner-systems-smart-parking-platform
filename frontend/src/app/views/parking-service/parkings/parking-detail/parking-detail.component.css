@@ -1,0 +1,52 @@
+/* parking-detail/parking-detail.component.css */
+
+/* Tarjetas de estadísticas */
+.stat-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card h3 {
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--cui-body-color);
+}
+
+/* Ajustes de tabla */
+table th {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+  color: var(--cui-secondary);
+}
+
+table td {
+  vertical-align: middle;
+}
+
+/* Progress bars pequeñas en tabla */
+c-progress[thin] {
+  height: 6px;
+}
+
+/* Badges */
+c-badge {
+  font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .stat-card h3 {
+    font-size: 1.5rem;
+  }
+  
+  table th:nth-child(3),
+  table td:nth-child(3) {
+    display: none;
+  }
+}

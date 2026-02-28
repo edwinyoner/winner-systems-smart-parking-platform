@@ -1,9 +1,6 @@
 package com.winnersystems.smartparking.auth.application.service.auth;
 
-import com.winnersystems.smartparking.auth.application.dto.command.ChangePasswordCommand;
-import com.winnersystems.smartparking.auth.application.dto.command.ForgotPasswordCommand;
-import com.winnersystems.smartparking.auth.application.dto.command.LoginCommand;
-import com.winnersystems.smartparking.auth.application.dto.command.ResetPasswordCommand;
+import com.winnersystems.smartparking.auth.application.dto.command.*;
 import com.winnersystems.smartparking.auth.application.dto.query.AuthResponseDto;
 import com.winnersystems.smartparking.auth.application.dto.query.CaptchaValidationResult;
 import com.winnersystems.smartparking.auth.application.dto.query.UserDto;
@@ -28,13 +25,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-/**
- * Servicio de aplicación para autenticación.
- * Implementa todos los casos de uso de auth/.
- *
- * @author Edwin Yoner Winner Systems - Smart Parking Platform
- * @version 1.0
- */
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -46,7 +36,8 @@ public class AuthService implements
       ResetPasswordUseCase,
       VerifyEmailUseCase,
       ResendVerificationUseCase,
-      ChangePasswordUseCase{
+      ChangePasswordUseCase,
+      UpdateProfileUseCase {
 
    private final UserPersistencePort userPersistencePort;
    private final PasswordEncoderPort passwordEncoderPort;
@@ -89,18 +80,39 @@ public class AuthService implements
          throw new IllegalStateException("Email no verificado");
       }
 
-      // 5. Generar access token (JWT)
+      // 5. VALIDAR QUE EL USUARIO TENGA EL ROL SELECCIONADO
+      String activeRole = command.selectedRole();
+      if (activeRole != null && !activeRole.isBlank()) {
+         if (!user.hasRole(activeRole)) {
+            throw new InvalidCredentialsException("No tienes el rol seleccionado");
+         }
+      } else {
+         // Si no seleccionó rol, usar el primero que tenga
+         activeRole = user.getRoles().stream()
+               .findFirst()
+               .map(Role::getName)
+               .orElse("OPERADOR");
+      }
+
+      // 6. Generar access token CON activeRole Y SUS PERMISOS
       String accessToken = jwtPort.generateAccessToken(
             user.getId(),
             user.getEmail(),
+            user.getFirstName(),
+            user.getLastName(),
+            user.getPhoneNumber(),
+            user.getProfilePicture(),
+            user.getStatus(),
+            user.isEmailVerified(),
+            activeRole,
             getRoleNames(user),
-            getPermissionNames(user)
+            getPermissionNames(user, activeRole)  // ✅ PASAR activeRole
       );
 
-      // 6. Generar y guardar refresh token (UUID v4)
+      // 7. Generar y guardar refresh token
       String refreshTokenValue = UUID.randomUUID().toString();
 
-      int validityHours = command.rememberMe() ? 720 : 168; // 30 días vs 7 días
+      int validityHours = command.rememberMe() ? 720 : 168;
 
       RefreshToken refreshToken = new RefreshToken(
             refreshTokenValue,
@@ -112,11 +124,11 @@ public class AuthService implements
 
       tokenPersistencePort.saveRefreshToken(refreshToken);
 
-      // 7. Retornar respuesta
+      // 8. Retornar respuesta
       return AuthResponseDto.of(
             accessToken,
             refreshTokenValue,
-            1800,                           // 30 minutos
+            1800,
             mapToDto(user)
       );
    }
@@ -125,16 +137,13 @@ public class AuthService implements
 
    @Override
    public void executeLogout(String refreshToken) {
-      // 1. Buscar token directo (búsqueda O(1) con índice)
       RefreshToken token = tokenPersistencePort.findRefreshTokenByToken(refreshToken)
             .orElseThrow(() -> new IllegalArgumentException("Token inválido"));
 
-      // 2. Validar que no esté revocado
       if (token.getRevoked()) {
          throw new IllegalStateException("Token ya fue revocado");
       }
 
-      // 3. Revocar usando método de dominio
       token.revoke();
       tokenPersistencePort.saveRefreshToken(token);
    }
@@ -143,7 +152,7 @@ public class AuthService implements
 
    @Override
    public AuthResponseDto executeRefresh(String refreshToken) {
-      // 1. Buscar token directo (búsqueda O(1) con índice)
+      // 1. Buscar token
       RefreshToken token = tokenPersistencePort.findRefreshTokenByToken(refreshToken)
             .orElseThrow(() -> new TokenExpiredException("RefreshToken", "Token inválido"));
 
@@ -166,19 +175,32 @@ public class AuthService implements
          throw new IllegalStateException("Usuario inactivo o email no verificado");
       }
 
-      // 6. Generar nuevo access token
+      // 6. Obtener el rol activo del token anterior (o usar el primero)
+      String activeRole = user.getRoles().stream()
+            .findFirst()
+            .map(Role::getName)
+            .orElse("OPERADOR");
+
+      // 7. Generar nuevo access token CON LOS PERMISOS DEL ROL ACTIVO
       String newAccessToken = jwtPort.generateAccessToken(
             user.getId(),
             user.getEmail(),
+            user.getFirstName(),
+            user.getLastName(),
+            user.getPhoneNumber(),
+            user.getProfilePicture(),
+            user.getStatus(),
+            user.isEmailVerified(),
+            activeRole,
             getRoleNames(user),
-            getPermissionNames(user)
+            getPermissionNames(user, activeRole)  // ✅ PASAR activeRole
       );
 
-      // 7. Retornar con MISMO refreshToken (NO rotación)
+      // 8. Retornar con MISMO refreshToken
       return AuthResponseDto.of(
             newAccessToken,
             refreshToken,
-            1800,                           // 30 minutos
+            1800,
             mapToDto(user)
       );
    }
@@ -187,7 +209,6 @@ public class AuthService implements
 
    @Override
    public void execute(ForgotPasswordCommand command) {
-      // 1. Validar captcha (más permisivo: 0.3)
       if (captchaPort.isEnabled()) {
          CaptchaValidationResult result = captchaPort.validate(
                command.captchaToken(),
@@ -199,17 +220,14 @@ public class AuthService implements
          }
       }
 
-      // 2. Buscar usuario (sin revelar si existe)
       var userOpt = userPersistencePort.findByEmail(command.email());
 
       if (userOpt.isEmpty()) {
-         // NO revelar que email no existe - retornar silenciosamente
          return;
       }
 
       User user = userOpt.get();
 
-      // 3. Verificar rate limiting (máx 3 por hora)
       long recentCount = tokenPersistencePort.countPasswordResetTokensByUserSince(
             user.getId(),
             LocalDateTime.now().minusHours(1)
@@ -219,10 +237,8 @@ public class AuthService implements
          throw new IllegalStateException("Demasiadas solicitudes. Intenta en 1 hora");
       }
 
-      // 4. Revocar tokens previos
       tokenPersistencePort.revokePasswordResetTokensByUserId(user.getId());
 
-      // 5. Generar token (UUID v4)
       String tokenValue = UUID.randomUUID().toString();
 
       PasswordResetToken token = new PasswordResetToken(
@@ -234,19 +250,17 @@ public class AuthService implements
 
       tokenPersistencePort.savePasswordResetToken(token);
 
-      // 6. Construir link
       String resetLink = "http://localhost:4200/reset-password?token=" + tokenValue;
 
-      // 7. Enviar email
       try {
          emailPort.sendPasswordResetEmail(
                user.getEmail(),
                user.getFullName(),
                resetLink,
-               1 // 1 hora
+               1
          );
       } catch (Exception e) {
-         // Log error pero no fallar
+         // Log error
       }
    }
 
@@ -254,11 +268,9 @@ public class AuthService implements
 
    @Override
    public void execute(ResetPasswordCommand command) {
-      // 1. Buscar token directo (búsqueda O(1) con índice)
       PasswordResetToken token = tokenPersistencePort.findPasswordResetTokenByToken(command.token())
             .orElseThrow(() -> new TokenExpiredException("Token", "Token inválido"));
 
-      // 2. Validar que sea válido (no usado, no expirado)
       if (!token.isValid()) {
          if (token.isUsed()) {
             throw new IllegalStateException("Token ya fue usado");
@@ -266,29 +278,23 @@ public class AuthService implements
          throw new TokenExpiredException("Token", "Token expirado");
       }
 
-      // 3. Validar que passwords coincidan
       if (!command.newPassword().equals(command.confirmPassword())) {
          throw new IllegalArgumentException("Las contraseñas no coinciden");
       }
 
-      // 4. Buscar usuario
       User user = userPersistencePort.findById(token.getUserId())
             .orElseThrow(() -> new UserNotFoundException(token.getUserId()));
 
-      // 5. Hashear y actualizar password
       String hashedPassword = passwordEncoderPort.encode(command.newPassword());
       user.setPassword(hashedPassword);
       user.setUpdatedAt(LocalDateTime.now());
       userPersistencePort.save(user);
 
-      // 6. Marcar token como usado (método de dominio)
       token.markAsUsed();
       tokenPersistencePort.savePasswordResetToken(token);
 
-      // 7. Revocar TODOS los refresh tokens (forzar re-login)
       tokenPersistencePort.revokeRefreshTokensByUserId(user.getId());
 
-      // 8. Enviar email de confirmación
       try {
          emailPort.sendPasswordChangedEmail(
                user.getEmail(),
@@ -296,7 +302,7 @@ public class AuthService implements
                LocalDateTime.now().toString()
          );
       } catch (Exception e) {
-         // Log error pero no fallar
+         // Log error
       }
    }
 
@@ -304,46 +310,38 @@ public class AuthService implements
 
    @Override
    public void verifyEmail(String token) {
-      // 1. Buscar token directo (búsqueda O(1) con índice)
       VerificationToken verificationToken = tokenPersistencePort
             .findVerificationTokenByToken(token)
             .orElseThrow(() -> new TokenInvalidException("Token de verificación inválido o no existe"));
 
-      // 2. Validar que no haya expirado
       if (verificationToken.isExpired()) {
          throw new TokenExpiredException("VerificationToken", "El token de verificación ha expirado");
       }
 
-      // 3. Validar que no haya sido usado
       if (verificationToken.isVerified()) {
          throw new TokenInvalidException("Este token ya fue utilizado previamente");
       }
 
-      // 4. Buscar usuario
       User user = userPersistencePort.findById(verificationToken.getUserId())
             .orElseThrow(() -> new UserNotFoundException(verificationToken.getUserId()));
 
-      // 5. Verificar si ya está verificado (evitar procesamiento duplicado)
       if (user.isEmailVerified()) {
          throw new IllegalStateException("Este email ya ha sido verificado");
       }
 
-      // 6. Marcar email como verificado
       user.verifyEmail();
       userPersistencePort.save(user);
 
-      // 7. Marcar token como usado (método de dominio)
       verificationToken.markAsVerified();
       tokenPersistencePort.saveVerificationToken(verificationToken);
 
-      // 8. Enviar email de bienvenida/confirmación (opcional)
       try {
          emailPort.sendEmailVerifiedConfirmation(
                user.getEmail(),
                user.getFullName()
          );
       } catch (Exception e) {
-         // Log error pero no fallar (verificación ya exitosa)
+         // Log error
       }
    }
 
@@ -351,16 +349,13 @@ public class AuthService implements
 
    @Override
    public void resendVerification(String email) {
-      // 1. Buscar usuario por email
       User user = userPersistencePort.findByEmail(email)
             .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado con email: " + email));
 
-      // 2. Verificar que NO esté ya verificado
       if (user.isEmailVerified()) {
          throw new IllegalStateException("Este email ya ha sido verificado");
       }
 
-      // 3. Verificar rate limiting (máx 3 por hora)
       long recentCount = tokenPersistencePort.countVerificationTokensByUserSince(
             user.getId(),
             LocalDateTime.now().minusHours(1)
@@ -370,24 +365,20 @@ public class AuthService implements
          throw new IllegalStateException("Demasiadas solicitudes de verificación. Intenta en 1 hora");
       }
 
-      // 4. Revocar tokens de verificación previos (opcional pero recomendado)
       tokenPersistencePort.deleteVerificationTokensByUserId(user.getId());
 
-      // 5. Generar nuevo token (UUID v4)
       String tokenValue = UUID.randomUUID().toString();
 
       VerificationToken verificationToken = new VerificationToken(
             tokenValue,
             user.getId(),
-            24L // 24 horas de validez
+            24L
       );
 
       tokenPersistencePort.saveVerificationToken(verificationToken);
 
-      // 6. Construir link de verificación
       String verificationLink = "http://localhost:4200/verify-email?token=" + tokenValue;
 
-      // 7. Enviar email de verificación
       emailPort.sendVerificationEmail(
             user.getEmail(),
             user.getFullName(),
@@ -399,35 +390,28 @@ public class AuthService implements
 
    @Override
    public void execute(ChangePasswordCommand command) {
-      // 1. Validar que passwords coincidan
       if (!command.newPassword().equals(command.confirmPassword())) {
          throw new IllegalArgumentException("Las contraseñas no coinciden");
       }
 
-      // 2. Buscar usuario
       User user = userPersistencePort.findById(command.userId())
             .orElseThrow(() -> new UserNotFoundException(command.userId()));
 
-      // 3. Verificar contraseña actual
       if (!passwordEncoderPort.matches(command.currentPassword(), user.getPassword())) {
          throw new IllegalStateException("La contraseña actual es incorrecta");
       }
 
-      // 4. Validar que nueva contraseña sea diferente
       if (passwordEncoderPort.matches(command.newPassword(), user.getPassword())) {
          throw new IllegalArgumentException("La nueva contraseña debe ser diferente a la actual");
       }
 
-      // 5. Hashear y actualizar password
       String hashedPassword = passwordEncoderPort.encode(command.newPassword());
       user.setPassword(hashedPassword);
       user.setUpdatedAt(LocalDateTime.now());
       userPersistencePort.save(user);
 
-      // 6. Revocar TODOS los refresh tokens (forzar re-login)
       tokenPersistencePort.revokeRefreshTokensByUserId(user.getId());
 
-      // 7. Enviar email de confirmación
       try {
          emailPort.sendPasswordChangedEmail(
                user.getEmail(),
@@ -435,8 +419,26 @@ public class AuthService implements
                LocalDateTime.now().toString()
          );
       } catch (Exception e) {
-         // Log error pero no fallar
+         // Log error
       }
+   }
+
+   // ========== UPDATE PROFILE ==========
+
+   @Override
+   public UserDto execute(UpdateProfileCommand command) {
+      User user = userPersistencePort.findById(command.userId())
+            .orElseThrow(() -> new UserNotFoundException(command.userId()));
+
+      user.setFirstName(command.firstName());
+      user.setLastName(command.lastName());
+      user.setPhoneNumber(command.phoneNumber());
+      user.setProfilePicture(command.profilePicture());
+      user.setUpdatedAt(LocalDateTime.now());
+
+      User updatedUser = userPersistencePort.save(user);
+
+      return mapToDto(updatedUser);
    }
 
    // ========== HELPERS ==========
@@ -463,12 +465,14 @@ public class AuthService implements
             .collect(Collectors.toSet());
    }
 
-   private Set<String> getPermissionNames(User user) {
+   /**
+    * MÉTODO - Obtiene solo los permisos del rol activo
+    */
+   private Set<String> getPermissionNames(User user, String activeRole) {
       return user.getRoles().stream()
+            .filter(role -> role.getName().equals(activeRole))  // Filtrar por rol activo
             .flatMap(role -> role.getPermissions().stream())
             .map(permission -> permission.getName())
             .collect(Collectors.toSet());
    }
-
-
 }

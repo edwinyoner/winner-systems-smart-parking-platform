@@ -1,7 +1,6 @@
 import { Directive, Input, TemplateRef, ViewContainerRef, OnInit, OnDestroy } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { PermissionService } from '../../core/services/permission.service';
-import { CurrentUserService } from '../../core/services/current-user.service';
 
 /**
  * Directiva estructural para mostrar/ocultar elementos según permisos
@@ -12,72 +11,56 @@ import { CurrentUserService } from '../../core/services/current-user.service';
  * 
  * Por defecto usa lógica OR (al menos uno de los permisos)
  * Para lógica AND usa: *hasPermission="perms; requireAll: true"
+ * 
+ * <button *appHasPermission="'users.create'">Crear</button>
+ * <button *appHasPermission="['users.update', 'users.delete']" [requireAll]="false">Editar o Eliminar</button>
+ * 
+ * Directiva estructural para mostrar/ocultar elementos según roles
+ * 
+ * Uso:
+ * <div *appHasRole="'ADMIN'">Solo para admin</div>
+ * <div *appHasRole="['ADMIN', 'AUTORIDAD']">Para admin o autoridad</div>
  */
 @Directive({
-  selector: '[hasPermission]',
+  selector: '[appHasPermission]',
   standalone: true
 })
-export class HasPermissionDirective implements OnInit, OnDestroy {
+export class HasPermissionDirective implements OnInit {
   
   private permissions: string[] = [];
-  private requireAll: boolean = false;
-  private subscription?: Subscription;
-
-  @Input() set hasPermission(permissions: string | string[]) {
-    this.permissions = Array.isArray(permissions) ? permissions : [permissions];
-    this.updateView();
-  }
-
-  @Input() set hasPermissionRequireAll(requireAll: boolean) {
-    this.requireAll = requireAll;
-    this.updateView();
-  }
+  private requireAll = false;
 
   constructor(
     private templateRef: TemplateRef<any>,
     private viewContainer: ViewContainerRef,
-    private permissionService: PermissionService,
-    private currentUserService: CurrentUserService
+    private permissionService: PermissionService
   ) {}
 
-  ngOnInit(): void {
-    // Suscribirse a cambios en el usuario actual
-    this.subscription = this.currentUserService.currentUser$.subscribe(() => {
-      this.updateView();
-    });
+  @Input()
+  set appHasPermission(permissions: string | string[]) {
+    this.permissions = Array.isArray(permissions) ? permissions : [permissions];
+    this.updateView();
   }
 
-  ngOnDestroy(): void {
-    if (this.subscription) {
-      this.subscription.unsubscribe();
-    }
+  @Input()
+  set appHasPermissionRequireAll(value: boolean) {
+    this.requireAll = value;
+    this.updateView();
+  }
+
+  ngOnInit(): void {
+    this.updateView();
   }
 
   private updateView(): void {
-    const hasPermission = this.checkPermissions();
+    const hasPermission = this.requireAll
+      ? this.permissionService.hasAllPermissions(this.permissions)
+      : this.permissionService.hasAnyPermission(this.permissions);
 
     if (hasPermission) {
-      // Mostrar el elemento
-      if (this.viewContainer.length === 0) {
-        this.viewContainer.createEmbeddedView(this.templateRef);
-      }
+      this.viewContainer.createEmbeddedView(this.templateRef);
     } else {
-      // Ocultar el elemento
       this.viewContainer.clear();
-    }
-  }
-
-  private checkPermissions(): boolean {
-    if (this.permissions.length === 0) {
-      return true;
-    }
-
-    if (this.requireAll) {
-      // Lógica AND: Debe tener TODOS los permisos
-      return this.permissionService.hasAllPermissions(this.permissions);
-    } else {
-      // Lógica OR: Debe tener AL MENOS UNO de los permisos
-      return this.permissionService.hasAnyPermission(this.permissions);
     }
   }
 }

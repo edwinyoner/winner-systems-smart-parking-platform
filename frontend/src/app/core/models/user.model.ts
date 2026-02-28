@@ -1,3 +1,5 @@
+import { Role } from './role.model';
+
 /**
  * Modelo de Usuario
  * Representa un usuario del sistema Smart Parking
@@ -6,6 +8,7 @@ export interface User {
   id: number;
   firstName: string;
   lastName: string;
+  fullName?: string;
   email: string;
   phoneNumber?: string;
   profilePicture?: string;
@@ -19,17 +22,8 @@ export interface User {
 }
 
 /**
- * Interface simplificada de Role para evitar imports circulares
- */
-export interface Role {
-  id: number;
-  name: string;
-  description?: string;
-  status: boolean;
-}
-
-/**
  * DTO para crear un nuevo usuario
+ * ✅ Backend espera: roles como string[] (nombres de roles)
  */
 export interface CreateUserRequest {
   firstName: string;
@@ -37,20 +31,20 @@ export interface CreateUserRequest {
   email: string;
   password: string;
   phoneNumber?: string;
-  roleIds: number[];
+  roles: string[]; // ✅ CAMBIO: string[] en lugar de roleIds: number[]
+  captchaToken?: string;
 }
 
 /**
  * DTO para actualizar un usuario existente
+ * ✅ Backend espera: roles como string[] (nombres de roles)
  */
 export interface UpdateUserRequest {
-  firstName?: string;
-  lastName?: string;
-  email?: string;
+  firstName: string;
+  lastName: string;
   phoneNumber?: string;
-  profilePicture?: string;
-  status?: boolean;
-  roleIds?: number[];
+  status: boolean;
+  roles: string[]; // ✅ CAMBIO: string[] en lugar de roleIds: number[]
 }
 
 /**
@@ -58,7 +52,7 @@ export interface UpdateUserRequest {
  */
 export interface UserFilters {
   search?: string;
-  roleId?: number;
+  roleId?: number; // Se enviará como 'role' al backend
   status?: boolean;
   emailVerified?: boolean;
   page?: number;

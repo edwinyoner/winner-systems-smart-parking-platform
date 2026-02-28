@@ -20,7 +20,8 @@ export interface Permission {
 export interface CreatePermissionRequest {
   name: string;
   description: string;
-  module?: string;
+  module: string;        // ✅ Cambiado a requerido (sin ?)
+  status: boolean;       // ✅ AGREGADO
 }
 
 /**

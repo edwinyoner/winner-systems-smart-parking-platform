@@ -16,13 +16,6 @@ import org.springframework.stereotype.Component;
 /**
  * Mapper que convierte entre REST DTOs y Application DTOs.
  *
- * <p><b>Responsabilidades:</b></p>
- * <ul>
- *   <li>REST Request → Application Command</li>
- *   <li>Application Response → REST Response</li>
- *   <li>Extraer metadata del HttpServletRequest (IP, User-Agent)</li>
- * </ul>
- *
  * @author Edwin Yoner Winner Systems - Smart Parking Platform
  * @version 1.0
  */
@@ -38,10 +31,11 @@ public class AuthRestMapper {
       return new LoginCommand(
             request.email(),                // 1. email
             request.password(),             // 2. password
-            request.captchaToken(),         // 3. captchaToken
-            request.rememberMe(),           // 4. rememberMe
-            extractDeviceInfo(httpRequest), // 5. deviceInfo
-            extractIpAddress(httpRequest)   // 6. ipAddress
+            request.selectedRole(),         // 3. selectedRole ✅ AGREGADO
+            request.captchaToken(),         // 4. captchaToken
+            request.rememberMe(),           // 5. rememberMe
+            extractDeviceInfo(httpRequest), // 6. deviceInfo
+            extractIpAddress(httpRequest)   // 7. ipAddress
       );
    }
 
@@ -62,11 +56,11 @@ public class AuthRestMapper {
     */
    public ResetPasswordCommand toCommand(ResetPasswordRequest request, HttpServletRequest httpRequest) {
       return new ResetPasswordCommand(
-            request.token(),                // 1. token
-            request.newPassword(),          // 2. newPassword
-            request.confirmPassword(),      // 3. confirmPassword
-            extractIpAddress(httpRequest),  // 4. ipAddress
-            extractUserAgent(httpRequest)   // 5. userAgent
+            request.token(),
+            request.newPassword(),
+            request.confirmPassword(),
+            extractIpAddress(httpRequest),
+            extractUserAgent(httpRequest)
       );
    }
 

@@ -72,33 +72,105 @@ public class DataSeeder implements CommandLineRunner {
       log.info("Creando permisos...");
 
       String[][] permissions = {
-            // Gestión de Usuarios
+            // ========== GESTIÓN DE USUARIOS ==========
             {"users.create", "Crear nuevos usuarios en el sistema"},
             {"users.read", "Ver información de usuarios"},
             {"users.update", "Actualizar información de usuarios"},
             {"users.delete", "Eliminar usuarios del sistema"},
             {"users.restore", "Restaurar usuarios eliminados"},
 
-            // Gestión de Roles y Permisos
+            // ========== GESTIÓN DE ROLES ==========
             {"roles.create", "Crear nuevos roles"},
             {"roles.read", "Ver información de roles"},
             {"roles.update", "Actualizar roles existentes"},
             {"roles.delete", "Eliminar roles del sistema"},
 
-            // Gestión de Estacionamientos
-            {"parking.create", "Crear zonas de estacionamiento"},
-            {"parking.read", "Ver zonas de estacionamiento"},
-            {"parking.update", "Actualizar zonas de estacionamiento"},
-            {"parking.delete", "Eliminar zonas de estacionamiento"},
+            // ========== GESTIÓN DE PERMISOS ==========
+            {"permissions.create", "Crear nuevos permisos"},
+            {"permissions.read", "Ver información de permisos"},
+            {"permissions.update", "Actualizar permisos existentes"},
+            {"permissions.delete", "Eliminar permisos del sistema"},
 
-            // Gestión de Tarifas
+            // ========== GESTIÓN DE ESTACIONAMIENTOS ==========
+
+            // Turnos (Shifts)
+            {"shifts.create", "Crear nuevos turnos de trabajo"},
+            {"shifts.read", "Ver información de turnos"},
+            {"shifts.update", "Actualizar turnos existentes"},
+            {"shifts.delete", "Eliminar turnos"},
+
+            // Zonas de Estacionamiento
+            {"zones.create", "Crear nuevas zonas de estacionamiento"},
+            {"zones.read", "Ver información de zonas"},
+            {"zones.update", "Actualizar zonas existentes"},
+            {"zones.delete", "Eliminar zonas"},
+            {"zones.activate", "Activar/Desactivar zonas"},
+
+            // Tipos de Espacio
+            {"space-types.create", "Crear nuevos tipos de espacio"},
+            {"space-types.read", "Ver tipos de espacio"},
+            {"space-types.update", "Actualizar tipos de espacio"},
+            {"space-types.delete", "Eliminar tipos de espacio"},
+
+            // Espacios de Estacionamiento
+            {"spaces.create", "Crear nuevos espacios"},
+            {"spaces.read", "Ver información de espacios"},
+            {"spaces.update", "Actualizar espacios existentes"},
+            {"spaces.delete", "Eliminar espacios"},
+            {"spaces.bulk-create", "Creación masiva de espacios"},
+
+            // Tipos de Documento
+            {"document-types.create", "Crear nuevos tipos de documento"},
+            {"document-types.read", "Ver tipos de documento"},
+            {"document-types.update", "Actualizar tipos de documento"},
+            {"document-types.delete", "Eliminar tipos de documento"},
+
+            // Clientes
+            {"customers.create", "Crear nuevos clientes"},
+            {"customers.read", "Ver información de clientes"},
+            {"customers.update", "Actualizar información de clientes"},
+            {"customers.delete", "Eliminar clientes"},
+
+            // Vehículos
+            {"vehicles.create", "Registrar nuevos vehículos"},
+            {"vehicles.read", "Ver información de vehículos"},
+            {"vehicles.update", "Actualizar información de vehículos"},
+            {"vehicles.delete", "Eliminar vehículos"},
+
+            // Transacciones
+            {"transactions.entry", "Registrar entrada de vehículos"},
+            {"transactions.exit", "Registrar salida de vehículos"},
+            {"transactions.view", "Ver transacciones del sistema"},
+            {"transactions.cancel", "Cancelar transacciones"},
+
+            // Tipos de Pago
+            {"payment-types.create", "Crear nuevos tipos de pago"},
+            {"payment-types.read", "Ver tipos de pago"},
+            {"payment-types.update", "Actualizar tipos de pago"},
+            {"payment-types.delete", "Eliminar tipos de pago"},
+
+            // Pagos
+            {"payments.process", "Procesar pagos de estacionamiento"},
+            {"payments.view", "Ver información de pagos"},
+            {"payments.refund", "Realizar reembolsos"},
+            {"payments.cancel", "Cancelar pagos"},
+
+            // Infracciones
+            {"infractions.create", "Crear nuevas infracciones"},
+            {"infractions.read", "Ver infracciones registradas"},
+            {"infractions.update", "Actualizar infracciones"},
+            {"infractions.delete", "Eliminar infracciones"},
+            {"infractions.resolve", "Resolver infracciones"},
+
+            // ========== GESTIÓN DE TARIFAS ==========
             {"rates.create", "Crear nuevas tarifas"},
             {"rates.read", "Ver tarifas configuradas"},
             {"rates.update", "Actualizar tarifas existentes"},
             {"rates.delete", "Eliminar tarifas"},
 
-            // Reportes
-            {"reports.view", "Ver reportes y estadísticas del sistema"}
+            // ========== REPORTES ==========
+            {"reports.view", "Ver reportes y estadísticas del sistema"},
+            {"reports.export", "Exportar reportes (PDF, Excel)"}
       };
 
       for (String[] perm : permissions) {
@@ -134,18 +206,47 @@ public class DataSeeder implements CommandLineRunner {
             .build();
 
       roleRepository.save(adminRole);
-      log.info("Rol ADMIN creado con {} permisos", adminRole.getPermissions().size());
+      log.info("Rol ADMIN creado con {} permisos (TODOS)", adminRole.getPermissions().size());
 
       // ========== ROL: AUTORIDAD ==========
       RoleEntity autoridadRole = RoleEntity.builder()
             .name("AUTORIDAD")
-            .description("Gestión de zonas, tarifas y reportes municipales")
+            .description("Gestión de usuarios, zonas, tarifas y reportes municipales")
             .status(true)
             .permissions(getPermissionsByNames(
-                  "users.read",
-                  "parking.create", "parking.read", "parking.update", "parking.delete",
+                  // Gestión de usuarios (crear, leer, actualizar - SIN eliminar)
+                  "users.create", "users.read", "users.update",
+                  // Gestión de roles (solo lectura)
+                  "roles.read",
+                  // Gestión de permisos (solo lectura)
+                  "permissions.read",
+
+                  // Gestión de Turnos
+                  "shifts.create", "shifts.read", "shifts.update", "shifts.delete",
+                  // Gestión de Zonas
+                  "zones.create", "zones.read", "zones.update", "zones.delete", "zones.activate",
+                  // Gestión de Tipos de Espacio
+                  "space-types.create", "space-types.read", "space-types.update", "space-types.delete",
+                  // Gestión de Espacios
+                  "spaces.create", "spaces.read", "spaces.update", "spaces.delete", "spaces.bulk-create",
+                  // Gestión de Tipos de Documento
+                  "document-types.create", "document-types.read", "document-types.update", "document-types.delete",
+                  // Gestión de Clientes
+                  "customers.create", "customers.read", "customers.update", "customers.delete",
+                  // Gestión de Vehículos
+                  "vehicles.create", "vehicles.read", "vehicles.update", "vehicles.delete",
+                  // Ver transacciones (sin registrar)
+                  "transactions.view",
+                  // Gestión de Tipos de Pago
+                  "payment-types.create", "payment-types.read", "payment-types.update", "payment-types.delete",
+                  // Ver pagos
+                  "payments.view",
+                  // Gestión de Infracciones
+                  "infractions.create", "infractions.read", "infractions.update", "infractions.delete", "infractions.resolve",
+                  // Gestión completa de tarifas
                   "rates.create", "rates.read", "rates.update", "rates.delete",
-                  "reports.view"
+                  // Reportes
+                  "reports.view", "reports.export"
             ))
             .build();
 
@@ -158,8 +259,30 @@ public class DataSeeder implements CommandLineRunner {
             .description("Operación diaria del sistema de estacionamiento")
             .status(true)
             .permissions(getPermissionsByNames(
-                  "parking.read", "parking.update",
+                  // Solo lectura de usuarios (ver su perfil)
+                  "users.read",
+
+                  // Ver información de zonas y espacios
+                  "zones.read",
+                  "spaces.read",
+                  "space-types.read",
+                  // Ver tipos de documento
+                  "document-types.read",
+                  // Gestión de clientes
+                  "customers.create", "customers.read", "customers.update",
+                  // Gestión de vehículos
+                  "vehicles.create", "vehicles.read", "vehicles.update",
+                  // Operaciones de transacciones
+                  "transactions.entry", "transactions.exit", "transactions.view",
+                  // Ver tipos de pago
+                  "payment-types.read",
+                  // Procesar pagos
+                  "payments.process", "payments.view",
+                  // Ver infracciones
+                  "infractions.read",
+                  // Solo lectura de tarifas
                   "rates.read",
+                  // Ver reportes (sin exportar)
                   "reports.view"
             ))
             .build();
@@ -169,7 +292,7 @@ public class DataSeeder implements CommandLineRunner {
    }
 
    /**
-    * Crea el usuario admin por defecto.
+    * Crea el usuario admin por defecto CON LOS 3 ROLES.
     */
    private void seedAdminUser() {
       if (userRepository.existsByEmail("edwinyoner@gmail.com")) {
@@ -177,13 +300,21 @@ public class DataSeeder implements CommandLineRunner {
          return;
       }
 
-      log.info("Creando usuario admin...");
+      log.info("Creando usuario admin con los 3 roles...");
 
+      // Obtener los 3 roles
       RoleEntity adminRole = roleRepository.findByName("ADMIN")
             .orElseThrow(() -> new RuntimeException("Rol ADMIN no encontrado"));
 
+      RoleEntity autoridadRole = roleRepository.findByName("AUTORIDAD")
+            .orElseThrow(() -> new RuntimeException("Rol AUTORIDAD no encontrado"));
+
+      RoleEntity operadorRole = roleRepository.findByName("OPERADOR")
+            .orElseThrow(() -> new RuntimeException("Rol OPERADOR no encontrado"));
+
       String tempPassword = "Admin123!";
 
+      // Crear usuario con los 3 roles
       UserEntity admin = UserEntity.builder()
             .firstName("Admin")
             .lastName("System")
@@ -191,38 +322,32 @@ public class DataSeeder implements CommandLineRunner {
             .password(passwordEncoder.encode(tempPassword))
             .phoneNumber("+51987654321")
             .status(true)
-            .emailVerified(false)  // SIN VERIFICAR - Debe verificar email primero
-            .roles(Set.of(adminRole))
+            .emailVerified(false)
+            .roles(Set.of(adminRole, autoridadRole, operadorRole))
             .build();
 
       userRepository.save(admin);
 
-      log.info("Usuario admin creado");
-      log.info("Email: edwinyoner@gmail.com");
-      log.info("Password: {}", tempPassword);
-      log.info("IMPORTANTE: Verificar email antes del primer login");
+      log.info("Usuario admin creado con {} roles", admin.getRoles().size());
+      log.info("   - Email: edwinyoner@gmail.com");
+      log.info("   - Password: {}", tempPassword);
+      log.info("   - Roles: ADMIN, AUTORIDAD, OPERADOR");
+      log.info("  IMPORTANTE: Verificar email antes del primer login");
 
       // GENERAR TOKEN Y ENVIAR EMAIL DE VERIFICACIÓN
       try {
-         // Generar token UUID v4
          String verificationToken = UUID.randomUUID().toString();
 
-         // Guardar token en base de datos
          VerificationTokenEntity tokenEntity = VerificationTokenEntity.builder()
                .token(verificationToken)
                .userId(admin.getId())
                .expiresAt(LocalDateTime.now().plusHours(24))
-               // verifiedAt permanece null (indica token no usado)
                .build();
 
          verificationTokenRepository.save(tokenEntity);
 
-         // Construir link de verificación
-         String verificationLink = "http://localhost:4200/verify-email?token=" + verificationToken;
+         String verificationLink = "http://192.168.1.4:4200/verify-email?token=" + verificationToken;
 
-
-
-         // Enviar email de bienvenida con verificación
          sendAdminWelcomeEmailWithVerification(admin, tempPassword, verificationLink);
 
          log.info("Email de verificación enviado a: {}", admin.getEmail());
@@ -398,7 +523,7 @@ public class DataSeeder implements CommandLineRunner {
                             <p>Se ha creado exitosamente tu cuenta de <strong>Administrador</strong> en Smart Parking Platform.</p>
                             
                             <div class="verification-box">
-                                <h3>✉️ Verifica tu correo electrónico</h3>
+                                <h3>Verifica tu correo electrónico</h3>
                                 <p>Para activar tu cuenta y garantizar la seguridad, por favor confirma tu dirección de correo haciendo clic en el botón:</p>
                                 <a href="%s" class="button">Verificar mi correo</a>
                                 <p style="font-size: 12px; margin-top: 15px; color: #666;">
@@ -420,7 +545,8 @@ public class DataSeeder implements CommandLineRunner {
                                 <p style="margin-top: 15px;"><strong>Contraseña temporal:</strong></p>
                                 <div class="password-box">%s</div>
                                 
-                                <p style="margin-top: 15px;"><strong>Rol asignado:</strong> Administrador (Acceso completo al sistema)</p>
+                                <p style="margin-top: 15px;"><strong>Roles asignados:</strong> Administrador, Autoridad, Operador</p>
+                                <p style="font-size: 14px; color: #666;">Tendrás acceso completo al sistema y podrás probar todas las funcionalidades.</p>
                             </div>
                             
                             <div class="warning">
@@ -448,7 +574,7 @@ public class DataSeeder implements CommandLineRunner {
                         <div class="footer">
                             <p style="margin: 0; font-weight: bold;">Winner Systems Corporation S.A.C.</p>
                             <p style="opacity: 0.9;">Smart Parking Platform</p>
-                            <p style="opacity: 0.8;">Huaraz, Ancash, Perú 🇵🇪</p>
+                            <p style="opacity: 0.8;">Huaraz, Áncash, Perú 🇵🇪</p>
                             <p style="font-size: 12px; opacity: 0.7; margin-top: 10px;">
                                 Este es un correo automático, por favor no responder directamente.
                             </p>

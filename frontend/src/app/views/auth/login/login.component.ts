@@ -41,11 +41,11 @@ export class LoginComponent implements OnInit {
   // Feature flags del environment
   showRememberMe = environment.features.enableRememberMe;
   showRegistration = environment.features.enableRegistration;
-  enableCaptcha = environment.features.enableRecaptcha; // ✅ CORREGIDO
+  enableCaptcha = environment.features.enableRecaptcha; // CORREGIDO
 
   // Roles disponibles para seleccionar
   availableRoles = [
-    { value: 'ADMIN', label: 'Administrador', icon: 'fas fa-user-shield' },
+    { value: 'ADMIN', label: 'Admin', icon: 'fas fa-user-shield' },
     { value: 'AUTORIDAD', label: 'Autoridad', icon: 'fas fa-user-tie' },
     { value: 'OPERADOR', label: 'Operador', icon: 'fas fa-user-cog' }
   ];
@@ -87,13 +87,13 @@ export class LoginComponent implements OnInit {
     });
 
     // Auto-completar en desarrollo (solo si está habilitado en environment)
-    if (!environment.production && environment.features.showDebugInfo) {
-      this.loginForm.patchValue({
-        email: 'admin@smartparking.com',
-        password: 'Admin123!',
-        selectedRole: 'ADMIN'
-      });
-    }
+    // if (!environment.production && environment.features.showDebugInfo) {
+    //   this.loginForm.patchValue({
+    //     email: 'admin@smartparking.com',
+    //     password: 'Admin123!',
+    //     selectedRole: 'ADMIN'
+    //   });
+    // }
   }
 
   /**
@@ -126,7 +126,7 @@ export class LoginComponent implements OnInit {
       next: (response) => {
         // Login exitoso
         if (environment.features.showDebugInfo) {
-          console.log('✅ Login exitoso:', {
+          console.log('Login exitoso:', {
             email: response.user.email,
             selectedRole: loginRequest.selectedRole,
             roles: response.user.roles

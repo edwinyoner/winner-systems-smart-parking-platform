@@ -98,7 +98,11 @@ export const routes: Routes = [
         path: 'profile',
         loadChildren: () => import('./views/profile/routes').then(m => m.routes),
         data: { title: 'Mi Perfil' }
-      }
+      },
+      {
+        path: '',
+        loadChildren: () => import('./views/parking-service/routes').then((m) => m.parkingRoutes)
+      },
     ]
   },
 

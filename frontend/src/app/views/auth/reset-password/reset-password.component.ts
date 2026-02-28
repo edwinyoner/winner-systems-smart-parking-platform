@@ -133,7 +133,7 @@ export class ResetPasswordComponent implements OnInit {
       next: (response) => {
         // Contraseña restablecida exitosamente
         if (environment.features.showDebugInfo) {
-          console.log('✅ Contraseña restablecida:', response);
+          console.log('Contraseña restablecida:', response);
         }
 
         // Mostrar mensaje de éxito

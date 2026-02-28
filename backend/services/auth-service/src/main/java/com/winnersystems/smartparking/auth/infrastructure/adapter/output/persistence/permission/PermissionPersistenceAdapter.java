@@ -63,4 +63,12 @@ public class PermissionPersistenceAdapter implements PermissionPersistencePort {
       PermissionEntity savedEntity = permissionRepository.save(entity);
       return mapper.toDomain(savedEntity);
    }
+
+   @Override
+   public List<Permission> findAllActive() {
+      List<PermissionEntity> entities = permissionRepository.findByStatusTrueAndDeletedAtIsNull();
+      return entities.stream()
+            .map(mapper::toDomain)
+            .collect(Collectors.toList());
+   }
 }

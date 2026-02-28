@@ -45,7 +45,7 @@ export const RoleGuard: CanActivateFn = (route: ActivatedRouteSnapshot, state) =
   // Verificar si es ADMIN (tiene acceso a todo)
   if (currentUserService.isAdmin()) {
     if (environment.features.showDebugInfo) {
-      console.log('✅ RoleGuard: Usuario ADMIN, acceso total permitido');
+      console.log('RoleGuard: Usuario ADMIN, acceso total permitido');
     }
     return true;
   }
@@ -91,7 +91,7 @@ export const RoleGuard: CanActivateFn = (route: ActivatedRouteSnapshot, state) =
   }
 
   if (environment.features.showDebugInfo) {
-    console.log('✅ RoleGuard: Acceso permitido');
+    console.log('RoleGuard: Acceso permitido');
   }
 
   return true;

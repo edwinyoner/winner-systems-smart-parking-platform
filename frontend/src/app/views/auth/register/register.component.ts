@@ -129,7 +129,7 @@ export class RegisterComponent implements OnInit {
       next: (response) => {
         // Registro exitoso
         if (environment.features.showDebugInfo) {
-          console.log('✅ Registro exitoso:', response);
+          console.log('Registro exitoso:', response);
         }
 
         // Mostrar mensaje de éxito

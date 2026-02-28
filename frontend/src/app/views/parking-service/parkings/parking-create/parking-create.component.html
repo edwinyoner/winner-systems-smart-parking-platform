@@ -1,0 +1,94 @@
+<!-- parking-create/parking-create.component.html -->
+
+<div class="container-lg py-4">
+
+  <!-- HEADER -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="mb-0">Nuevo Parqueo</h2>
+      <small class="text-muted">Paso {{ currentStep }} de {{ totalSteps }}</small>
+    </div>
+    <button cButton color="secondary" variant="outline" size="sm" (click)="onCancel()">
+      <c-icon name="cilX" class="me-1"></c-icon>Cancelar
+    </button>
+  </div>
+
+  <!-- STEPPER INDICADORES -->
+  <c-card class="mb-4">
+    <c-card-body class="py-3">
+
+      <!-- Barra de progreso -->
+      <c-progress class="mb-3" [value]="progressValue" color="primary" height="6px"></c-progress>
+
+      <!-- Pasos -->
+      <div class="d-flex justify-content-between">
+        @for (step of steps; track step.number) {
+          <div class="d-flex flex-column align-items-center" style="flex: 1">
+
+            <!-- Círculo del paso -->
+            <div class="step-circle mb-1"
+                 [class.step-completed]="isStepCompleted(step.number)"
+                 [class.step-active]="isStepActive(step.number)"
+                 [class.step-pending]="!isStepCompleted(step.number) && !isStepActive(step.number)">
+              @if (isStepCompleted(step.number)) {
+                <c-icon name="cilCheckAlt" size="sm"></c-icon>
+              } @else {
+                <span>{{ step.number }}</span>
+              }
+            </div>
+
+            <!-- Etiqueta -->
+            <small class="text-center"
+                   [class.text-primary]="isStepActive(step.number)"
+                   [class.fw-semibold]="isStepActive(step.number)"
+                   [class.text-muted]="!isStepActive(step.number)">
+              {{ step.label }}
+            </small>
+
+          </div>
+        }
+      </div>
+
+    </c-card-body>
+  </c-card>
+
+  <!-- CONTENIDO DEL PASO ACTIVO -->
+  @switch (currentStep) {
+
+    @case (1) {
+      <app-step1-info
+        (parkingCreated)="onParkingCreated($event)">
+      </app-step1-info>
+    }
+
+    @case (2) {
+      <app-step2-zones
+        [parkingId]="parkingId!"
+        (zonesCreated)="onZonesCreated($event)">
+      </app-step2-zones>
+    }
+
+    @case (3) {
+      <app-step3-spaces
+        [zones]="createdZones"
+        (spacesCreated)="onSpacesCreated()">
+      </app-step3-spaces>
+    }
+
+    @case (4) {
+      <app-step4-config
+        [parkingId]="parkingId!"
+        (configSaved)="onConfigSaved()">
+      </app-step4-config>
+    }
+
+    @case (5) {
+      <app-step5-operators
+        [zoneIds]="zoneIds"
+        (completed)="onCompleted()">
+      </app-step5-operators>
+    }
+
+  }
+
+</div>

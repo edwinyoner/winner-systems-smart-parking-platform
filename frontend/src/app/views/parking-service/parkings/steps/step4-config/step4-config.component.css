@@ -1,0 +1,66 @@
+/* Fila de configuración */
+.config-row {
+  padding: 12px;
+  border-radius: var(--cui-border-radius);
+  border: 1px solid var(--cui-border-color);
+  background-color: var(--cui-body-bg);
+  transition: all 0.2s ease;
+}
+
+.config-row:hover {
+  border-color: rgba(var(--cui-primary-rgb), 0.5);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Toggle switch centrado */
+.form-switch-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 38px;
+}
+
+.form-switch {
+  display: flex;
+  align-items: center;
+}
+
+.form-check-input {
+  width: 3rem;
+  height: 1.5rem;
+  cursor: pointer;
+}
+
+.form-check-input:checked {
+  background-color: var(--cui-success);
+  border-color: var(--cui-success);
+}
+
+/* Selectores */
+select.form-control {
+  cursor: pointer;
+}
+
+select.form-control option:first-child {
+  color: var(--cui-secondary);
+}
+
+/* Labels pequeños */
+.form-label.small {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .config-row {
+    padding: 8px;
+  }
+  
+  .form-check-input {
+    width: 2.5rem;
+    height: 1.25rem;
+  }
+}

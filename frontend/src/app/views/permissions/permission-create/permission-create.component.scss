@@ -1,0 +1,82 @@
+.permission-create-container {
+  padding: 1.5rem;
+  max-width: 1000px;
+  margin: 0 auto;
+
+  .page-header {
+    .page-title {
+      font-size: 1.75rem;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+  }
+
+  // Permission Preview
+  .permission-preview {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+
+    .preview-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid #e9ecef;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      .preview-label {
+        font-weight: 600;
+        color: #6c757d;
+        min-width: 120px;
+      }
+
+      .preview-value {
+        color: #2c3e50;
+        flex: 1;
+      }
+
+      code {
+        background-color: #e9ecef;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.9rem;
+        color: #d63384;
+      }
+    }
+  }
+
+  // Form elements
+  .form-label {
+    i {
+      color: #6c757d;
+    }
+  }
+
+  // Responsive
+  @media (max-width: 768px) {
+    padding: 1rem;
+
+    .page-header {
+      .page-title {
+        font-size: 1.5rem;
+      }
+    }
+
+    .permission-preview {
+      .preview-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+
+        .preview-label {
+          min-width: auto;
+        }
+      }
+    }
+  }
+}

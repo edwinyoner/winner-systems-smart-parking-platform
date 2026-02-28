@@ -3,24 +3,30 @@ package com.winnersystems.smartparking.auth.infrastructure.adapter.output.persis
 import com.winnersystems.smartparking.auth.application.dto.query.UserSearchCriteria;
 import com.winnersystems.smartparking.auth.application.port.output.UserPersistencePort;
 import com.winnersystems.smartparking.auth.domain.model.User;
+import com.winnersystems.smartparking.auth.infrastructure.adapter.output.persistence.role.entity.RoleEntity;
+import com.winnersystems.smartparking.auth.infrastructure.adapter.output.persistence.role.repository.RoleRepository;
 import com.winnersystems.smartparking.auth.infrastructure.adapter.output.persistence.user.entity.UserEntity;
 import com.winnersystems.smartparking.auth.infrastructure.adapter.output.persistence.user.mapper.UserPersistenceMapper;
 import com.winnersystems.smartparking.auth.infrastructure.adapter.output.persistence.user.repository.UserRepository;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
  * Adaptador de persistencia para User.
- *
- * <p>Implementa UserPersistencePort usando JPA/Hibernate.</p>
  *
  * @author Edwin Yoner Winner Systems - Smart Parking Platform
  * @version 1.0
@@ -30,11 +36,27 @@ import java.util.stream.Collectors;
 public class UserPersistenceAdapter implements UserPersistencePort {
 
    private final UserRepository userRepository;
+   private final RoleRepository roleRepository;
    private final UserPersistenceMapper mapper;
 
    @Override
    public User save(User user) {
       UserEntity entity = mapper.toEntity(user);
+
+      // Recargar roles desde la base de datos
+      if (!entity.getRoles().isEmpty()) {
+         Set<Long> roleIds = entity.getRoles().stream()
+               .map(RoleEntity::getId)
+               .collect(Collectors.toSet());
+
+         // Cargar roles gestionados (managed) desde la base de datos
+         Set<RoleEntity> managedRoles = new HashSet<>(
+               roleRepository.findAllById(roleIds)
+         );
+
+         entity.setRoles(managedRoles);
+      }
+
       UserEntity savedEntity = userRepository.save(entity);
       return mapper.toDomain(savedEntity);
    }
@@ -42,33 +64,37 @@ public class UserPersistenceAdapter implements UserPersistencePort {
    @Override
    public Optional<User> findById(Long id) {
       return userRepository.findById(id)
-            .filter(entity -> entity.getDeletedAt() == null)  // Excluir eliminados
+            .filter(entity -> entity.getDeletedAt() == null)
             .map(mapper::toDomain);
    }
 
    @Override
    public Optional<User> findByEmail(String email) {
       return userRepository.findByEmail(email)
-            .filter(entity -> entity.getDeletedAt() == null)  // Excluir eliminados
+            .filter(entity -> entity.getDeletedAt() == null)
             .map(mapper::toDomain);
    }
 
    @Override
    public List<User> findByCriteria(UserSearchCriteria criteria, int page, int size) {
-      // Crear especificación dinámica
+      // ✅ Construir Specification
       Specification<UserEntity> spec = buildSpecification(criteria);
 
-      // Crear paginación con ordenamiento
-      Sort sort = Sort.by(Sort.Direction.fromString(criteria.sortDirection()), criteria.sortBy());
-      PageRequest pageRequest = PageRequest.of(page, size, sort);
+      // ✅ Ordenamiento
+      Sort.Direction direction = "desc".equalsIgnoreCase(criteria.sortDirection())
+            ? Sort.Direction.DESC
+            : Sort.Direction.ASC;
 
-      // Ejecutar consulta
-      Page<UserEntity> pageResult = userRepository.findAll(spec, pageRequest);
+      Sort sort = Sort.by(direction, criteria.sortBy());
+      Pageable pageable = PageRequest.of(page, size, sort);
 
-      // Convertir a dominio
+      // ✅ Ejecutar query
+      Page<UserEntity> pageResult = userRepository.findAll(spec, pageable);
+
+      // ✅ Mapear a dominio
       return pageResult.getContent().stream()
             .map(mapper::toDomain)
-            .collect(Collectors.toList());
+            .toList();
    }
 
    @Override
@@ -80,46 +106,45 @@ public class UserPersistenceAdapter implements UserPersistencePort {
    // ========== HELPER: BUILD SPECIFICATION ==========
 
    /**
-    * Construye especificación JPA dinámica basada en criterios de búsqueda.
+    * Construye la especificación de búsqueda sin usar métodos deprecated.
     */
    private Specification<UserEntity> buildSpecification(UserSearchCriteria criteria) {
       return (root, query, cb) -> {
-         var predicates = new java.util.ArrayList<jakarta.persistence.criteria.Predicate>();
+         List<Predicate> predicates = new ArrayList<>();
 
-         // Filtrar por searchTerm (buscar en firstName, lastName, email)
-         if (criteria.searchTerm() != null && !criteria.searchTerm().isEmpty()) {
-            String searchPattern = "%" + criteria.searchTerm().toLowerCase() + "%";
-            predicates.add(cb.or(
-                  cb.like(cb.lower(root.get("firstName")), searchPattern),
-                  cb.like(cb.lower(root.get("lastName")), searchPattern),
-                  cb.like(cb.lower(root.get("email")), searchPattern)
-            ));
+         // ========== BÚSQUEDA GENERAL ==========
+         if (criteria.search() != null && !criteria.search().isBlank()) {
+            String searchLower = criteria.search().toLowerCase();
+            Predicate searchPredicate = cb.or(
+                  cb.like(cb.lower(root.get("firstName")), "%" + searchLower + "%"),
+                  cb.like(cb.lower(root.get("lastName")), "%" + searchLower + "%"),
+                  cb.like(cb.lower(root.get("email")), "%" + searchLower + "%"),
+                  cb.like(cb.lower(root.get("phoneNumber")), "%" + searchLower + "%")
+            );
+            predicates.add(searchPredicate);
          }
 
-         // Filtrar por status
+         // ========== FILTRO POR ROL ==========
+         if (criteria.roleId() != null) {
+            Join<UserEntity, RoleEntity> rolesJoin = root.join("roles");
+            predicates.add(cb.equal(rolesJoin.get("id"), criteria.roleId()));
+         }
+
+         // ========== FILTRO POR ESTADO ==========
          if (criteria.status() != null) {
             predicates.add(cb.equal(root.get("status"), criteria.status()));
          }
 
-         // Filtrar por emailVerified
+         // ========== FILTRO POR EMAIL VERIFICADO ==========
          if (criteria.emailVerified() != null) {
             predicates.add(cb.equal(root.get("emailVerified"), criteria.emailVerified()));
          }
 
-         // Filtrar por rol
-         if (criteria.roleName() != null && !criteria.roleName().isEmpty()) {
-            predicates.add(cb.isMember(
-                  criteria.roleName(),
-                  root.join("roles").get("name")
-            ));
-         }
+         // ========== EXCLUIR ELIMINADOS ==========
+         predicates.add(cb.isNull(root.get("deletedAt")));
 
-         // Incluir/excluir eliminados
-         if (criteria.includeDeleted() == null || !criteria.includeDeleted()) {
-            predicates.add(cb.isNull(root.get("deletedAt")));
-         }
-
-         return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+         // ========== COMBINAR TODOS LOS PREDICADOS ==========
+         return cb.and(predicates.toArray(new Predicate[0]));
       };
    }
 }

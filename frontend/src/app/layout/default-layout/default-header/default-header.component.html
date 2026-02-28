@@ -47,79 +47,78 @@
 <ng-template #userDropdown>
   <c-dropdown [popperOptions]="{ placement: 'bottom-start' }" variant="nav-item">
     <button [caret]="false" cDropdownToggle class="py-0 pe-0" aria-label="Open user menu">
+      <!-- ✅ Avatar con iniciales -->
       <c-avatar
         shape="rounded-1"
         size="md"
-        [src]="currentUser()?.profilePicture || './assets/images/avatars/8.jpg'"
+        [src]="profilePicture() || ''"
         status="success"
-        textColor="primary"
-        [alt]="currentUser()?.firstName || 'User avatar'"
-      />
+        color="primary"
+        textColor="white"
+        [alt]="fullName()">
+        {{ userInitials() }}
+      </c-avatar>
     </button>
-    <ul cDropdownMenu class="pt-0 w-auto">
-      <!-- User Info Header -->
+    <ul cDropdownMenu class="pt-0 user-dropdown-menu">
+      
+      <!-- ✅ User Info Card Header -->
+      <li class="user-info-header">
+        <div class="d-flex align-items-center gap-3 p-3">
+          <!-- Avatar grande con iniciales -->
+          <c-avatar
+            shape="rounded-1"
+            size="lg"
+            [src]="profilePicture() || ''"
+            color="primary"
+            textColor="white"
+            [alt]="fullName()">
+            <span class="fs-5 fw-bold">{{ userInitials() }}</span>
+          </c-avatar>
+          
+          <!-- User details -->
+          <div class="flex-grow-1">
+            <div class="fw-semibold text-body-emphasis">{{ fullName() }}</div>
+            <div class="small text-body-secondary">{{ userEmail() }}</div>
+            <c-badge [color]="roleBadgeColor()" class="mt-1">
+              {{ activeRole() }}
+            </c-badge>
+          </div>
+        </div>
+      </li>
+
       <li>
-        <h6 cDropdownHeader class="bg-body-secondary text-body-secondary fw-semibold py-2 rounded-top">
-          {{ currentUser()?.firstName }} {{ currentUser()?.lastName }}
-        </h6>
+        <hr cDropdownDivider class="my-0" />
       </li>
       
-      <!-- Profile -->
+      <!-- ✅ Menu Options -->
       <li>
-        <a cDropdownItem (click)="goToProfile()" style="cursor: pointer;">
+        <a cDropdownItem (click)="goToProfile()" class="dropdown-item-custom">
           <svg cIcon class="me-2" name="cilUser"></svg>
           Mi Perfil
         </a>
       </li>
       
-      <!-- Edit Profile -->
       <li>
-        <a cDropdownItem (click)="goToEditProfile()" style="cursor: pointer;">
+        <a cDropdownItem (click)="goToEditProfile()" class="dropdown-item-custom">
           <svg cIcon class="me-2" name="cilPencil"></svg>
           Editar Perfil
         </a>
       </li>
 
-      <!-- Change Password -->
       <li>
-        <a cDropdownItem (click)="goToChangePassword()" style="cursor: pointer;">
+        <a cDropdownItem (click)="goToChangePassword()" class="dropdown-item-custom">
           <svg cIcon class="me-2" name="cilLockLocked"></svg>
           Cambiar Contraseña
         </a>
       </li>
 
       <li>
-        <hr cDropdownDivider />
+        <hr cDropdownDivider class="my-0" />
       </li>
 
-      <!-- Settings Section -->
+      <!-- ✅ Logout -->
       <li>
-        <h6 cDropdownHeader class="bg-body-secondary text-body-secondary fw-semibold py-2">
-          Configuración
-        </h6>
-      </li>
-
-      <li>
-        <a cDropdownItem routerLink="/users">
-          <svg cIcon class="me-2" name="cilPeople"></svg>
-          Usuarios
-        </a>
-      </li>
-
-      <li>
-        <a cDropdownItem routerLink="/roles">
-          <svg cIcon class="me-2" name="cilSettings"></svg>
-          Roles
-        </a>
-      </li>
-
-      <li>
-        <hr cDropdownDivider />
-      </li>
-
-      <!-- Logout -->
-      <li>
-        <a cDropdownItem (click)="logout()" style="cursor: pointer;">
+        <a cDropdownItem (click)="logout()" class="dropdown-item-custom text-danger">
           <svg cIcon class="me-2" name="cilAccountLogout"></svg>
           Cerrar Sesión
         </a>

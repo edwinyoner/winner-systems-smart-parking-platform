@@ -88,7 +88,7 @@ export class VerifyEmailComponent implements OnInit {
         this.successMessage = 'Tu email ha sido verificado exitosamente. Ya puedes iniciar sesión.';
 
         if (environment.features.showDebugInfo) {
-          console.log('✅ Email verificado:', response);
+          console.log('Email verificado:', response);
         }
 
         // Redirigir al login después de 3 segundos
@@ -99,6 +99,7 @@ export class VerifyEmailComponent implements OnInit {
             }
           });
         }, 3000);
+        
       },
       error: (error) => {
         // Error en verificación
@@ -119,6 +120,7 @@ export class VerifyEmailComponent implements OnInit {
       }
     });
   }
+  
 
   /**
    * Reenvía el email de verificación
@@ -150,7 +152,7 @@ export class VerifyEmailComponent implements OnInit {
         this.successMessage = 'Email de verificación enviado. Por favor, revisa tu bandeja de entrada.';
 
         if (environment.features.showDebugInfo) {
-          console.log('✅ Email reenviado:', response);
+          console.log('Email reenviado:', response);
         }
 
         // Resetear formulario

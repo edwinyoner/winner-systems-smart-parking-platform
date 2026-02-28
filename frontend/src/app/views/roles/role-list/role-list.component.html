@@ -1,1 +1,307 @@
-<p>role-list works!</p>
+<div class="role-list-container">
+  
+  <!-- Page Header -->
+  <div class="page-header mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <h2 class="page-title mb-0">
+        <i class="fas fa-user-shield me-2"></i>
+        Gestión de Roles
+      </h2>
+      
+      @if (hasPermission('roles.create')) {
+        <button
+          class="btn btn-success"
+          (click)="createRole()">
+          <i class="fas fa-plus-circle me-2"></i>
+          Crear Nuevo Rol
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Success/Error Messages -->
+  @if (successMessage) {
+    <app-alert-message 
+      type="success" 
+      [message]="successMessage"
+      [dismissible]="true"
+      (onDismiss)="dismissSuccess()">
+    </app-alert-message>
+  }
+
+  @if (errorMessage) {
+    <app-alert-message 
+      type="error" 
+      [message]="errorMessage"
+      [dismissible]="true"
+      (onDismiss)="dismissError()">
+    </app-alert-message>
+  }
+
+  <!-- Filters Card -->
+  <div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <strong>
+        <i class="fas fa-filter me-2"></i>
+        Filtros de Búsqueda
+      </strong>
+      <button
+        class="btn btn-sm btn-outline-secondary"
+        (click)="clearFilters()">
+        <i class="fas fa-times me-1"></i>
+        Limpiar Filtros
+      </button>
+    </div>
+    <div class="card-body">
+      <form [formGroup]="filterForm">
+        <div class="row g-3">
+          
+          <!-- Search -->
+          <div class="col-md-8">
+            <label class="form-label fw-semibold">
+              <i class="fas fa-search me-2"></i>
+              Buscar
+            </label>
+            <input
+              type="text"
+              class="form-control"
+              formControlName="search"
+              placeholder="Nombre o descripción del rol...">
+          </div>
+
+          <!-- Status Filter -->
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">
+              <i class="fas fa-power-off me-2"></i>
+              Estado
+            </label>
+            <select class="form-select" formControlName="status">
+              <option value="">Todos</option>
+              <option value="true">Activo</option>
+              <option value="false">Inactivo</option>
+            </select>
+          </div>
+
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Roles Table Card -->
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <strong>
+        <i class="fas fa-list me-2"></i>
+        Lista de Roles ({{ totalItems }} roles)
+      </strong>
+      <div class="d-flex align-items-center gap-2">
+        <label class="mb-0 me-2 fw-semibold">Mostrar:</label>
+        <select 
+          class="form-select form-select-sm" 
+          style="width: auto;" 
+          [value]="pageSize" 
+          (change)="onPageSizeChange($event)">
+          @for (size of pageSizeOptions; track size) {
+            <option [value]="size">{{ size }}</option>
+          }
+        </select>
+      </div>
+    </div>
+    
+    <div class="card-body">
+      
+      <!-- Loading State -->
+      @if (isLoading) {
+        <div class="text-center py-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+          </div>
+          <p class="mt-3 text-muted">Cargando roles...</p>
+        </div>
+      }
+
+      <!-- Table -->
+      @if (!isLoading && roles.length > 0) {
+        <div class="table-responsive">
+          <table class="table table-striped table-hover align-middle">
+            <thead>
+              <tr>
+                <th style="width: 60px;" class="text-center">ID</th>
+                <th>Nombre del Rol</th>
+                <th>Descripción</th>
+                <th class="text-center">Permisos</th>
+                <th class="text-center">Estado</th>
+                <th class="text-center">Fecha Creación</th>
+                <th class="text-center" style="width: 200px;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (role of roles; track role.id) {
+                <tr>
+                  <!-- ID -->
+                  <td class="text-center">
+                    <span class="badge bg-secondary">{{ role.id }}</span>
+                  </td>
+
+                  <!-- Nombre -->
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <i class="fas fa-user-shield me-2 text-primary"></i>
+                      <strong>{{ role.name }}</strong>
+                    </div>
+                  </td>
+
+                  <!-- Descripción -->
+                  <td>
+                    <span class="text-muted">{{ role.description || 'Sin descripción' }}</span>
+                  </td>
+
+                  <!-- Permisos -->
+                  <td class="text-center">
+                    <span class="badge bg-info">
+                      <i class="fas fa-key me-1"></i>
+                      {{ getPermissionCount(role) }} permisos
+                    </span>
+                  </td>
+
+                  <!-- Estado -->
+                  <td class="text-center">
+                    <span 
+                      class="badge" 
+                      [class.bg-success]="role.status" 
+                      [class.bg-danger]="!role.status">
+                      <i 
+                        class="fas me-1" 
+                        [class.fa-check-circle]="role.status" 
+                        [class.fa-times-circle]="!role.status">
+                      </i>
+                      {{ role.status ? 'Activo' : 'Inactivo' }}
+                    </span>
+                  </td>
+
+                  <!-- Fecha -->
+                  <td class="text-center">
+                    <small class="text-muted">{{ formatDate(role.createdAt) }}</small>
+                  </td>
+
+                  <!-- Acciones -->
+                  <td class="text-center">
+                    <div class="btn-group btn-group-sm" role="group">
+                      
+                      @if (hasPermission('roles.read')) {
+                        <button 
+                          class="btn btn-outline-info" 
+                          (click)="viewRole(role.id)" 
+                          title="Ver detalles">
+                          <i class="fas fa-eye"></i>
+                        </button>
+                      }
+
+                      @if (hasPermission('roles.update')) {
+                        <button 
+                          class="btn btn-outline-warning" 
+                          (click)="editRole(role.id)" 
+                          title="Editar">
+                          <i class="fas fa-edit"></i>
+                        </button>
+                      }
+
+                      @if (hasPermission('roles.delete')) {
+                        <button 
+                          class="btn btn-outline-danger" 
+                          (click)="confirmDelete(role)" 
+                          title="Eliminar">
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-3">
+          <div class="text-muted">
+            Mostrando {{ (currentPage - 1) * pageSize + 1 }} - 
+            {{ Math.min(currentPage * pageSize, totalItems) }} 
+            de {{ totalItems }} roles
+          </div>
+
+          <nav aria-label="Page navigation">
+            <ul class="pagination pagination-sm mb-0">
+              <li class="page-item" [class.disabled]="currentPage === 1">
+                <a class="page-link" (click)="goToPage(currentPage - 1)" style="cursor: pointer;">&laquo;</a>
+              </li>
+
+              @for (page of getPages(); track page) {
+                <li class="page-item" [class.active]="page === currentPage">
+                  <a class="page-link" (click)="goToPage(page)" style="cursor: pointer;">{{ page }}</a>
+                </li>
+              }
+
+              <li class="page-item" [class.disabled]="currentPage === totalPages">
+                <a class="page-link" (click)="goToPage(currentPage + 1)" style="cursor: pointer;">&raquo;</a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      }
+
+      <!-- Empty State -->
+      @if (!isLoading && roles.length === 0) {
+        <div class="text-center py-5">
+          <i class="fas fa-user-shield fa-3x text-muted mb-3"></i>
+          <h5 class="text-muted">No se encontraron roles</h5>
+          <p class="text-muted">Intenta ajustar los filtros o crea un nuevo rol</p>
+          
+          @if (hasPermission('roles.create')) {
+            <button class="btn btn-primary" (click)="createRole()">
+              <i class="fas fa-plus-circle me-2"></i>
+              Crear Rol
+            </button>
+          }
+        </div>
+      }
+
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  @if (showDeleteConfirm && roleToDelete) {
+    <div class="modal-backdrop fade show"></div>
+    <div class="modal fade show d-block" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+          <div class="modal-header bg-danger text-white">
+            <h5 class="modal-title">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              Confirmar Eliminación
+            </h5>
+            <button type="button" class="btn-close btn-close-white" (click)="cancelDelete()"></button>
+          </div>
+          <div class="modal-body p-4">
+            <p>¿Estás seguro de eliminar el rol <strong>"{{ roleToDelete.name }}"</strong>?</p>
+            <p class="text-danger mb-0">
+              <i class="fas fa-exclamation-circle me-2"></i>
+              Esta acción no se puede deshacer. Asegúrate de que ningún usuario tenga este rol asignado.
+            </p>
+          </div>
+          <div class="modal-footer bg-light">
+            <button type="button" class="btn btn-secondary" (click)="cancelDelete()">
+              <i class="fas fa-times me-2"></i>
+              Cancelar
+            </button>
+            <button type="button" class="btn btn-danger" (click)="deleteRole()">
+              <i class="fas fa-trash me-2"></i>
+              Eliminar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+</div>

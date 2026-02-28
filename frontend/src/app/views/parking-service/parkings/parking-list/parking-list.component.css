@@ -1,0 +1,41 @@
+/* parking-list/parking-list.component.css */
+
+/* Ajustes de tabla */
+table th {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+  color: var(--cui-secondary);
+  border-bottom: 2px solid var(--cui-border-color);
+}
+
+table td {
+  vertical-align: middle;
+}
+
+/* Badges personalizados */
+c-badge {
+  font-weight: 500;
+  padding: 4px 10px;
+}
+
+/* Dropdown de acciones */
+[cDropdownToggle] {
+  padding: 2px 8px;
+}
+
+/* Paginación compacta */
+c-pagination {
+  margin-bottom: 0;
+}
+
+/* Responsive - ocultar columnas en móvil */
+@media (max-width: 768px) {
+  table th:nth-child(3),
+  table td:nth-child(3),
+  table th:nth-child(6),
+  table td:nth-child(6) {
+    display: none;
+  }
+}

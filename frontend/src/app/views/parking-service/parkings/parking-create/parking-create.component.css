@@ -1,0 +1,32 @@
+/* parking-create/parking-create.component.css */
+
+.step-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.step-completed {
+  background-color: var(--cui-success);
+  color: white;
+  border: 2px solid var(--cui-success);
+}
+
+.step-active {
+  background-color: var(--cui-primary);
+  color: white;
+  border: 2px solid var(--cui-primary);
+  box-shadow: 0 0 0 3px rgba(var(--cui-primary-rgb), 0.2);
+}
+
+.step-pending {
+  background-color: var(--cui-secondary-bg);
+  color: var(--cui-secondary-color);
+  border: 2px solid var(--cui-border-color);
+}

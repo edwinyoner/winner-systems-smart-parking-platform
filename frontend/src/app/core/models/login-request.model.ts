@@ -6,7 +6,7 @@ export interface LoginRequest {
   password: string;
   rememberMe?: boolean;
   captchaToken?: string;
-  selectedRole?: string;  // ✅ NUEVO: Rol seleccionado al login
+  selectedRole?: string;  // NUEVO: Rol seleccionado al login
 }
 
 /**

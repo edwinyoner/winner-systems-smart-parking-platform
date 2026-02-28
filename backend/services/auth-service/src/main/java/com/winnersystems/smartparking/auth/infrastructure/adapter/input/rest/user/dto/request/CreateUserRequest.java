@@ -56,7 +56,7 @@ public record CreateUserRequest(
       String phoneNumber,
 
       @NotEmpty(message = "Debe asignar al menos un rol")
-      Set<String> roles,  // ✅ String en lugar de RoleType
+      Set<String> roles,  // String en lugar de RoleType
 
       String captchaToken  // Opcional
 ) {

@@ -5,27 +5,13 @@ import java.util.List;
 /**
  * Respuesta paginada genérica.
  *
- * <p>Contiene datos paginados y metadata de navegación.
- * Usa factory methods estáticos para construcción conveniente.</p>
- *
- * @param <T> tipo de datos en la lista
- * @param content lista de elementos de la página actual
- * @param currentPage página actual (0-based)
- * @param pageSize tamaño de página solicitado
- * @param totalElements total de elementos en BD
- * @param totalPages total de páginas
- * @param first true si es la primera página
- * @param last true si es la última página
- * @param hasNext true si hay página siguiente
- * @param hasPrevious true si hay página anterior
- *
  * @author Edwin Yoner Winner Systems - Smart Parking Platform
  * @version 1.0
  */
 public record PagedResponse<T>(
       List<T> content,
-      int currentPage,
-      int pageSize,
+      int number,              // CAMBIO: currentPage → number
+      int size,                // CAMBIO: pageSize → size
       long totalElements,
       int totalPages,
       boolean first,
@@ -35,13 +21,6 @@ public record PagedResponse<T>(
 ) {
    /**
     * Crea una respuesta paginada sin paginación real.
-    *
-    * <p>Útil cuando se retorna una lista completa como si fuera
-    * una sola página (ej: filtros que retornan pocos resultados).</p>
-    *
-    * @param content lista completa de elementos
-    * @param <T> tipo de elementos
-    * @return respuesta paginada con una sola página
     */
    public static <T> PagedResponse<T> of(List<T> content) {
       return new PagedResponse<>(
@@ -59,28 +38,18 @@ public record PagedResponse<T>(
 
    /**
     * Crea una respuesta paginada con cálculo automático de metadata.
-    *
-    * <p>Calcula automáticamente totalPages, first, last, hasNext, hasPrevious
-    * basándose en los parámetros proporcionados.</p>
-    *
-    * @param content lista de elementos de la página actual
-    * @param currentPage página actual (0-based)
-    * @param pageSize tamaño de página
-    * @param totalElements total de elementos en BD
-    * @param <T> tipo de elementos
-    * @return respuesta paginada con metadata calculada
     */
-   public static <T> PagedResponse<T> of(List<T> content, int currentPage, int pageSize, long totalElements) {
-      int totalPages = (int) Math.ceil((double) totalElements / pageSize);
-      boolean first = currentPage == 0;
-      boolean last = currentPage >= totalPages - 1;
-      boolean hasNext = currentPage < totalPages - 1;
-      boolean hasPrevious = currentPage > 0;
+   public static <T> PagedResponse<T> of(List<T> content, int page, int size, long totalElements) {
+      int totalPages = (int) Math.ceil((double) totalElements / size);
+      boolean first = page == 0;
+      boolean last = page >= totalPages - 1;
+      boolean hasNext = page < totalPages - 1;
+      boolean hasPrevious = page > 0;
 
       return new PagedResponse<>(
             content,
-            currentPage,
-            pageSize,
+            page,
+            size,
             totalElements,
             totalPages,
             first,

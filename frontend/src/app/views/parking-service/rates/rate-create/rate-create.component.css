@@ -1,0 +1,174 @@
+/* src/app/views/parking-service/rates/rate-create/rate-create.component.css */
+
+.rate-create-container {
+  padding: 1.5rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 1.5rem;
+}
+
+.page-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--bs-body-color);
+  margin-bottom: 0.5rem;
+}
+
+.breadcrumb {
+  background-color: transparent;
+  padding: 0;
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.breadcrumb-item a {
+  color: var(--bs-primary);
+  text-decoration: none;
+}
+
+.breadcrumb-item a:hover {
+  text-decoration: underline;
+}
+
+/* Card */
+.card {
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.card-header {
+  font-weight: 600;
+  background-color: var(--bs-secondary-bg);
+  border-bottom: 1px solid var(--bs-border-color);
+}
+
+/* Form */
+.form-label.required::after {
+  content: " *";
+  color: var(--bs-danger);
+}
+
+.form-control{
+  border-color: var(--bs-border-color);
+  transition: all 0.2s ease;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--bs-primary);
+  box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
+}
+
+.is-invalid {
+  border-color: var(--bs-danger);
+}
+
+.invalid-feedback {
+  display: block;
+  color: var(--bs-danger);
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+/* Amount Preview */
+.amount-preview {
+  padding: 1rem;
+  background-color: var(--bs-secondary-bg);
+  border: 2px dashed var(--bs-border-color);
+  border-radius: 0.5rem;
+  text-align: center;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.preview-amount {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--bs-success);
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+/* Input Group */
+.input-group-text {
+  background-color: var(--bs-secondary-bg);
+  border-color: var(--bs-border-color);
+  font-weight: 600;
+}
+
+.status-toggle-card:hover {
+  /* background-color: var(--bs-tertiary-bg); */
+  background-color: white;
+}
+
+/* Switch */
+.form-check-input {
+  cursor: pointer;
+  width: 3rem;
+  height: 1.5rem;
+}
+
+.form-check-input:checked {
+  /* background-color: var(--bs-success);
+  border-color: var(--bs-success); */
+  background-color: green;
+  border-color: white;
+}
+
+.form-check-input:not(:checked) {
+  /* background-color: var(--bs-danger);
+  border-color: var(--bs-danger); */
+  background-color: rgb(248, 54, 54);
+  border-color: white;
+}
+
+/* .form-check-input:focus {
+  box-shadow: 0 0 0 0.25rem rgba(var(--bs-success-rgb), 0.25);
+} */
+
+/* Buttons */
+.btn {
+  padding: 0.5rem 1.5rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .rate-create-container {
+    padding: 1rem;
+  }
+
+  .page-title {
+    font-size: 1.5rem;
+  }
+
+  .d-flex.gap-2 {
+    flex-direction: column;
+  }
+
+  .d-flex.gap-2 button {
+    width: 100%;
+  }
+
+  .preview-amount {
+    font-size: 1.5rem;
+  }
+}

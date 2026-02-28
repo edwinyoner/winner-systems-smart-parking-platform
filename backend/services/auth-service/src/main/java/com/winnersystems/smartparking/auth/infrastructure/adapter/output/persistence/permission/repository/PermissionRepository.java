@@ -4,6 +4,7 @@ import com.winnersystems.smartparking.auth.infrastructure.adapter.output.persist
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -31,4 +32,9 @@ public interface PermissionRepository extends JpaRepository<PermissionEntity, Lo
     * @return Optional con la entidad si existe
     */
    Optional<PermissionEntity> findByName(String name);
+
+   /**
+    * Busca todos los permisos activos y no eliminados
+    */
+   List<PermissionEntity> findByStatusTrueAndDeletedAtIsNull();
 }

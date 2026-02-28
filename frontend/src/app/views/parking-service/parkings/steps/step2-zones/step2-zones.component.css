@@ -1,0 +1,15 @@
+/* steps/step2-zones/step2-zones.component.css */
+
+.add-zone-btn {
+  border-style: dashed;
+  transition: background-color 0.2s ease;
+}
+
+.add-zone-btn:hover {
+  background-color: var(--cui-secondary-bg);
+}
+
+.summary-card {
+  background-color: var(--cui-tertiary-bg);
+  border-color: var(--cui-border-color);
+}

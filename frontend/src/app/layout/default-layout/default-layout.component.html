@@ -1,52 +1,81 @@
 <!--sidebar-->
-<!-- colorScheme="light" dark -->
-<c-sidebar #sidebar1="cSidebar" class="d-print-none sidebar sidebar-fixed border-end" colorScheme="light" id="sidebar1"
-  visible>
-  <!-- <c-sidebar-header class="border-bottom">
-    <c-sidebar-brand [routerLink]="[]">
-      <svg [class]="{icon: false}" cIcon class="sidebar-brand-full" height="32" name="logo" title="CoreUI Logo"></svg>
-      <svg cIcon class="sidebar-brand-narrow" height="32" name="signet" title="CoreUI Logo"></svg>
-    </c-sidebar-brand>
-  </c-sidebar-header> -->
-
+<c-sidebar #sidebar1="cSidebar" class="d-print-none sidebar sidebar-fixed border-end" colorScheme="light" id="sidebar1" visible>
+  
+  <!-- HEADER CON LOGO -->
   <c-sidebar-header class="border-bottom">
-  <c-sidebar-brand [routerLink]="[]" style="display: flex; justify-content: center; width: 100%;">
-    <!-- Logo completo -->
-    <div class="sidebar-brand-full" style="width: 100%; display: flex; justify-content: center;">
-      <div style="display: flex; flex-direction: column; align-items: center;">
-        <div style="line-height: 1;">
-          <span style="font-size: 1.3rem; font-weight: 700; color: #1d6eb1;">SMART</span>
-          <span style="font-size: 1.3rem; font-weight: 700; color: #a0663a; margin-left: 0.25rem;">PARKING</span>
+    <c-sidebar-brand [routerLink]="[]" style="display: flex; justify-content: center; width: 100%;">
+      <div class="sidebar-brand-full" style="width: 100%; display: flex; justify-content: center;">
+        <div style="display: flex; flex-direction: column; align-items: center;">
+          <div style="line-height: 1;">
+            <span style="font-size: 1.3rem; font-weight: 700; color: #1d6eb1;">SMART</span>
+            <span style="font-size: 1.3rem; font-weight: 700; color: #a0663a; margin-left: 0.25rem;">PARKING</span>
+          </div>
+          <span style="font-size: 0.5rem; font-weight: 500; color: #78909C; margin-top: 0.15rem; letter-spacing: 1px;">PLATFORM</span>
         </div>
-        <span style="font-size: 0.5rem; font-weight: 500; color: #78909C; margin-top: 0.15rem; letter-spacing: 1px;">WINNER SYSTEMS</span>
+      </div>
+    </c-sidebar-brand>
+  </c-sidebar-header>
+
+  <!-- INFO DEL USUARIO -->
+  <div class="user-info-sidebar border-bottom p-3">
+    <div class="d-flex align-items-center">
+      <!-- Avatar -->
+      <div class="user-avatar me-3">
+        @if (profilePicture) {
+          <img [src]="profilePicture" [alt]="fullName" class="rounded-circle" width="48" height="48">
+        } @else {
+          <div class="avatar-placeholder rounded-circle d-flex align-items-center justify-content-center" 
+               style="width: 48px; height: 48px; background: #1d6eb1; color: white; font-weight: 600;">
+            {{ userInitials }}
+          </div>
+        }
+      </div>
+      
+      <!-- Info del Usuario -->
+      <div class="user-details flex-grow-1">
+        <div class="user-name fw-semibold text-truncate" style="max-width: 150px; font-size: 0.9rem;">
+          {{ fullName }}
+        </div>
+        <div class="user-role mt-1">
+          <span class="badge" [ngClass]="roleBadgeClass" style="font-size: 0.7rem;">
+            <i class="fas fa-shield-alt me-1"></i>
+            {{ activeRole }}
+          </span>
+        </div>
       </div>
     </div>
-  </c-sidebar-brand>
-</c-sidebar-header>
+  </div>
 
+  <!-- MENÚ DE NAVEGACIÓN -->
   <ng-scrollbar pointerEventsMethod="scrollbar" visibility="hover">
     <c-sidebar-nav [navItems]="navItems" dropdownMode="close" compact />
   </ng-scrollbar>
 
+  <!-- FOOTER DEL SIDEBAR -->
   @if (!sidebar1.narrow) {
-  <c-sidebar-footer cSidebarToggle="sidebar1" class="border-top d-none d-lg-flex" toggle="unfoldable"
-    style="cursor: pointer;">
-    <button cSidebarToggler aria-label="Toggle sidebar fold"></button>
-  </c-sidebar-footer>
+    <c-sidebar-footer cSidebarToggle="sidebar1" class="border-top d-none d-lg-flex" toggle="unfoldable" style="cursor: pointer;">
+      <button cSidebarToggler aria-label="Toggle sidebar fold"></button>
+    </c-sidebar-footer>
   }
 </c-sidebar>
 
-<!--main-->
+<!--CONTENIDO PRINCIPAL-->
 <div class="wrapper d-flex flex-column min-vh-100">
-  <!--app-header-->
-  <app-default-header [cShadowOnScroll]="'sm'" class="mb-4 d-print-none header header-sticky p-0 shadow-sm"
-    position="sticky" sidebarId="sidebar1" />
-  <!--app-body-->
+  
+  <!-- HEADER -->
+  <app-default-header 
+    [cShadowOnScroll]="'sm'" 
+    class="mb-4 d-print-none header header-sticky p-0 shadow-sm"
+    position="sticky" 
+    sidebarId="sidebar1" />
+  
+  <!-- BODY -->
   <div class="body flex-grow-1">
     <c-container breakpoint="lg" class="h-auto px-4">
       <router-outlet />
     </c-container>
   </div>
-  <!--app footer-->
-  <app-default-footer/>
+  
+  <!-- FOOTER -->
+  <app-default-footer />
 </div>

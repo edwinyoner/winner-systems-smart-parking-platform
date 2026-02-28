@@ -1,1 +1,230 @@
-<p>user-create works!</p>
+<div class="user-create-container">
+
+  <!-- Page Header -->
+  <div class="page-header mb-4">
+    <div>
+      <h2 class="page-title">
+        <i class="fas fa-user-plus me-2"></i>
+        Bienvenido a la gestión de usuarios
+      </h2>
+    </div>
+  </div>
+
+  <!-- Success/Error Messages -->
+  @if (successMessage) {
+  <app-alert-message type="success" [message]="successMessage" [dismissible]="true" (onDismiss)="dismissSuccess()">
+  </app-alert-message>
+  }
+
+  @if (errorMessage) {
+  <app-alert-message type="error" [message]="errorMessage" [dismissible]="true" (onDismiss)="dismissError()">
+  </app-alert-message>
+  }
+
+  <!-- Two Column Layout -->
+  <div class="row">
+
+    <!-- LEFT COLUMN: Create User Form -->
+    <div class="col-lg-6 mb-4">
+      <div class="card card-cyan">
+        <div class="card-header">
+          <i class="fas fa-user-plus me-2"></i>
+          Crear Nuevo Usuario
+        </div>
+        <div class="card-body">
+
+          <form [formGroup]="userForm" (ngSubmit)="onSubmit()">
+
+            <!-- First Name -->
+            <div class="form-group mb-3">
+              <label for="firstName" class="form-label">
+                <i class="fas fa-user me-2"></i>
+                Nombre del Usuario
+              </label>
+              <input type="text" id="firstName" class="form-control"
+                [class.is-invalid]="hasError('firstName', 'required') || hasError('firstName', 'minlength')"
+                formControlName="firstName" placeholder="Ingresa el nombre">
+              @if (hasError('firstName', 'required') || hasError('firstName', 'minlength')) {
+              <div class="invalid-feedback">
+                {{ getErrorMessage('firstName') }}
+              </div>
+              }
+            </div>
+
+            <!-- Last Name -->
+            <div class="form-group mb-3">
+              <label for="lastName" class="form-label">
+                <i class="fas fa-user me-2"></i>
+                Apellido
+              </label>
+              <input type="text" id="lastName" class="form-control"
+                [class.is-invalid]="hasError('lastName', 'required') || hasError('lastName', 'minlength')"
+                formControlName="lastName" placeholder="Ingresa el apellido">
+              @if (hasError('lastName', 'required') || hasError('lastName', 'minlength')) {
+              <div class="invalid-feedback">
+                {{ getErrorMessage('lastName') }}
+              </div>
+              }
+            </div>
+
+            <!-- Email -->
+            <div class="form-group mb-3">
+              <label for="email" class="form-label">
+                <i class="fas fa-envelope me-2"></i>
+                Correo Electrónico
+              </label>
+              <input type="email" id="email" class="form-control"
+                [class.is-invalid]="hasError('email', 'required') || hasError('email', 'email')" formControlName="email"
+                placeholder="correo@ejemplo.com">
+              @if (hasError('email', 'required') || hasError('email', 'email')) {
+              <div class="invalid-feedback">
+                {{ getErrorMessage('email') }}
+              </div>
+              }
+            </div>
+
+            <!-- Phone Number -->
+            <div class="form-group mb-3">
+              <label for="phoneNumber" class="form-label">
+                <i class="fas fa-phone me-2"></i>
+                Teléfono (opcional)
+              </label>
+              <input type="tel" id="phoneNumber" class="form-control"
+                [class.is-invalid]="hasError('phoneNumber', 'pattern')" formControlName="phoneNumber"
+                placeholder="+51987654321">
+              @if (hasError('phoneNumber', 'pattern')) {
+              <div class="invalid-feedback">
+                {{ getErrorMessage('phoneNumber') }}
+              </div>
+              }
+            </div>
+
+            <!-- Password Info -->
+            <div class="alert alert-info" role="alert">
+              <i class="fas fa-lock me-2"></i>
+              La contraseña se generará automáticamente de forma segura.
+            </div>
+
+            <!-- Roles Selection -->
+            <div class="form-group mb-4">
+              <label class="form-label">
+                <i class="fas fa-user-shield me-2"></i>
+                Roles
+              </label>
+              <div class="roles-container">
+                @for (role of roles; track role.id) {
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" [id]="'role-' + role.id"
+                    [checked]="isRoleSelected(role.id)" (change)="onRoleChange(role.id, $event)">
+                  <label class="form-check-label" [for]="'role-' + role.id">
+                    {{ role.name }}
+                  </label>
+                </div>
+                }
+              </div>
+              @if (hasError('roleIds', 'required')) {
+              <div class="text-danger mt-2">
+                <small>Debe seleccionar al menos un rol</small>
+              </div>
+              }
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-secondary" (click)="cancel()" [disabled]="isLoading">
+                <i class="fas fa-arrow-left me-2"></i>
+                Volver a Usuarios
+              </button>
+
+              <button type="submit" class="btn btn-success" [disabled]="isLoading || userForm.invalid">
+                @if (!isLoading) {
+                <i class="fas fa-plus-circle me-2"></i>
+                <span>Crear Usuario</span>
+                } @else {
+                <i class="fas fa-spinner fa-spin me-2"></i>
+                <span>Creando...</span>
+                }
+              </button>
+            </div>
+
+          </form>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: Generated Credentials -->
+    <div class="col-lg-6 mb-4">
+      <div class="card card-warning">
+        <div class="card-header">
+          <i class="fas fa-key me-2"></i>
+          Credenciales Generadas
+        </div>
+        <div class="card-body">
+
+          @if (!generatedCredentials) {
+          <div class="text-center py-5">
+            <i class="fas fa-info-circle fa-3x text-muted mb-3"></i>
+            <p class="text-muted">
+              Las credenciales aparecerán aquí una vez que se cree el usuario.
+            </p>
+          </div>
+          }
+
+          @if (generatedCredentials) {
+          <div class="alert alert-warning" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Usuario creado exitosamente</strong>
+          </div>
+
+          <div class="credentials-box mb-3">
+            <div class="credential-item">
+              <strong>Nombre:</strong>
+              <span>{{ generatedCredentials.firstName }}</span>
+            </div>
+
+            <div class="credential-item">
+              <strong>Correo:</strong>
+              <span>{{ generatedCredentials.email }}</span>
+            </div>
+
+            <div class="credential-item">
+              <strong>Contraseña:</strong>
+              <span class="password-text">{{ generatedCredentials.password }}</span>
+            </div>
+
+            <div class="credential-item">
+              <strong>Link del Sistema:</strong>
+              <a [href]="generatedCredentials.loginUrl" target="_blank" class="link-primary">
+                {{ generatedCredentials.loginUrl }}
+              </a>
+            </div>
+          </div>
+
+          <div class="alert alert-info" role="alert">
+            <i class="fas fa-envelope me-2"></i>
+            El usuario podrá usar estas credenciales para iniciar sesión.
+          </div>
+
+          <button type="button" class="btn btn-primary" (click)="sendCredentialsByEmail()" [disabled]="isSendingEmail">
+            @if (!isSendingEmail) {
+            <i class="fas fa-paper-plane me-2"></i>
+            <span>Enviar Credenciales por Email</span>
+            } @else {
+            <i class="fas fa-spinner fa-spin me-2"></i>
+            <span>Enviando...</span>
+            }
+          </button>
+
+          <p class="text-muted text-center mt-3 mb-0">
+            <small>Se enviará un correo con las credenciales y link de verificación.</small>
+          </p>
+          }
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>

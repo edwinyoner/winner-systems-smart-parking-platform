@@ -1,7 +1,9 @@
 package com.winnersystems.smartparking.auth.infrastructure.adapter.output.persistence.user.mapper;
 
+import com.winnersystems.smartparking.auth.domain.model.Permission;
 import com.winnersystems.smartparking.auth.domain.model.Role;
 import com.winnersystems.smartparking.auth.domain.model.User;
+import com.winnersystems.smartparking.auth.infrastructure.adapter.output.persistence.permission.entity.PermissionEntity;
 import com.winnersystems.smartparking.auth.infrastructure.adapter.output.persistence.role.entity.RoleEntity;
 import com.winnersystems.smartparking.auth.infrastructure.adapter.output.persistence.user.entity.UserEntity;
 import org.springframework.stereotype.Component;
@@ -93,7 +95,7 @@ public class UserPersistenceMapper {
       user.setDeletedAt(entity.getDeletedAt());
       user.setDeletedBy(entity.getDeletedBy());
 
-      // Roles
+      // Roles CON PERMISOS
       if (entity.getRoles() != null) {
          user.setRoles(
                entity.getRoles().stream()
@@ -136,6 +138,49 @@ public class UserPersistenceMapper {
          role.deactivate();
       }
 
+      // ✅ MAPEAR PERMISOS (AQUÍ ESTABA EL PROBLEMA)
+      if (entity.getPermissions() != null) {
+         role.setPermissions(
+               entity.getPermissions().stream()
+                     .map(this::permissionToDomain)
+                     .collect(Collectors.toSet())
+         );
+      }
+
       return role;
+   }
+
+   // ============================================================
+   // HELPERS: PERMISSION MAPPING
+   // ============================================================
+
+   private PermissionEntity permissionToEntity(Permission permission) {
+      if (permission == null) return null;
+
+      PermissionEntity entity = new PermissionEntity();
+      entity.setId(permission.getId());
+      entity.setName(permission.getName());
+      entity.setDescription(permission.getDescription());
+      entity.setStatus(permission.getStatus());
+
+      return entity;
+   }
+
+   private Permission permissionToDomain(PermissionEntity entity) {
+      if (entity == null) return null;
+
+      Permission permission = new Permission();
+      permission.setId(entity.getId());
+      permission.setName(entity.getName());
+      permission.setDescription(entity.getDescription());
+
+      // Status - usar método de dominio
+      if (entity.isStatus()) {
+         permission.activate();
+      } else {
+         permission.deactivate();
+      }
+
+      return permission;
    }
 }

@@ -73,7 +73,7 @@ export class AuthService {
     
     // Debug info
     if (environment.features.showDebugInfo) {
-      console.log('✅ Login exitoso:', {
+      console.log('Login exitoso:', {
         user: response.user.email,
         roles: response.user.roles,
         expiresIn: `${response.expiresIn / 1000 / 60} minutos`
@@ -169,6 +169,13 @@ export class AuthService {
       catchError(this.handleError)
     );
   }
+
+  /**
+ * Actualiza el perfil del usuario actual
+ */
+updateProfile(data: {firstName: string, lastName: string, phoneNumber?: string | null}): Observable<any> {
+  return this.http.put(`${this.API_URL}/profile`, data);
+}
 
   /**
    * Restablece la contraseña con el token recibido por email

@@ -210,4 +210,9 @@ public interface TokenPersistencePort {
     * @param userId ID del usuario
     */
    void revokePasswordResetTokensByUserId(Long userId);
+
+   /**
+    * Busca tokens de verificación por usuario
+    */
+   Optional<VerificationToken> findVerificationTokenByUserId(Long userId);
 }

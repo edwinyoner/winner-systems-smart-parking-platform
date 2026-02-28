@@ -60,4 +60,10 @@ public interface RolePersistencePort {
     * @return rol guardado con ID generado
     */
    Role save(Role role);
+
+   /**
+    * Obtiene todos los roles activos
+    */
+   List<Role> findAllActive();
+
 }

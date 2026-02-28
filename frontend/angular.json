@@ -117,6 +117,7 @@
   },
   "schematics": {
     "@schematics/angular:component": {
+      "style": "css",
       "type": "component"
     },
     "@schematics/angular:directive": {

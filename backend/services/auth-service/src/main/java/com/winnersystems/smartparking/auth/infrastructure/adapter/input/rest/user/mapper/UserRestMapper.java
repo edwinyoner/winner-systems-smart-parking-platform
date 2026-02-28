@@ -95,7 +95,7 @@ public class UserRestMapper {
             dto.email(),
             dto.phoneNumber(),
             dto.profilePicture(),
-            dto.status() ? "ACTIVE" : "INACTIVE",
+            dto.status(),
             dto.emailVerified(),
             dto.roles() != null ? dto.roles().stream()
                   .map(roleName -> new UserResponse.RoleInfo(

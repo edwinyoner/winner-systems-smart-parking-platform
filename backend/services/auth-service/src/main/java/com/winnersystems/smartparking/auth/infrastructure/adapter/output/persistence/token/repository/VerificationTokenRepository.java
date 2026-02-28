@@ -42,4 +42,9 @@ public interface VerificationTokenRepository extends JpaRepository<VerificationT
     * @param userId ID del usuario
     */
    void deleteByUserId(Long userId);
+
+   /**
+    * Busca token de verificación por ID de usuario
+    */
+   Optional<VerificationTokenEntity> findByUserId(Long userId);
 }

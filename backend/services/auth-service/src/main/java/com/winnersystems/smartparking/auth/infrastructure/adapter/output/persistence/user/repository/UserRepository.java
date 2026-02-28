@@ -27,31 +27,13 @@ import java.util.Optional;
  * @version 1.0
  */
 @Repository
-public interface UserRepository extends JpaRepository<UserEntity, Long>,
-      JpaSpecificationExecutor<UserEntity> {
+public interface UserRepository extends JpaRepository<UserEntity, Long>, JpaSpecificationExecutor<UserEntity> {
 
-   /**
-    * Busca un usuario por su email único.
-    *
-    * <p>Usado en:</p>
-    * <ul>
-    *   <li>LoginUseCase - Autenticación</li>
-    *   <li>CreateUserUseCase - Validar email único</li>
-    *   <li>ForgotPasswordUseCase - Buscar usuario para reset</li>
-    * </ul>
-    *
-    * @param email email del usuario
-    * @return Optional con la entidad si existe
-    */
-   @EntityGraph(attributePaths = {"roles", "roles.permissions"})
+   @EntityGraph(attributePaths = {"roles", "roles.permissions"})  // ✅ CARGA EAGER
    Optional<UserEntity> findByEmail(String email);
 
-   /**
-    * Verifica si existe un usuario con el email especificado.
-    *
-    * @param email email a verificar
-    * @return true si existe, false si no
-    */
-   boolean existsByEmail(String email);
+   @EntityGraph(attributePaths = {"roles", "roles.permissions"})  // ✅ CARGA EAGER
+   Optional<UserEntity> findById(Long id);
 
+   boolean existsByEmail(String email);
 }

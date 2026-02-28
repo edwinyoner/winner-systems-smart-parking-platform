@@ -1,0 +1,92 @@
+<div class="document-type-edit-container">
+
+  <div class="page-header mb-4">
+    <h2 class="page-title"><i class="fas fa-edit me-2"></i>Editar Tipo de Documento</h2>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a routerLink="/dashboard">Inicio</a></li>
+        <li class="breadcrumb-item"><a routerLink="/document-types">Tipos de Documento</a></li>
+        <li class="breadcrumb-item active">Editar</li>
+      </ol>
+    </nav>
+  </div>
+
+  @if (errorMessage) {
+  <app-alert-message type="error" [message]="errorMessage" [dismissible]="true" (onDismiss)="dismissError()"></app-alert-message>
+  }
+
+  @if (isLoading) {
+  <div class="text-center py-5">
+    <div class="spinner-border text-primary" role="status"></div>
+    <p class="mt-3 text-muted">Cargando datos...</p>
+  </div>
+  }
+
+  @if (!isLoading && currentDocumentType) {
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <strong><i class="fas fa-edit me-2"></i>Información del Tipo de Documento</strong>
+      <span class="badge" [class.bg-success]="currentDocumentType.status" [class.bg-danger]="!currentDocumentType.status">
+        <i class="fas me-1" [class.fa-check-circle]="currentDocumentType.status" [class.fa-times-circle]="!currentDocumentType.status"></i>
+        {{ currentDocumentType.status ? 'Activo' : 'Inactivo' }}
+      </span>
+    </div>
+    <div class="card-body">
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <div class="row g-3">
+
+          <!-- Código (solo lectura — inmutable) -->
+          <div class="col-md-6">
+            <label class="form-label"><i class="fas fa-barcode me-2"></i>Código</label>
+            <input type="text" class="form-control" [value]="currentDocumentType.code" readonly>
+            <small class="form-text text-muted">El código no puede modificarse</small>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label required"><i class="fas fa-tag me-2"></i>Nombre</label>
+            <input type="text" class="form-control" formControlName="name"
+              placeholder="Ej: Documento Nacional de Identidad" [class.is-invalid]="isFieldInvalid('name')">
+            @if (isFieldInvalid('name')) {
+            <div class="invalid-feedback">{{ getFieldError('name') }}</div>
+            }
+          </div>
+
+          <div class="col-12">
+            <label class="form-label"><i class="fas fa-align-left me-2"></i>Descripción</label>
+            <textarea class="form-control" formControlName="description" rows="3"
+              placeholder="Descripción del tipo de documento..."></textarea>
+          </div>
+
+          <div class="col-12">
+            <div class="status-toggle-card p-3 border rounded">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 class="mb-1"><i class="fas fa-power-off me-2"></i>Estado del Tipo</h6>
+                  <small class="text-muted">
+                    {{ form.get('status')?.value ? 'Activo — disponible para nuevos clientes' : 'Inactivo — no disponible' }}
+                  </small>
+                </div>
+                <div class="form-check form-switch mb-0">
+                  <input class="form-check-input" type="checkbox" formControlName="status" id="statusSwitch" role="switch">
+                  <label class="form-check-label visually-hidden" for="statusSwitch">Estado</label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="d-flex gap-2 justify-content-end mt-4">
+          <button type="button" class="btn btn-secondary" (click)="cancel()" [disabled]="isSubmitting">
+            <i class="fas fa-times me-2"></i>Cancelar
+          </button>
+          <button type="submit" class="btn btn-success" [disabled]="isSubmitting" style="color: aliceblue;">
+            @if (isSubmitting) { <span class="spinner-border spinner-border-sm me-2"></span> }
+            <i class="fas fa-save me-2"></i>{{ isSubmitting ? 'Guardando...' : 'Actualizar Tipo' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  }
+</div>

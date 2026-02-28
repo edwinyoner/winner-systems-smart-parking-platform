@@ -1,0 +1,254 @@
+<!-- parking-list/parking-list.component.html -->
+
+<div class="container-lg py-4">
+
+  <!-- HEADER -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="mb-0">Parqueos</h2>
+      <small class="text-muted">Gestión de estacionamientos municipales</small>
+    </div>
+    <a cButton color="primary" routerLink="/parkings/create">
+      <c-icon name="cilPlus" class="me-2"></c-icon>
+      Nuevo Parqueo
+    </a>
+  </div>
+
+  <!-- ERROR -->
+  @if (errorMessage) {
+    <c-alert color="danger" [dismissible]="true" (visibleChange)="errorMessage = ''">
+      <c-icon name="cilWarning" class="me-2"></c-icon>{{ errorMessage }}
+    </c-alert>
+  }
+
+  <!-- FILTROS -->
+  <c-card class="mb-4">
+    <c-card-body>
+      <div cRow class="g-3">
+
+        <!-- Búsqueda -->
+        <div cCol md="6">
+          <label cLabel for="search">Buscar</label>
+          <input
+            cFormControl
+            id="search"
+            type="text"
+            placeholder="Nombre, código o dirección..."
+            [ngModel]="searchTerm"
+            (ngModelChange)="onSearchChange($event)"
+          />
+        </div>
+
+        <!-- Estado -->
+        <div cCol md="4">
+          <label cLabel for="status">Estado</label>
+          <select
+            cSelect
+            id="status"
+            [(ngModel)]="statusFilter"
+            (change)="onStatusChange()"
+          >
+            <option value="">Todos</option>
+            <option value="ACTIVE">Activo</option>
+            <option value="INACTIVE">Inactivo</option>
+            <option value="MAINTENANCE">Mantenimiento</option>
+            <option value="OUT_OF_SERVICE">Fuera de Servicio</option>
+          </select>
+        </div>
+
+        <!-- Botón Limpiar -->
+        <div cCol md="2" class="d-flex align-items-end">
+          <button
+            cButton
+            color="secondary"
+            variant="outline"
+            class="w-100"
+            (click)="clearFilters()"
+          >
+            <c-icon name="cilFilterX" class="me-1"></c-icon>
+            Limpiar
+          </button>
+        </div>
+
+      </div>
+    </c-card-body>
+  </c-card>
+
+  <!-- TABLA -->
+  <c-card>
+    <c-card-body class="p-0">
+
+      @if (loading) {
+        <div class="text-center py-5">
+          <c-spinner color="primary"></c-spinner>
+          <p class="text-muted mt-2">Cargando parqueos...</p>
+        </div>
+      } @else if (parkings.length === 0) {
+        <div class="text-center py-5">
+          <c-icon name="cilInbox" size="3xl" class="text-muted mb-3"></c-icon>
+          <p class="text-muted">No se encontraron parqueos</p>
+          @if (searchTerm || statusFilter) {
+            <button cButton color="primary" variant="outline" (click)="clearFilters()">
+              Limpiar filtros
+            </button>
+          }
+        </div>
+      } @else {
+        <table cTable hover responsive>
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Nombre</th>
+              <th>Dirección</th>
+              <th class="text-center">Zonas</th>
+              <th class="text-center">Espacios</th>
+              <th class="text-center">Ocupación</th>
+              <th class="text-center">Estado</th>
+              <th class="text-end">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (parking of parkings; track parking.id) {
+              <tr>
+                <!-- Código -->
+                <td>
+                  <strong class="text-primary">{{ parking.code }}</strong>
+                </td>
+
+                <!-- Nombre -->
+                <td>
+                  <div>{{ parking.name }}</div>
+                  @if (parking.description) {
+                    <small class="text-muted">{{ parking.description }}</small>
+                  }
+                </td>
+
+                <!-- Dirección -->
+                <td>
+                  <small class="text-muted">
+                    <c-icon name="cilLocationPin" size="sm" class="me-1"></c-icon>
+                    {{ parking.address }}
+                  </small>
+                </td>
+
+                <!-- Zonas -->
+                <td class="text-center">
+                  <c-badge color="secondary">
+                    {{ parking.totalZones || 0 }}
+                  </c-badge>
+                </td>
+
+                <!-- Espacios -->
+                <td class="text-center">
+                  <c-badge color="info">
+                    {{ parking.totalSpaces || 0 }}
+                  </c-badge>
+                </td>
+
+                <!-- Ocupación -->
+                <td class="text-center">
+                  @if (parking.occupancyPercentage !== undefined) {
+                    <c-badge [color]="getOccupancyColor(parking.occupancyPercentage)">
+                      {{ parking.occupancyPercentage }}%
+                    </c-badge>
+                  } @else {
+                    <span class="text-muted">-</span>
+                  }
+                </td>
+
+                <!-- Estado -->
+                <td class="text-center">
+                  <c-badge [color]="getStatusBadge(parking.status)">
+                    {{ getStatusLabel(parking.status) }}
+                  </c-badge>
+                </td>
+
+                <!-- Acciones -->
+                <td class="text-end">
+                  <div cDropdown variant="btn-group">
+                    <button cButton color="light" size="sm" cDropdownToggle>
+                      <c-icon name="cilOptions"></c-icon>
+                    </button>
+                    <ul cDropdownMenu>
+                      <li>
+                        <a cDropdownItem [routerLink]="['/parkings', parking.id]">
+                          <c-icon name="cilZoom" class="me-2"></c-icon>
+                          Ver Detalle
+                        </a>
+                      </li>
+                      <li>
+                        <a cDropdownItem [routerLink]="['/parkings', parking.id, 'edit']">
+                          <c-icon name="cilPencil" class="me-2"></c-icon>
+                          Editar
+                        </a>
+                      </li>
+                      <li><hr cDropdownDivider /></li>
+                      <li>
+                        <button cDropdownItem (click)="onToggleStatus(parking)">
+                          <c-icon 
+                            [name]="parking.status === 'ACTIVE' ? 'cilLockLocked' : 'cilLockUnlocked'" 
+                            class="me-2">
+                          </c-icon>
+                          {{ parking.status === 'ACTIVE' ? 'Desactivar' : 'Activar' }}
+                        </button>
+                      </li>
+                      <li><hr cDropdownDivider /></li>
+                      <li>
+                        <button cDropdownItem class="text-danger" (click)="onDelete(parking)">
+                          <c-icon name="cilTrash" class="me-2"></c-icon>
+                          Eliminar
+                        </button>
+                      </li>
+                    </ul>
+                  </div>
+                </td>
+
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+
+    </c-card-body>
+
+    <!-- PAGINACIÓN -->
+    @if (!loading && parkings.length > 0) {
+      <c-card-footer>
+        <div class="d-flex justify-content-between align-items-center">
+          <small class="text-muted">
+            Mostrando {{ parkings.length }} de {{ totalElements }} registros
+          </small>
+          <nav>
+            <c-pagination size="sm">
+              <li
+                cPageItem
+                [disabled]="currentPage === 0"
+                (click)="currentPage > 0 && onPageChange(currentPage - 1)"
+              >
+                Anterior
+              </li>
+              @for (page of pages; track page) {
+                <li
+                  cPageItem
+                  [active]="page === currentPage"
+                  (click)="onPageChange(page)"
+                >
+                  {{ page + 1 }}
+                </li>
+              }
+              <li
+                cPageItem
+                [disabled]="currentPage >= totalPages - 1"
+                (click)="currentPage < totalPages - 1 && onPageChange(currentPage + 1)"
+              >
+                Siguiente
+              </li>
+            </c-pagination>
+          </nav>
+        </div>
+      </c-card-footer>
+    }
+
+  </c-card>
+
+</div>

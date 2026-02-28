@@ -12,7 +12,7 @@ server:
 
 spring:
   application:
-    name: auth-service  # ✅ AGREGAR ESTA LÍNEA
+    name: auth-service
 
   # ========== DATASOURCE (Base de Datos) ==========
   datasource:

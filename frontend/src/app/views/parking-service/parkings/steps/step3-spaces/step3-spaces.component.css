@@ -1,0 +1,22 @@
+/* steps/step3-spaces/step3-spaces.component.css */
+
+.preview-box {
+  min-height: 38px;
+  padding: 6px 8px;
+  background-color: var(--cui-tertiary-bg);
+  border: 1px solid var(--cui-border-color);
+  border-radius: var(--cui-border-radius);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.preview-badge {
+  font-size: 11px;
+  font-family: monospace;
+}
+
+.summary-card {
+  background-color: var(--cui-tertiary-bg);
+  border-color: var(--cui-border-color);
+}

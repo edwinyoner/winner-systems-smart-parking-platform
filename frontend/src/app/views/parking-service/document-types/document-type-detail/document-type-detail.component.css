@@ -1,0 +1,73 @@
+.document-type-detail-container {
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.page-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--bs-body-color);
+}
+.breadcrumb {
+  background-color: transparent;
+  padding: 0;
+  margin: 0;
+  font-size: 0.875rem;
+}
+.breadcrumb-item a {
+  color: var(--bs-primary);
+  text-decoration: none;
+}
+.card {
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+.card-header {
+  font-weight: 600;
+  background-color: var(--bs-secondary-bg);
+  border-bottom: 1px solid var(--bs-border-color);
+}
+.detail-item {
+  margin-bottom: 1rem;
+}
+.detail-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--bs-secondary);
+  margin-bottom: 0.5rem;
+}
+.detail-value {
+  font-size: 1rem;
+  color: var(--bs-body-color);
+}
+.audit-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+.audit-item i {
+  margin-top: 0.25rem;
+  font-size: 1.25rem;
+}
+.badge {
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+}
+.btn {
+  transition: all 0.2s ease;
+}
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+@media (max-width: 768px) {
+  .document-type-detail-container {
+    padding: 1rem;
+  }
+  .page-header .d-flex {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+}

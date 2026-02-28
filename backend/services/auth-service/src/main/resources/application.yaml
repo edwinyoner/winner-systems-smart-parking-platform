@@ -16,4 +16,3 @@ spring:
       enabled: true
       uri: http://localhost:8888
       fail-fast: true  # Fallar si no puede conectar al Config Server
-

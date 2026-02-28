@@ -1,1 +1,193 @@
-<p>profile-edit works!</p>
+<!-- Profile Edit Form - Diseño Moderno -->
+<div class="profile-edit-container">
+  
+  <!-- Header -->
+  <div class="form-header">
+    <div class="icon-container">
+      <i class="fas fa-user-edit"></i>
+      <div class="icon-glow"></div>
+    </div>
+    <h2>Editar Perfil</h2>
+    <p class="subtitle">Actualiza tu información personal</p>
+  </div>
+
+  <!-- Success Alert -->
+  @if (successMessage) {
+    <app-alert-message 
+      type="success" 
+      [message]="successMessage"
+      [dismissible]="true"
+      (onDismiss)="dismissSuccess()">
+    </app-alert-message>
+  }
+
+  <!-- Error Alert -->
+  @if (errorMessage) {
+    <app-alert-message 
+      type="error" 
+      [message]="errorMessage"
+      [dismissible]="true"
+      (onDismiss)="dismissError()">
+    </app-alert-message>
+  }
+
+  <!-- Profile Edit Form -->
+  <form [formGroup]="profileForm" (ngSubmit)="onSubmit()">
+    
+    <!-- First Name Field -->
+    <div class="form-group">
+      <label for="firstName">
+        <i class="fas fa-user"></i>
+        Nombre
+      </label>
+      <div class="input-wrapper">
+        <input
+          type="text"
+          id="firstName"
+          class="form-control"
+          [class.error]="hasError('firstName', 'required') || hasError('firstName', 'minlength') || hasError('firstName', 'maxlength')"
+          formControlName="firstName"
+          placeholder="Ingresa tu nombre">
+        <div class="input-border"></div>
+      </div>
+      @if (hasError('firstName', 'required') || hasError('firstName', 'minlength') || hasError('firstName', 'maxlength')) {
+        <span class="error-message">{{ getErrorMessage('firstName') }}</span>
+      }
+    </div>
+
+    <!-- Last Name Field -->
+    <div class="form-group">
+      <label for="lastName">
+        <i class="fas fa-user"></i>
+        Apellido
+      </label>
+      <div class="input-wrapper">
+        <input
+          type="text"
+          id="lastName"
+          class="form-control"
+          [class.error]="hasError('lastName', 'required') || hasError('lastName', 'minlength') || hasError('lastName', 'maxlength')"
+          formControlName="lastName"
+          placeholder="Ingresa tu apellido">
+        <div class="input-border"></div>
+      </div>
+      @if (hasError('lastName', 'required') || hasError('lastName', 'minlength') || hasError('lastName', 'maxlength')) {
+        <span class="error-message">{{ getErrorMessage('lastName') }}</span>
+      }
+    </div>
+
+    <!-- Email Field (Read-only) -->
+    <div class="form-group">
+      <label for="email">
+        <i class="fas fa-envelope"></i>
+        Email
+      </label>
+      <div class="input-wrapper">
+        <input
+          type="email"
+          id="email"
+          class="form-control"
+          formControlName="email"
+          readonly>
+        <div class="input-border"></div>
+      </div>
+      <span class="info-text">
+        <i class="fas fa-info-circle"></i>
+        El email no puede ser modificado
+      </span>
+    </div>
+
+    <!-- Phone Number Field -->
+    <div class="form-group">
+      <label for="phoneNumber">
+        <i class="fas fa-phone"></i>
+        Teléfono (opcional)
+      </label>
+      <div class="input-wrapper">
+        <input
+          type="tel"
+          id="phoneNumber"
+          class="form-control"
+          [class.error]="hasError('phoneNumber', 'pattern')"
+          formControlName="phoneNumber"
+          placeholder="+51987654321">
+        <div class="input-border"></div>
+      </div>
+      @if (hasError('phoneNumber', 'pattern')) {
+        <span class="error-message">{{ getErrorMessage('phoneNumber') }}</span>
+      }
+    </div>
+
+    <!-- Profile Picture Field -->
+<div class="form-group">
+  <label for="profilePicture">
+    <i class="fas fa-image"></i>
+    Foto de Perfil (URL)
+  </label>
+  
+  <!-- Preview -->
+  @if (profilePicturePreview) {
+    <div class="profile-picture-preview">
+      <img [src]="profilePicturePreview" alt="Preview" (error)="profilePicturePreview = null">
+    </div>
+  }
+  
+  <div class="input-wrapper">
+    <input
+      type="url"
+      id="profilePicture"
+      class="form-control"
+      formControlName="profilePicture"
+      (input)="onProfilePictureChange()"
+      placeholder="https://ejemplo.com/foto.jpg">
+    <div class="input-border"></div>
+  </div>
+  <span class="info-text">
+    <i class="fas fa-info-circle"></i>
+    Ingresa la URL de tu foto de perfil
+  </span>
+</div>
+
+    <!-- Info Box -->
+    <div class="info-box">
+      <i class="fas fa-info-circle"></i>
+      <span>
+        Los cambios se reflejarán inmediatamente en tu perfil
+      </span>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="button-group">
+      <!-- Submit Button -->
+      <button
+        type="submit"
+        class="btn-submit"
+        [disabled]="isLoading || profileForm.invalid">
+        @if (!isLoading) {
+          <span class="btn-content">
+            <i class="fas fa-save"></i>
+            <span>Guardar Cambios</span>
+          </span>
+        } @else {
+          <span class="btn-content">
+            <i class="fas fa-spinner fa-spin"></i>
+            <span>Guardando...</span>
+          </span>
+        }
+        <div class="btn-glow"></div>
+      </button>
+
+      <!-- Cancel Button -->
+      <button
+        type="button"
+        class="btn-cancel"
+        (click)="cancel()"
+        [disabled]="isLoading">
+        <i class="fas fa-times"></i>
+        <span>Cancelar</span>
+      </button>
+    </div>
+
+  </form>
+
+</div>

@@ -90,7 +90,7 @@ export class ForgotPasswordComponent implements OnInit {
       next: (response) => {
         // Email enviado exitosamente
         if (environment.features.showDebugInfo) {
-          console.log('✅ Email de recuperación enviado:', response);
+          console.log('Email de recuperación enviado:', response);
         }
 
         // Mostrar mensaje de éxito

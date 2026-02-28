@@ -10,7 +10,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;  // ✅ AGREGAR
+import org.springframework.transaction.annotation.Transactional;  // AGREGAR
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -37,7 +37,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
    }
 
    @Override
-   @Transactional(readOnly = true)  // ✅ AGREGAR ESTA LÍNEA
+   @Transactional(readOnly = true)
    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
       // 1. Buscar usuario por email
       User user = userPersistencePort.findByEmail(email)
@@ -46,7 +46,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
       // 2. Convertir a CustomUserDetails (incluye userId)
       return new CustomUserDetails(
-            user.getId(),                    // ✅ userId
+            user.getId(),                    // userId
             user.getEmail(),                 // username
             user.getPassword(),              // password
             true,                            // accountNonExpired

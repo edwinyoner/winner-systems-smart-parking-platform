@@ -25,10 +25,8 @@ public class JwtAdapter implements JwtPort {
          @Value("${jwt.refresh-token-expiration}") long refreshTokenExpiration,
          @Value("${jwt.refresh-token-expiration-remember-me}") long refreshTokenExpirationRememberMe) {
 
-      // CLAVE: ESTO FUNCIONA CON CUALQUIER SECRET (BASE64 o TEXTO PLANO)
       byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
-      if (keyBytes.length < 32) { // menos de 256 bits
-         // Si es Base64, decodifícalo
+      if (keyBytes.length < 32) {
          keyBytes = Base64.getUrlDecoder().decode(secret);
       }
       this.secretKey = Keys.hmacShaKeyFor(keyBytes);
@@ -38,12 +36,35 @@ public class JwtAdapter implements JwtPort {
       this.refreshTokenExpirationRememberMe = refreshTokenExpirationRememberMe;
    }
 
-   // ... el resto del código queda IGUAL
    @Override
-   public String generateAccessToken(Long userId, String email, Set<String> roles, Set<String> permissions) {
+   public String generateAccessToken(
+         Long userId,
+         String email,
+         String firstName,
+         String lastName,
+         String phoneNumber,
+         String profilePicture,
+         Boolean status,
+         Boolean emailVerified,
+         String activeRole,
+         Set<String> roles,
+         Set<String> permissions) {
+
       Map<String, Object> claims = new HashMap<>();
+
       claims.put("userId", userId);
       claims.put("email", email);
+      claims.put("firstName", firstName);
+      claims.put("lastName", lastName);
+      claims.put("phoneNumber", phoneNumber);
+      claims.put("profilePicture", profilePicture);
+      claims.put("status", status);
+      claims.put("emailVerified", emailVerified);
+
+      // ROL ACTIVO (con el que inició sesión)
+      claims.put("activeRole", activeRole);
+
+      // TODOS LOS ROLES
       claims.put("roles", roles);
       claims.put("permissions", permissions);
 

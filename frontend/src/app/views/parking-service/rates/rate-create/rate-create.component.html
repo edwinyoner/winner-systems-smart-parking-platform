@@ -1,0 +1,163 @@
+<!-- src/app/views/parking-service/rates/rate-create/rate-create.component.html -->
+<div class="rate-create-container">
+
+  <div class="page-header mb-4">
+    <h2 class="page-title">
+      <i class="fas fa-plus-circle me-2"></i>
+      Crear Nueva Tarifa
+    </h2>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a routerLink="/dashboard">Inicio</a></li>
+        <li class="breadcrumb-item"><a routerLink="/rates">Tarifas</a></li>
+        <li class="breadcrumb-item active">Crear</li>
+      </ol>
+    </nav>
+  </div>
+
+  @if (errorMessage) {
+  <app-alert-message type="error" [message]="errorMessage" [dismissible]="true" (onDismiss)="dismissError()">
+  </app-alert-message>
+  }
+
+  <div class="card">
+    <div class="card-header">
+      <strong>
+        <i class="fas fa-edit me-2"></i>
+        Información de la Tarifa
+      </strong>
+    </div>
+    <div class="card-body">
+      <form [formGroup]="rateForm" (ngSubmit)="onSubmit()">
+        
+        <div class="row g-3">
+          
+          <!-- Nombre -->
+          <div class="col-md-6">
+            <label class="form-label required">
+              <i class="fas fa-tag me-2"></i>Nombre de la Tarifa
+            </label>
+            <input 
+              type="text" 
+              class="form-control" 
+              formControlName="name"
+              placeholder="Ej: Tarifa Premium"
+              [class.is-invalid]="isFieldInvalid('name')">
+            @if (isFieldInvalid('name')) {
+            <div class="invalid-feedback">{{ getFieldError('name') }}</div>
+            }
+          </div>
+
+          <!-- Moneda -->
+          <div class="col-md-6">
+            <label class="form-label required">
+              <i class="fas fa-money-bill me-2"></i>Moneda
+            </label>
+            <select 
+              class="form-select" 
+              formControlName="currency"
+              [class.is-invalid]="isFieldInvalid('currency')">
+              @for (curr of currencies; track curr.code) {
+              <option [value]="curr.code">{{ curr.name }}</option>
+              }
+            </select>
+            @if (isFieldInvalid('currency')) {
+            <div class="invalid-feedback">{{ getFieldError('currency') }}</div>
+            }
+          </div>
+
+          <!-- Monto -->
+          <div class="col-md-6">
+            <label class="form-label required">
+              <i class="fas fa-dollar-sign me-2"></i>Tarifa por Hora
+            </label>
+            <div class="input-group">
+              <span class="input-group-text">{{ getCurrencySymbol() }}</span>
+              <input 
+                type="number" 
+                class="form-control" 
+                formControlName="amount"
+                placeholder="0.00"
+                step="0.01"
+                min="0.01"
+                [class.is-invalid]="isFieldInvalid('amount')">
+              <span class="input-group-text">/hora</span>
+            </div>
+            @if (isFieldInvalid('amount')) {
+            <div class="invalid-feedback d-block">{{ getFieldError('amount') }}</div>
+            }
+            <small class="form-text text-muted">Ingrese el monto que se cobrará por hora</small>
+          </div>
+
+          <!-- Preview del Monto -->
+          <div class="col-md-6">
+            <label class="form-label">
+              <i class="fas fa-eye me-2"></i>Vista Previa
+            </label>
+            <div class="amount-preview">
+              <span class="preview-amount">
+                {{ getCurrencySymbol() }} {{ rateForm.get('amount')?.value || '0.00' }}
+              </span>
+              <small class="text-muted d-block">por hora de estacionamiento</small>
+            </div>
+          </div>
+
+          <!-- Descripción -->
+          <div class="col-12">
+            <label class="form-label">
+              <i class="fas fa-align-left me-2"></i>Descripción
+            </label>
+            <textarea 
+              class="form-control" 
+              formControlName="description"
+              rows="3"
+              placeholder="Descripción detallada de la tarifa..."></textarea>
+          </div>
+
+          <!-- Estado -->
+          <div class="col-12">
+            <div class="form-check form-switch">
+              <input 
+                class="form-check-input" 
+                type="checkbox" 
+                formControlName="status"
+                id="statusSwitch">
+              <label class="form-check-label" for="statusSwitch">
+                <i class="fas fa-power-off me-2"></i>
+                <strong>Tarifa Activa</strong>
+              </label>
+            </div>
+            <small class="form-text text-muted ms-4">
+              Las tarifas activas pueden ser asignadas a zonas de estacionamiento
+            </small>
+          </div>
+
+        </div>
+
+        <!-- Botones -->
+        <div class="d-flex gap-2 justify-content-end mt-4">
+          <button 
+            type="button" 
+            class="btn btn-secondary" 
+            (click)="cancel()"
+            [disabled]="isSubmitting">
+            <i class="fas fa-times me-2"></i>
+            Cancelar
+          </button>
+          <button 
+            type="submit" 
+            class="btn btn-success"
+            [disabled]="isSubmitting" style="color: aliceblue;">
+            @if (isSubmitting) {
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            }
+            <i class="fas fa-save me-2"></i>
+            {{ isSubmitting ? 'Guardando...' : 'Guardar Tarifa' }}
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+</div>

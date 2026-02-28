@@ -1,0 +1,286 @@
+<!-- src/app/views/parking-service/zones/zone-create/zone-create.component.html -->
+<div class="zone-create-container">
+
+  <div class="page-header mb-4">
+    <h2 class="page-title">
+      <i class="fas fa-plus-circle me-2"></i>
+      Crear Nueva Zona de Estacionamiento
+    </h2>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a routerLink="/dashboard">Inicio</a></li>
+        <li class="breadcrumb-item"><a routerLink="/zones">Zonas</a></li>
+        <li class="breadcrumb-item active">Crear</li>
+      </ol>
+    </nav>
+  </div>
+
+  @if (errorMessage) {
+  <app-alert-message type="error" [message]="errorMessage" [dismissible]="true" (onDismiss)="dismissError()">
+  </app-alert-message>
+  }
+
+  <form [formGroup]="zoneForm" (ngSubmit)="onSubmit()">
+
+    <!-- Información Básica -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <strong>
+          <i class="fas fa-info-circle me-2"></i>
+          Información Básica
+        </strong>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          
+          <!-- Nombre -->
+          <div class="col-md-6">
+            <label class="form-label required">
+              <i class="fas fa-tag me-2"></i>Nombre de la Zona
+            </label>
+            <input 
+              type="text" 
+              class="form-control" 
+              formControlName="name"
+              placeholder="Ej: Plaza de Armas - Centro Histórico"
+              [class.is-invalid]="isFieldInvalid('name')">
+            @if (isFieldInvalid('name')) {
+            <div class="invalid-feedback">{{ getFieldError('name') }}</div>
+            }
+          </div>
+
+          <!-- Código -->
+          <div class="col-md-6">
+            <label class="form-label required">
+              <i class="fas fa-barcode me-2"></i>Código
+            </label>
+            <input 
+              type="text" 
+              class="form-control" 
+              formControlName="code"
+              placeholder="Ej: PDA-01"
+              [class.is-invalid]="isFieldInvalid('code')">
+            @if (isFieldInvalid('code')) {
+            <div class="invalid-feedback">{{ getFieldError('code') }}</div>
+            }
+            <small class="form-text text-muted">Código único para identificar la zona</small>
+          </div>
+
+          <!-- Dirección -->
+          <div class="col-12">
+            <label class="form-label required">
+              <i class="fas fa-map-marker-alt me-2"></i>Dirección
+            </label>
+            <input 
+              type="text" 
+              class="form-control" 
+              formControlName="address"
+              placeholder="Ej: Jr. 28 de Julio, Huaraz, Ancash"
+              [class.is-invalid]="isFieldInvalid('address')">
+            @if (isFieldInvalid('address')) {
+            <div class="invalid-feedback">{{ getFieldError('address') }}</div>
+            }
+          </div>
+
+          <!-- Descripción -->
+          <div class="col-12">
+            <label class="form-label">
+              <i class="fas fa-align-left me-2"></i>Descripción
+            </label>
+            <textarea 
+              class="form-control" 
+              formControlName="description"
+              rows="3"
+              placeholder="Descripción detallada de la zona..."></textarea>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Capacidad y Geolocalización -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <strong>
+          <i class="fas fa-map-marked-alt me-2"></i>
+          Capacidad y Ubicación
+        </strong>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          
+          <!-- Capacidad Total -->
+          <div class="col-md-4">
+            <label class="form-label required">
+              <i class="fas fa-parking me-2"></i>Capacidad Total
+            </label>
+            <input 
+              type="number" 
+              class="form-control" 
+              formControlName="totalSpaces"
+              placeholder="0"
+              min="1"
+              [class.is-invalid]="isFieldInvalid('totalSpaces')">
+            @if (isFieldInvalid('totalSpaces')) {
+            <div class="invalid-feedback">{{ getFieldError('totalSpaces') }}</div>
+            }
+            <small class="form-text text-muted">Número total de espacios</small>
+          </div>
+
+          <!-- Latitud -->
+          <div class="col-md-4">
+            <label class="form-label">
+              <i class="fas fa-globe me-2"></i>Latitud
+            </label>
+            <input 
+              type="number" 
+              class="form-control" 
+              formControlName="latitude"
+              placeholder="-9.5277"
+              step="0.000001"
+              [class.is-invalid]="isFieldInvalid('latitude')">
+            @if (isFieldInvalid('latitude')) {
+            <div class="invalid-feedback">{{ getFieldError('latitude') }}</div>
+            }
+            <small class="form-text text-muted">Coordenada GPS (-90 a 90)</small>
+          </div>
+
+          <!-- Longitud -->
+          <div class="col-md-4">
+            <label class="form-label">
+              <i class="fas fa-globe me-2"></i>Longitud
+            </label>
+            <input 
+              type="number" 
+              class="form-control" 
+              formControlName="longitude"
+              placeholder="-77.5278"
+              step="0.000001"
+              [class.is-invalid]="isFieldInvalid('longitude')">
+            @if (isFieldInvalid('longitude')) {
+            <div class="invalid-feedback">{{ getFieldError('longitude') }}</div>
+            }
+            <small class="form-text text-muted">Coordenada GPS (-180 a 180)</small>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Equipamiento (Cámaras) -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <strong>
+          <i class="fas fa-video me-2"></i>
+          Equipamiento de Vigilancia
+        </strong>
+      </div>
+      <div class="card-body">
+        
+        <!-- Toggle Cámaras -->
+        <div class="form-check form-switch mb-3">
+          <input 
+            class="form-check-input" 
+            type="checkbox" 
+            formControlName="hasCamera"
+            id="hasCameraSwitch"
+            (change)="onHasCameraChange()">
+          <label class="form-check-label" for="hasCameraSwitch">
+            <i class="fas fa-video me-2"></i>
+            <strong>Esta zona tiene cámaras de vigilancia</strong>
+          </label>
+        </div>
+
+        <!-- Lista de Cámaras -->
+        @if (zoneForm.get('hasCamera')?.value) {
+        <div class="camera-list">
+          <label class="form-label fw-semibold mb-3">
+            <i class="fas fa-list me-2"></i>IDs de Cámaras Asignadas
+          </label>
+          
+          @for (camera of cameraIds.controls; track i; let i = $index) {
+          <div class="camera-item mb-2">
+            <div class="input-group">
+              <span class="input-group-text">
+                <i class="fas fa-video"></i>
+              </span>
+              <input 
+                type="text" 
+                class="form-control" 
+                [formControl]="$any(camera)"
+                placeholder="Ej: CAM-001">
+              <button 
+                type="button" 
+                class="btn btn-outline-danger" 
+                (click)="removeCamera(i)"
+                [disabled]="cameraIds.length === 1">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+          }
+
+          <button 
+            type="button" 
+            class="btn btn-sm btn-outline-primary mt-2" 
+            (click)="addCamera()">
+            <i class="fas fa-plus me-2"></i>
+            Agregar Cámara
+          </button>
+        </div>
+        }
+
+      </div>
+    </div>
+
+    <!-- Estado -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <strong>
+          <i class="fas fa-power-off me-2"></i>
+          Estado Inicial
+        </strong>
+      </div>
+      <div class="card-body">
+        <div class="form-check form-switch">
+          <input 
+            class="form-check-input" 
+            type="checkbox" 
+            formControlName="status"
+            id="statusSwitch">
+          <label class="form-check-label" for="statusSwitch">
+            <i class="fas fa-power-off me-2"></i>
+            <strong>Zona Activa</strong>
+          </label>
+        </div>
+        <small class="form-text text-muted ms-4">
+          Las zonas activas pueden recibir vehículos inmediatamente
+        </small>
+      </div>
+    </div>
+
+    <!-- Botones -->
+    <div class="d-flex gap-2 justify-content-end">
+      <button 
+        type="button" 
+        class="btn btn-secondary" 
+        (click)="cancel()"
+        [disabled]="isSubmitting">
+        <i class="fas fa-times me-2"></i>
+        Cancelar
+      </button>
+      <button 
+        type="submit" 
+        class="btn btn-primary"
+        [disabled]="isSubmitting">
+        @if (isSubmitting) {
+        <span class="spinner-border spinner-border-sm me-2"></span>
+        }
+        <i class="fas fa-save me-2"></i>
+        {{ isSubmitting ? 'Guardando...' : 'Guardar Zona' }}
+      </button>
+    </div>
+
+  </form>
+
+</div>

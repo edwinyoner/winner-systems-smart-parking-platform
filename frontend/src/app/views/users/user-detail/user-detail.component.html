@@ -1,1 +1,321 @@
-<p>user-detail works!</p>
+<div class="user-detail-container">
+
+  <!-- Page Header -->
+  <div class="page-header mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div class="d-flex align-items-center gap-3">
+        <button class="btn btn-outline-secondary" (click)="goBack()">
+          <i class="fas fa-arrow-left me-2"></i>
+          Volver
+        </button>
+        <h2 class="page-title mb-0">
+          <i class="fas fa-user me-2"></i>
+          Detalles del Usuario
+        </h2>
+      </div>
+      @if (user) {
+        <div class="btn-group">
+          <button class="btn btn-warning" (click)="editUser()">
+            <i class="fas fa-edit me-2"></i>
+            Editar
+          </button>
+          <button class="btn btn-danger" (click)="confirmDelete()">
+            <i class="fas fa-trash me-2"></i>
+            Eliminar
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  @if (errorMessage) {
+    <app-alert-message 
+      type="error" 
+      [message]="errorMessage"
+      [dismissible]="true"
+      (onDismiss)="dismissError()">
+    </app-alert-message>
+  }
+
+  <!-- Loading State -->
+  @if (isLoading) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+      <p class="mt-3 text-muted">Cargando información del usuario...</p>
+    </div>
+  }
+
+  <!-- User Details -->
+  @if (!isLoading && user) {
+    <div class="row g-4">
+
+      <!-- Columna Izquierda: Información Personal -->
+      <div class="col-lg-4">
+        
+        <!-- Card: Perfil -->
+        <div class="card mb-4">
+          <div class="card-body text-center">
+            @if (user.profilePicture) {
+              <img
+                [src]="user.profilePicture"
+                [alt]="user.firstName"
+                class="user-avatar-large mb-3">
+            } @else {
+              <div class="user-avatar-placeholder-large mb-3">
+                {{ getUserInitials(user) }}
+              </div>
+            }
+            
+            <h4 class="mb-1">{{ user.firstName }} {{ user.lastName }}</h4>
+            <p class="text-muted mb-3">{{ user.email }}</p>
+
+            <!-- Estado -->
+            <div class="mb-3">
+              @if (user.status) {
+                <span class="badge bg-success px-3 py-2">
+                  <i class="fas fa-check-circle me-1"></i>
+                  Activo
+                </span>
+              } @else {
+                <span class="badge bg-danger px-3 py-2">
+                  <i class="fas fa-times-circle me-1"></i>
+                  Inactivo
+                </span>
+              }
+            </div>
+
+            <!-- Email Verificado -->
+            <div>
+              @if (user.emailVerified) {
+                <span class="badge bg-info px-3 py-2">
+                  <i class="fas fa-check-circle me-1"></i>
+                  Email Verificado
+                </span>
+              } @else {
+                <span class="badge bg-warning px-3 py-2">
+                  <i class="fas fa-exclamation-triangle me-1"></i>
+                  Email Pendiente
+                </span>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Card: Roles -->
+        <div class="card">
+          <div class="card-header">
+            <strong>
+              <i class="fas fa-user-shield me-2"></i>
+              Roles Asignados
+            </strong>
+          </div>
+          <div class="card-body">
+            @if (user.roles && user.roles.length > 0) {
+              <div class="d-flex flex-column gap-2">
+                @for (role of user.roles; track role.name) {
+                  <div class="role-item p-3 border rounded">
+                    <div class="d-flex align-items-center mb-2">
+                      <i class="fas fa-shield-alt text-primary me-2"></i>
+                      <strong>{{ role.name }}</strong>
+                    </div>
+                    <small class="text-muted">{{ role.description }}</small>
+                  </div>
+                }
+              </div>
+            } @else {
+              <p class="text-muted mb-0">
+                <i class="fas fa-info-circle me-2"></i>
+                Sin roles asignados
+              </p>
+            }
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Columna Derecha: Información Detallada -->
+      <div class="col-lg-8">
+        
+        <!-- Card: Información de Contacto -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <strong>
+              <i class="fas fa-address-card me-2"></i>
+              Información de Contacto
+            </strong>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-muted small">
+                  <i class="fas fa-user me-2"></i>
+                  Nombre
+                </label>
+                <p class="mb-0">{{ user.firstName }}</p>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-muted small">
+                  <i class="fas fa-user me-2"></i>
+                  Apellido
+                </label>
+                <p class="mb-0">{{ user.lastName }}</p>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-muted small">
+                  <i class="fas fa-envelope me-2"></i>
+                  Correo Electrónico
+                </label>
+                <p class="mb-0">{{ user.email }}</p>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-muted small">
+                  <i class="fas fa-phone me-2"></i>
+                  Teléfono
+                </label>
+                <p class="mb-0">{{ user.phoneNumber || 'No especificado' }}</p>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Card: Información del Sistema -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <strong>
+              <i class="fas fa-info-circle me-2"></i>
+              Información del Sistema
+            </strong>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-muted small">
+                  <i class="fas fa-hashtag me-2"></i>
+                  ID de Usuario
+                </label>
+                <p class="mb-0">{{ user.id }}</p>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-muted small">
+                  <i class="fas fa-toggle-on me-2"></i>
+                  Estado de la Cuenta
+                </label>
+                <p class="mb-0">
+                  @if (user.status) {
+                    <span class="text-success">
+                      <i class="fas fa-check-circle me-1"></i>
+                      Activa
+                    </span>
+                  } @else {
+                    <span class="text-danger">
+                      <i class="fas fa-times-circle me-1"></i>
+                      Inactiva
+                    </span>
+                  }
+                </p>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-muted small">
+                  <i class="fas fa-envelope-open-text me-2"></i>
+                  Email Verificado
+                </label>
+                <p class="mb-0">
+                  @if (user.emailVerified) {
+                    <span class="text-success">
+                      <i class="fas fa-check-circle me-1"></i>
+                      Sí
+                    </span>
+                  } @else {
+                    <span class="text-warning">
+                      <i class="fas fa-exclamation-triangle me-1"></i>
+                      No
+                    </span>
+                  }
+                </p>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-muted small">
+                  <i class="fas fa-calendar-plus me-2"></i>
+                  Fecha de Registro
+                </label>
+                <p class="mb-0">{{ formatDate(user.createdAt) }}</p>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-muted small">
+                  <i class="fas fa-calendar-check me-2"></i>
+                  Última Actualización
+                </label>
+                <p class="mb-0">{{ formatDate(user.updatedAt) }}</p>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  }
+
+  <!-- Empty State (Usuario no encontrado) -->
+  @if (!isLoading && !user && !errorMessage) {
+    <div class="text-center py-5">
+      <i class="fas fa-user-slash fa-3x text-muted mb-3"></i>
+      <h5 class="text-muted">Usuario no encontrado</h5>
+      <p class="text-muted">El usuario que buscas no existe o fue eliminado</p>
+      <button class="btn btn-primary" (click)="goBack()">
+        <i class="fas fa-arrow-left me-2"></i>
+        Volver a la Lista
+      </button>
+    </div>
+  }
+
+  <!-- Delete Confirmation Modal -->
+  @if (showDeleteConfirm && user) {
+    <div class="modal-backdrop fade show"></div>
+    <div class="modal fade show d-block" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header bg-danger text-white">
+            <h5 class="modal-title">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              Confirmar Eliminación
+            </h5>
+            <button type="button" class="btn-close btn-close-white" (click)="cancelDelete()"></button>
+          </div>
+          <div class="modal-body">
+            <p>¿Estás seguro de eliminar al usuario <strong>"{{ user.firstName }} {{ user.lastName }}"</strong>?</p>
+            <p class="text-danger mb-0">
+              <i class="fas fa-exclamation-circle me-2"></i>
+              Esta acción no se puede deshacer.
+            </p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="cancelDelete()">
+              <i class="fas fa-times me-2"></i>
+              Cancelar
+            </button>
+            <button type="button" class="btn btn-danger" (click)="deleteUser()">
+              <i class="fas fa-trash me-2"></i>
+              Eliminar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+</div>

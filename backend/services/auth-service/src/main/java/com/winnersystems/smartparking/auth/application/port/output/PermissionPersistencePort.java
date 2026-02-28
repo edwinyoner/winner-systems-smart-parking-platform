@@ -55,4 +55,9 @@ public interface PermissionPersistencePort {
     * @return permiso guardado con ID generado
     */
    Permission save(Permission permission);
+
+   /**
+    * Obtiene todos los permisos activos (status=true y no eliminados)
+    */
+   List<Permission> findAllActive();
 }

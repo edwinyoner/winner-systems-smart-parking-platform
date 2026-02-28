@@ -1,0 +1,272 @@
+<!-- parking-detail/parking-detail.component.html -->
+
+<div class="container-lg py-4">
+
+  <!-- LOADING -->
+  @if (loading) {
+    <div class="text-center py-5">
+      <c-spinner color="primary"></c-spinner>
+      <p class="text-muted mt-2">Cargando detalles del parqueo...</p>
+    </div>
+  }
+
+  <!-- ERROR -->
+  @if (errorMessage && !loading) {
+    <c-alert color="danger" [dismissible]="true" (visibleChange)="errorMessage = ''">
+      <c-icon name="cilWarning" class="me-2"></c-icon>{{ errorMessage }}
+    </c-alert>
+  }
+
+  <!-- CONTENIDO -->
+  @if (parking && !loading) {
+
+    <!-- HEADER -->
+    <div class="d-flex justify-content-between align-items-start mb-4">
+      <div>
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <h2 class="mb-0">{{ parking.name }}</h2>
+          <c-badge [color]="getStatusBadge(parking.status || 'INACTIVE')">
+            {{ getStatusLabel(parking.status || 'INACTIVE') }}
+          </c-badge>
+        </div>
+        <small class="text-muted">
+          <c-icon name="cilTag" size="sm" class="me-1"></c-icon>
+          {{ parking.code }}
+        </small>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button cButton color="secondary" variant="outline" (click)="goBack()">
+          <c-icon name="cilArrowLeft" class="me-2"></c-icon>
+          Volver
+        </button>
+
+        <div cDropdown>
+          <button cButton color="primary" cDropdownToggle>
+            <c-icon name="cilOptions" class="me-2"></c-icon>
+            Acciones
+          </button>
+          <ul cDropdownMenu>
+            <li>
+              <a cDropdownItem [routerLink]="['/parkings', parking.id, 'edit']">
+                <c-icon name="cilPencil" class="me-2"></c-icon>
+                Editar
+              </a>
+            </li>
+            <li><hr cDropdownDivider /></li>
+            <li>
+              <button cDropdownItem (click)="onToggleStatus()">
+                <c-icon 
+                  [name]="parking.status === 'ACTIVE' ? 'cilLockLocked' : 'cilLockUnlocked'" 
+                  class="me-2">
+                </c-icon>
+                {{ parking.status === 'ACTIVE' ? 'Desactivar' : 'Activar' }}
+              </button>
+            </li>
+            <li><hr cDropdownDivider /></li>
+            <li>
+              <button cDropdownItem class="text-danger" (click)="onDelete()">
+                <c-icon name="cilTrash" class="me-2"></c-icon>
+                Eliminar
+              </button>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- INFORMACIÓN GENERAL -->
+    <c-card class="mb-4">
+      <c-card-header>
+        <strong>
+          <c-icon name="cilInfo" class="me-2"></c-icon>
+          Información General
+        </strong>
+      </c-card-header>
+      <c-card-body>
+        <div cRow class="g-3">
+
+          <div cCol md="6">
+            <label class="text-muted small">Dirección</label>
+            <div>
+              <c-icon name="cilLocationPin" class="me-1 text-primary"></c-icon>
+              {{ parking.address }}
+            </div>
+          </div>
+
+          @if (parking.description) {
+            <div cCol md="6">
+              <label class="text-muted small">Descripción</label>
+              <div>{{ parking.description }}</div>
+            </div>
+          }
+
+          @if (parking.latitude && parking.longitude) {
+            <div cCol md="6">
+              <label class="text-muted small">Coordenadas GPS</label>
+              <div>
+                <c-badge color="light" class="text-dark me-2">
+                  Lat: {{ parking.latitude }}
+                </c-badge>
+                <c-badge color="light" class="text-dark">
+                  Lng: {{ parking.longitude }}
+                </c-badge>
+              </div>
+            </div>
+          }
+
+          @if (parking.managerName) {
+            <div cCol md="6">
+              <label class="text-muted small">Gestor Asignado</label>
+              <div>
+                <c-icon name="cilUser" class="me-1 text-primary"></c-icon>
+                {{ parking.managerName }}
+              </div>
+            </div>
+          }
+
+        </div>
+      </c-card-body>
+    </c-card>
+
+    <!-- ESTADÍSTICAS -->
+    <div cRow class="mb-4">
+
+      <div cCol sm="6" lg="3">
+        <c-card class="text-center stat-card">
+          <c-card-body>
+            <c-icon name="cilMap" size="3xl" class="text-primary mb-2"></c-icon>
+            <h3 class="mb-0">{{ parking.totalZones || 0 }}</h3>
+            <small class="text-muted">Zonas</small>
+          </c-card-body>
+        </c-card>
+      </div>
+
+      <div cCol sm="6" lg="3">
+        <c-card class="text-center stat-card">
+          <c-card-body>
+            <c-icon name="cilGrid" size="3xl" class="text-info mb-2"></c-icon>
+            <h3 class="mb-0">{{ parking.totalSpaces || 0 }}</h3>
+            <small class="text-muted">Espacios Totales</small>
+          </c-card-body>
+        </c-card>
+      </div>
+
+      <div cCol sm="6" lg="3">
+        <c-card class="text-center stat-card">
+          <c-card-body>
+            <c-icon name="cilCheckCircle" size="3xl" class="text-success mb-2"></c-icon>
+            <h3 class="mb-0">{{ parking.availableSpaces || 0 }}</h3>
+            <small class="text-muted">Disponibles</small>
+          </c-card-body>
+        </c-card>
+      </div>
+
+      <div cCol sm="6" lg="3">
+        <c-card class="text-center stat-card">
+          <c-card-body>
+            <c-icon name="cilX" size="3xl" class="text-danger mb-2"></c-icon>
+            <h3 class="mb-0">{{ parking.occupiedSpaces || 0 }}</h3>
+            <small class="text-muted">Ocupados</small>
+          </c-card-body>
+        </c-card>
+      </div>
+
+    </div>
+
+    <!-- OCUPACIÓN GENERAL -->
+    @if (parking.occupancyPercentage !== undefined) {
+      <c-card class="mb-4">
+        <c-card-body>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <strong>Ocupación General</strong>
+            <c-badge [color]="getOccupancyColor(parking.occupancyPercentage || 0)">
+              {{ parking.occupancyPercentage || 0 }}%
+            </c-badge>
+          </div>
+          <c-progress thin>
+            <c-progress-bar
+              [value]="parking.occupancyPercentage || 0"
+              [color]="getOccupancyColor(parking.occupancyPercentage || 0)">
+            </c-progress-bar>
+          </c-progress>
+        </c-card-body>
+      </c-card>
+    }
+
+    <!-- ZONAS -->
+    <c-card>
+      <c-card-header>
+        <strong>
+          <c-icon name="cilMap" class="me-2"></c-icon>
+          Zonas ({{ zones.length }})
+        </strong>
+      </c-card-header>
+      <c-card-body class="p-0">
+
+        @if (zones.length === 0) {
+          <div class="text-center py-5">
+            <c-icon name="cilMap" size="3xl" class="text-muted mb-3"></c-icon>
+            <p class="text-muted">No hay zonas configuradas</p>
+          </div>
+        } @else {
+          <table cTable hover responsive>
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Nombre</th>
+                <th>Dirección</th>
+                <th class="text-center">Espacios</th>
+                <th class="text-center">Disponibles</th>
+                <th class="text-center">Ocupación</th>
+                <th class="text-center">Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (zone of zones; track zone.id) {
+                <tr>
+                  <td>
+                    <strong class="text-primary">{{ zone.code }}</strong>
+                  </td>
+                  <td>{{ zone.name }}</td>
+                  <td>
+                    <small class="text-muted">{{ zone.address }}</small>
+                  </td>
+                  <td class="text-center">
+                    <c-badge color="info">{{ zone.totalSpaces || 0 }}</c-badge>
+                  </td>
+                  <td class="text-center">
+                    <c-badge color="success">{{ zone.availableSpaces || 0 }}</c-badge>
+                  </td>
+                  <td class="text-center">
+                    @if (zone.occupancyPercentage !== undefined) {
+                      <div class="d-flex align-items-center justify-content-center gap-2">
+                        <small>{{ zone.occupancyPercentage }}%</small>
+                        <c-progress thin style="width: 60px;">
+                          <c-progress-bar
+                            [value]="zone.occupancyPercentage"
+                            [color]="getOccupancyColor(zone.occupancyPercentage)">
+                          </c-progress-bar>
+                        </c-progress>
+                      </div>
+                    } @else {
+                      <span class="text-muted">-</span>
+                    }
+                  </td>
+                  <td class="text-center">
+                    <c-badge [color]="getStatusBadge(zone.status || 'INACTIVE')">
+                      {{ getStatusLabel(zone.status || 'INACTIVE') }}
+                    </c-badge>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+
+      </c-card-body>
+    </c-card>
+
+  }
+
+</div>

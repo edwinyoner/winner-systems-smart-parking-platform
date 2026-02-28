@@ -1,1 +1,286 @@
-<p>permission-edit works!</p>
+<div class="permission-edit-container">
+  
+  <!-- Header -->
+  <div class="page-header mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div>
+        <h2 class="page-title mb-1">
+          <i class="fas fa-key me-2"></i>
+          Editar Permiso
+        </h2>
+        @if (permission) {
+          <p class="text-muted mb-0">
+            Modificando: <code>{{ permission.name }}</code>
+          </p>
+        }
+      </div>
+      
+      <button 
+        class="btn btn-outline-secondary"
+        (click)="cancel()"
+        [disabled]="isLoading">
+        <i class="fas fa-times me-2"></i>
+        Cancelar
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  @if (isLoadingPermission) {
+    <div class="card">
+      <div class="card-body text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Cargando permiso...</span>
+        </div>
+        <p class="mt-3 text-muted">Cargando información del permiso...</p>
+      </div>
+    </div>
+  }
+
+  <!-- Error Message -->
+  @if (errorMessage) {
+    <app-alert-message 
+      type="error" 
+      [message]="errorMessage"
+      [dismissible]="true"
+      (onDismiss)="dismissError()">
+    </app-alert-message>
+  }
+
+  @if (!isLoadingPermission && permission) {
+    
+    <!-- Info Alert -->
+    <app-alert-message 
+      type="info" 
+      [message]="'💡 Edita los campos necesarios. El nombre debe mantener el formato: módulo.acción (ej: users.create)'"
+      [dismissible]="false">
+    </app-alert-message>
+
+    <form [formGroup]="permissionForm" (ngSubmit)="onSubmit()">
+      
+      <!-- Configuración del Permiso -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <strong>
+            <i class="fas fa-cog me-2"></i>
+            Configuración del Permiso
+          </strong>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            
+            <!-- Nombre del Permiso -->
+            <div class="col-12">
+              <label for="name" class="form-label fw-semibold">
+                <i class="fas fa-tag me-2"></i>
+                Nombre del Permiso <span class="text-danger">*</span>
+              </label>
+              <input
+                type="text"
+                id="name"
+                class="form-control"
+                formControlName="name"
+                placeholder="Ej: users.create"
+                (input)="onNameManualChange($event)"
+                [class.is-invalid]="hasError('name', 'required') || hasError('name', 'minlength') || hasError('name', 'maxlength')">
+              
+              @if (hasError('name', 'required') || hasError('name', 'minlength') || hasError('name', 'maxlength')) {
+                <div class="invalid-feedback">
+                  {{ getErrorMessage('name') }}
+                </div>
+              }
+              
+              <small class="form-text text-muted">
+                Identificador único del permiso en formato: módulo.acción
+              </small>
+            </div>
+
+            <!-- Módulo -->
+            <div class="col-md-6">
+              <label for="module" class="form-label fw-semibold">
+                <i class="fas fa-folder me-2"></i>
+                Módulo
+              </label>
+              <select
+                id="module"
+                class="form-select"
+                formControlName="module">
+                <option value="">Sin módulo específico</option>
+                @for (module of availableModules; track module.value) {
+                  <option [value]="module.value">
+                    {{ module.label }}
+                  </option>
+                }
+              </select>
+              
+              <small class="form-text text-muted">
+                Selecciona el módulo al que pertenece el permiso
+              </small>
+            </div>
+
+            <!-- Estado -->
+            <div class="col-md-6">
+              <label for="status" class="form-label fw-semibold">
+                <i class="fas fa-power-off me-2"></i>
+                Estado
+              </label>
+              <select id="status" class="form-select" formControlName="status">
+                <option [value]="true">Activo</option>
+                <option [value]="false">Inactivo</option>
+              </select>
+              <small class="form-text text-muted">
+                Solo los permisos activos se aplican a los roles
+              </small>
+            </div>
+
+            <!-- Descripción -->
+            <div class="col-12">
+              <label for="description" class="form-label fw-semibold">
+                <i class="fas fa-align-left me-2"></i>
+                Descripción
+              </label>
+              <textarea
+                id="description"
+                class="form-control"
+                formControlName="description"
+                rows="3"
+                placeholder="Ej: Permite crear nuevos usuarios en el sistema"
+                [class.is-invalid]="hasError('description', 'maxlength')">
+              </textarea>
+              
+              @if (hasError('description', 'maxlength')) {
+                <div class="invalid-feedback">
+                  {{ getErrorMessage('description') }}
+                </div>
+              }
+              
+              <small class="form-text text-muted">
+                Descripción clara de lo que permite hacer este permiso
+              </small>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview del Permiso -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <strong>
+            <i class="fas fa-eye me-2"></i>
+            Vista Previa del Permiso Actualizado
+          </strong>
+        </div>
+        <div class="card-body">
+          <div class="permission-preview">
+            <div class="preview-item">
+              <span class="preview-label">Nombre:</span>
+              <code class="preview-value">{{ permissionForm.get('name')?.value }}</code>
+            </div>
+            
+            <div class="preview-item">
+              <span class="preview-label">Descripción:</span>
+              <span class="preview-value">{{ permissionForm.get('description')?.value || 'Sin descripción' }}</span>
+            </div>
+            
+            <div class="preview-item">
+              <span class="preview-label">Módulo:</span>
+              <span class="badge bg-secondary">
+                {{ getModuleLabel() }}
+              </span>
+            </div>
+            
+            <div class="preview-item">
+              <span class="preview-label">Estado:</span>
+              @if (permissionForm.get('status')?.value) {
+                <span class="badge bg-success">
+                  <i class="fas fa-check-circle me-1"></i>
+                  Activo
+                </span>
+              } @else {
+                <span class="badge bg-danger">
+                  <i class="fas fa-times-circle me-1"></i>
+                  Inactivo
+                </span>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Información de Auditoría (Solo lectura) -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <strong>
+            <i class="fas fa-clock me-2"></i>
+            Información de Auditoría
+          </strong>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            
+            <!-- ID -->
+            <div class="col-md-4">
+              <div class="detail-item">
+                <label class="detail-label">ID del Permiso</label>
+                <div class="detail-value">{{ permission.id }}</div>
+              </div>
+            </div>
+
+            <!-- Fecha de Creación -->
+            <div class="col-md-4">
+              <div class="detail-item">
+                <label class="detail-label">Fecha de Creación</label>
+                <div class="detail-value">
+                  {{ permission.createdAt | date:'dd/MM/yyyy HH:mm' }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Última Actualización -->
+            <div class="col-md-4">
+              <div class="detail-item">
+                <label class="detail-label">Última Actualización</label>
+                <div class="detail-value">
+                  {{ permission.updatedAt | date:'dd/MM/yyyy HH:mm' }}
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="card">
+        <div class="card-body">
+          <div class="d-flex justify-content-end gap-2">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              (click)="cancel()"
+              [disabled]="isLoading">
+              <i class="fas fa-times me-2"></i>
+              Cancelar
+            </button>
+
+            <button
+              type="submit"
+              class="btn btn-primary"
+              [disabled]="isLoading || permissionForm.invalid">
+              @if (isLoading) {
+                <span class="spinner-border spinner-border-sm me-2"></span>
+                Guardando...
+              } @else {
+                <i class="fas fa-save me-2"></i>
+                Guardar Cambios
+              }
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </form>
+  }
+
+</div>

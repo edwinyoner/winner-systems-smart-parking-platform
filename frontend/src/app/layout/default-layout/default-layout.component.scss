@@ -60,200 +60,17 @@
   // ========================================
   
   .nav-title {
-    font-weight: 500 !important;
+    font-weight: 800 !important;
     font-size: 0.75rem !important;
     text-align: center !important;
     border-radius: 5px !important;
     padding: 0.5rem 0.25rem !important;
     margin: 0.5rem 0rem !important;
-    // Background que funciona en ambos modos
-    background: linear-gradient(145deg, rgba(116, 144, 171, 0.5) 0%, rgba(52, 71, 103, 0.5) 100%) !important;
-    color: #ffffff !important;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
-    letter-spacing: 0.5px !important;
+    color: #787878ff !important;
+    // letter-spacing: 0.5px !important;
   }
 
-  // ITEMS DE NAVEGACIÓN CON COLORES DE ICONOS
 
-  // Dashboard
-  .nav-item-dashboard {
-    .nav-icon {
-      color: #1976D2 !important;
-    }
-    &:hover .nav-icon {
-      color: #2196F3 !important;
-    }
-  }
-
-  // Gestión de Accesos
-  .nav-item-users {
-    .nav-icon {
-      color: #42A5F5 !important;
-    }
-    &:hover .nav-icon {
-      color: #1E88E5 !important;
-    }
-  }
-
-  .nav-item-roles {
-    .nav-icon {
-      color: #5C6BC0 !important;
-    }
-    &:hover .nav-icon {
-      color: #3F51B5 !important;
-    }
-  }
-
-  .nav-item-permissions {
-    .nav-icon {
-      color: #7E57C2 !important;
-    }
-    &:hover .nav-icon {
-      color: #673AB7 !important;
-    }
-  }
-
-  // Gestión de Estacionamiento
-  .nav-item-spaces {
-    .nav-icon {
-      color: #4CAF50 !important;
-    }
-    &:hover .nav-icon {
-      color: #66BB6A !important;
-    }
-  }
-
-  .nav-item-vehicles {
-    .nav-icon {
-      color: #388E3C !important;
-    }
-    &:hover .nav-icon {
-      color: #4CAF50 !important;
-    }
-  }
-
-  .nav-item-rates {
-    .nav-icon {
-      color: #66BB6A !important;
-    }
-    &:hover .nav-icon {
-      color: #81C784 !important;
-    }
-  }
-
-  .nav-item-violations {
-    .nav-icon {
-      color: #EF5350 !important;
-    }
-    &:hover .nav-icon {
-      color: #E53935 !important;
-    }
-  }
-
-  // Clientes y Pagos
-  .nav-item-clients {
-    .nav-icon {
-      color: #FF7043 !important;
-    }
-    &:hover .nav-icon {
-      color: #FF5722 !important;
-    }
-  }
-
-  .nav-item-payments {
-    .nav-icon {
-      color: #FFA726 !important;
-    }
-    &:hover .nav-icon {
-      color: #FF9800 !important;
-    }
-  }
-
-  .nav-item-billing {
-    .nav-icon {
-      color: #FFCA28 !important;
-    }
-    &:hover .nav-icon {
-      color: #FFC107 !important;
-    }
-  }
-
-  // Monitoreo IOT
-  .nav-item-sensors {
-    .nav-icon {
-      color: #AB47BC !important;
-    }
-    &:hover .nav-icon {
-      color: #9C27B0 !important;
-    }
-  }
-
-  .nav-item-cameras {
-    .nav-icon {
-      color: #EC407A !important;
-    }
-    &:hover .nav-icon {
-      color: #E91E63 !important;
-    }
-  }
-
-  .nav-item-barriers {
-    .nav-icon {
-      color: #8E24AA !important;
-    }
-    &:hover .nav-icon {
-      color: #7B1FA2 !important;
-    }
-  }
-
-  .nav-item-device-status {
-    .nav-icon {
-      color: #BA68C8 !important;
-    }
-    &:hover .nav-icon {
-      color: #AB47BC !important;
-    }
-  }
-
-  // Reportes
-  .nav-item-executive,
-  .nav-item-general-reports,
-  .nav-item-occupancy,
-  .nav-item-financial,
-  .nav-item-export {
-    .nav-icon {
-      color: #26C6DA !important;
-    }
-    &:hover .nav-icon {
-      color: #00BCD4 !important;
-    }
-  }
-
-  // Configuración
-  .nav-item-general-settings,
-  .nav-item-zones,
-  .nav-item-notifications,
-  .nav-item-integrations,
-  .nav-item-backup {
-    .nav-icon {
-      color: #78909C !important;
-    }
-    &:hover .nav-icon {
-      color: #607D8B !important;
-    }
-  }
-
-  // Documentación
-  .nav-item-manual,
-  .nav-item-support,
-  .nav-item-about {
-    .nav-icon {
-      color: #A1887F !important;
-    }
-    &:hover .nav-icon {
-      color: #8D6E63 !important;
-    }
-  }
 
   // ESTILOS ADICIONALES PARA MEJORAR LA NAVEGACIÓN
 
@@ -263,11 +80,6 @@
 
   // ESTADO ACTIVO - MÁS VISIBLE
   .nav-link.active {
-    // Background más visible con gradiente azul
-    //background: linear-gradient(90deg, rgba(30, 143, 235, 0.212) 0%, rgba(33, 149, 243, 0.318) 100%) !important;
-    // Más sutil
-    //background: linear-gradient(90deg, rgba(33, 150, 243, 0.15) 0%, rgba(33, 150, 243, 0.03) 100%) !important;
-
     // Más intenso
     background: linear-gradient(90deg, rgba(33, 150, 243, 0.35) 0%, rgba(33, 150, 243, 0.1) 100%) !important;
     // Borde izquierdo más grueso y colorido
@@ -346,5 +158,34 @@
       left: 0 !important;
       width: 100% !important;
     }
+  }
+}
+
+
+.user-info-sidebar {
+  // background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  
+  .user-name {
+    color: #868585ff;
+  }
+  
+  .badge-admin {
+    background: #b02a1bff;
+    color: white;
+  }
+  
+  .badge-autoridad {
+    background: #c6a129ff;
+    color: white;
+  }
+  
+  .badge-operador {
+    background: #0dacd7ff;
+    color: white;
+  }
+  
+  .badge-default {
+    background: #95a5a6;
+    color: white;
   }
 }

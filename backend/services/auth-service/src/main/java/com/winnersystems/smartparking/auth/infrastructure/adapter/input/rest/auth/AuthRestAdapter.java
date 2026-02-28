@@ -1,10 +1,8 @@
 package com.winnersystems.smartparking.auth.infrastructure.adapter.input.rest.auth;
 
-import com.winnersystems.smartparking.auth.application.dto.command.ChangePasswordCommand;
-import com.winnersystems.smartparking.auth.application.dto.command.ForgotPasswordCommand;
-import com.winnersystems.smartparking.auth.application.dto.command.LoginCommand;
-import com.winnersystems.smartparking.auth.application.dto.command.ResetPasswordCommand;
+import com.winnersystems.smartparking.auth.application.dto.command.*;
 import com.winnersystems.smartparking.auth.application.dto.query.AuthResponseDto;
+import com.winnersystems.smartparking.auth.application.dto.query.UserDto;
 import com.winnersystems.smartparking.auth.application.port.input.auth.*;
 import com.winnersystems.smartparking.auth.infrastructure.adapter.input.rest.auth.dto.request.*;
 import com.winnersystems.smartparking.auth.infrastructure.adapter.input.rest.auth.dto.response.LoginResponse;
@@ -34,7 +32,7 @@ import java.net.URI;
  * @version 1.0
  */
 @RestController
-@RequestMapping  // ✅ SIN /api/auth (API Gateway hace el rewrite)
+@RequestMapping  // SIN /api/auth (API Gateway hace el rewrite)
 @RequiredArgsConstructor
 public class AuthRestAdapter {
 
@@ -43,10 +41,11 @@ public class AuthRestAdapter {
    private final RefreshTokenUseCase refreshTokenUseCase;
    private final ForgotPasswordUseCase forgotPasswordUseCase;
    private final ResetPasswordUseCase resetPasswordUseCase;
-   private final VerifyEmailUseCase verifyEmailUseCase;          // ✅ NUEVO
-   private final ResendVerificationUseCase resendVerificationUseCase; // ✅ NUEVO
+   private final VerifyEmailUseCase verifyEmailUseCase;
+   private final ResendVerificationUseCase resendVerificationUseCase;
    private final ChangePasswordUseCase changePasswordUseCase;
    private final AuthRestMapper mapper;
+   private final UpdateProfileUseCase updateProfileUseCase;
 
    /**
     * POST /login (desde Gateway: POST /api/auth/login)
@@ -198,48 +197,57 @@ public class AuthRestAdapter {
    }
 
    /**
-    * PUT /change-password (desde Gateway: PUT /api/auth/change-password)
+    * POST /change-password (desde Gateway: POST /api/auth/change-password)
     * Cambiar contraseña del usuario autenticado.
     *
     * <p><b>REQUIERE AUTENTICACIÓN:</b> JWT válido en header Authorization</p>
     */
-   @PutMapping("/change-password")
+   @PostMapping("/change-password")
    public ResponseEntity<MessageResponse> changePassword(
          @Valid @RequestBody ChangePasswordRequest request,
          HttpServletRequest httpRequest,
          @AuthenticationPrincipal CustomUserDetails userDetails) {
 
-      // ✅ DEBUG - VER QUÉ ESTÁ PASANDO
-      System.out.println("========== CHANGE PASSWORD DEBUG ==========");
-      System.out.println("📋 Request received");
-      System.out.println("🔐 Authorization Header: " + httpRequest.getHeader("Authorization"));
-      System.out.println("👤 UserDetails: " + userDetails);
-
-      if (userDetails != null) {
-         System.out.println("   - UserDetails Class: " + userDetails.getClass().getName());
-         System.out.println("   - UserId: " + userDetails.getUserId());
-         System.out.println("   - Email: " + userDetails.getUsername());
-         System.out.println("   - Authorities: " + userDetails.getAuthorities());
-      } else {
-         System.out.println("   ❌ UserDetails is NULL!");
-      }
-      System.out.println("==========================================");
-
-      // Si userDetails es null, retornar 403
-      if (userDetails == null) {
-         System.err.println("❌ ERROR: No se pudo obtener el usuario autenticado");
-         return ResponseEntity.status(403).body(
-               new MessageResponse("No tienes permisos para realizar esta acción")
-         );
-      }
-
+      // Extraer userId directamente
       Long userId = userDetails.getUserId();
 
+      // Convertir Request → Command
       ChangePasswordCommand command = mapper.toCommand(request, httpRequest, userId);
+
+      // Ejecutar caso de uso
       changePasswordUseCase.execute(command);
 
       return ResponseEntity.ok(
             new MessageResponse("Contraseña cambiada exitosamente. Por favor, inicia sesión nuevamente.")
       );
+   }
+
+   /**
+    * PUT /profile (desde Gateway: PUT /api/auth/profile)
+    * Actualizar perfil del usuario autenticado.
+    *
+    * <p><b>REQUIERE AUTENTICACIÓN:</b> JWT válido en header Authorization</p>
+    */
+   @PutMapping("/profile")
+   public ResponseEntity<UserDto> updateProfile(
+         @Valid @RequestBody UpdateProfileRequest request,
+         @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+      // Obtener userId del token
+      Long userId = userDetails.getUserId();
+
+      // Convertir Request → Command
+      UpdateProfileCommand command = new UpdateProfileCommand(
+            userId,
+            request.firstName(),
+            request.lastName(),
+            request.phoneNumber(),
+            request.profilePicture()
+      );
+
+      // Ejecutar caso de uso
+      UserDto updatedUser = updateProfileUseCase.execute(command);
+
+      return ResponseEntity.ok(updatedUser);
    }
 }

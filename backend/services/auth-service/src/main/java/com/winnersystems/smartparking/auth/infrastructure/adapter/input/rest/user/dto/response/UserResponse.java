@@ -14,7 +14,7 @@ public record UserResponse(
       String email,
       String phoneNumber,
       String profilePicture,
-      String status,
+      boolean status,
       boolean emailVerified,
       Set<RoleInfo> roles,
       LocalDateTime createdAt,
@@ -28,7 +28,7 @@ public record UserResponse(
     * @param description Descripción del rol
     */
    public record RoleInfo(
-         String name,          // ✅ Sin id
+         String name,          // Sin id
          String displayName,
          String description
    ) {

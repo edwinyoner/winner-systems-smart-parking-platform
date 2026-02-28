@@ -103,7 +103,7 @@ export class ChangePasswordComponent implements OnInit {
         this.successMessage = 'Contraseña cambiada exitosamente. Por seguridad, debes iniciar sesión nuevamente.';
         
         if (environment.features.showDebugInfo) {
-          console.log('✅ Contraseña cambiada:', response);
+          console.log('Contraseña cambiada:', response);
         }
 
         // Resetear formulario

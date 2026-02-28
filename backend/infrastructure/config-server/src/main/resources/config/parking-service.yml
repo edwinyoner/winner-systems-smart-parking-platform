@@ -1,0 +1,150 @@
+# ================================================================================
+# CONFIGURACIÓN DEL MICROSERVICIO: parking-service
+# config-server/src/main/resources/config/parking-service.yml
+# Smart Parking Platform - Winner Systems
+# ================================================================================
+
+server:
+  port: 8082
+  error:
+    include-message: always
+    include-binding-errors: always
+
+spring:
+  application:
+    name: parking-service
+
+  # ========== DATASOURCE (Oracle Database 23ai Free) ==========
+  datasource:
+    driver-class-name: oracle.jdbc.OracleDriver
+    url: jdbc:oracle:thin:@//localhost:1521/FREEPDB1
+    username: EDWINYONER
+    password: edwinyoner
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      pool-name: ParkingServiceHikariCP
+
+  # ========== JPA / HIBERNATE ==========
+  jpa:
+    database-platform: org.hibernate.dialect.OracleDialect
+    hibernate:
+      ddl-auto: update   # Desarrollo: update | Producción: validate
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyJpaImpl
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.OracleDialect
+        format_sql: true
+        use_sql_comments: true
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+        generate_statistics: false
+
+  # ========== TIMEZONE CONFIGURATION ==========
+  jackson:
+    time-zone: America/Lima
+    date-format: yyyy-MM-dd HH:mm:ss
+    serialization:
+      write-dates-as-timestamps: false
+
+# ========== EUREKA CLIENT ==========
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+    registry-fetch-interval-seconds: 10
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
+    metadata-map:
+      version: 1.0.0
+      description: "Parking Management Microservice"
+
+# ========== JWT CONFIGURATION (NUEVO) ==========
+# ⚠️ IMPORTANTE: Debe ser el MISMO secret que en auth-service
+jwt:
+  secret: "SmartParkingWinnerSystemsSecureKeyForJWTAuthentication2025MinimumRequired256Bits"
+  access-token-expiration: 1800000  # 30 minutos (debe coincidir con auth-service)
+
+# ========== PARKING SERVICE CONFIGURATION ==========
+parking:
+  default-building-id: 1
+  max-parking-spaces: 250
+  rates:
+    currency: PEN
+    default-hourly-rate: 5.00
+    default-daily-rate: 30.00
+  business-hours:
+    open: "06:00"
+    close: "22:00"
+    timezone: America/Lima
+
+# ========== ACTUATOR (Health Checks & Monitoring) ==========
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+  health:
+    db:
+      enabled: true
+    diskspace:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: false  # Habilitar cuando uses Prometheus
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+
+# ========== LOGGING ==========
+logging:
+  level:
+    root: INFO
+    com.winnersystems.smartparking.parking: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.springframework.web: DEBUG
+    org.springframework.jdbc.core: DEBUG
+    org.springframework.security: DEBUG  # ← AGREGADO para debugging de JWT
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/parking-service.log
+    max-size: 10MB
+    max-history: 30
+
+# ========== APPLICATION INFO ==========
+info:
+  app:
+    name: Parking Service
+    description: Microservicio de gestión de estacionamiento y espacios
+    version: 1.0.0
+    author: Edwin Yoner - Winner Systems Corporation
+    database: Oracle 23ai Free
+    features:
+      - Gestión de espacios
+      - Control de tarifas
+      - Registro de transacciones
+      - Búsqueda de vehículos
+      - Reportes de ocupación

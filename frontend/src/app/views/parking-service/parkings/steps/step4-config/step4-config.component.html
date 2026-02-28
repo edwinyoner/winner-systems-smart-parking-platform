@@ -1,0 +1,167 @@
+<!-- CARGANDO CATÁLOGOS -->
+@if (loadingCatalogs) {
+  <div class="text-center py-5">
+    <c-spinner color="primary"></c-spinner>
+    <p class="text-muted mt-2">Cargando turnos y tarifas...</p>
+  </div>
+}
+
+<!-- ERROR DE CATÁLOGO -->
+@if (catalogError) {
+  <c-alert color="danger">
+    <c-icon name="cilWarning" class="me-2"></c-icon>{{ catalogError }}
+    <button cButton color="danger" variant="outline" size="sm" class="ms-3"
+            (click)="loadCatalogs()">
+      <c-icon name="cilReload" class="me-1"></c-icon>Reintentar
+    </button>
+  </c-alert>
+}
+
+<!-- CONTENIDO PRINCIPAL -->
+@if (!loadingCatalogs && !catalogError) {
+
+  <!-- ERROR DE GUARDADO -->
+  @if (errorMessage) {
+    <c-alert color="danger" [dismissible]="true">
+      <c-icon name="cilWarning" class="me-2"></c-icon>{{ errorMessage }}
+    </c-alert>
+  }
+
+  <!-- INFO -->
+  <c-alert color="info" class="mb-4">
+    <c-icon name="cilInfo" class="me-2"></c-icon>
+    Configura los turnos y tarifas del parqueo. Esta configuración se aplicará a
+    <strong>todas las zonas</strong>. Puedes configurar hasta <strong>3 turnos</strong> diferentes.
+  </c-alert>
+
+  <!-- CARD PRINCIPAL -->
+  <c-card class="mb-4">
+    <c-card-header class="d-flex justify-content-between align-items-center">
+      <strong>
+        <c-icon name="cilClock" class="me-2"></c-icon>
+        Asignación de Turnos y Tarifas Maestras
+      </strong>
+      <c-badge color="primary">
+        {{ configurations.length }} / {{ MAX_CONFIGS }} configuración(es)
+      </c-badge>
+    </c-card-header>
+    
+    <c-card-body [formGroup]="form">
+      <div formArrayName="configurations">
+        
+        <!-- FILAS DE CONFIGURACIÓN -->
+        @for (config of configurations.controls; track $index; let idx = $index) {
+          <div [formGroupName]="idx" class="config-row mb-3">
+            <div cRow [gutter]="3" class="align-items-center">
+              
+              <!-- TURNO -->
+              <div cCol sm="5">
+                <label class="form-label small text-muted mb-1">Seleccionar Turno</label>
+                <select cFormControl formControlName="shiftId" 
+                        [class.is-invalid]="config.get('shiftId')?.invalid && config.get('shiftId')?.touched">
+                  <option [value]="null">Ej: Mañana (06:00 - 14:00)</option>
+                  @for (shift of getAvailableShifts(idx); track shift.id) {
+                    <option [value]="shift.id">
+                      {{ shift.name }} ({{ shift.startTime | slice:0:5 }} - {{ shift.endTime | slice:0:5 }})
+                    </option>
+                  }
+                </select>
+                @if (config.get('shiftId')?.invalid && config.get('shiftId')?.touched) {
+                  <div class="invalid-feedback d-block small">
+                    Seleccione un turno
+                  </div>
+                }
+              </div>
+
+              <!-- TARIFA -->
+              <div cCol sm="5">
+                <label class="form-label small text-muted mb-1">Seleccionar Tarifa</label>
+                <select cFormControl formControlName="rateId"
+                        [class.is-invalid]="config.get('rateId')?.invalid && config.get('rateId')?.touched">
+                  <option [value]="null">Ej: Tarifa Plana Huaraz (S/. 2.00)</option>
+                  @for (rate of rates; track rate.id) {
+                    <option [value]="rate.id">
+                      {{ rate.name }} ({{ rate.currency || 'PEN' }} {{ rate.amount.toFixed(2) }})
+                    </option>
+                  }
+                </select>
+                @if (config.get('rateId')?.invalid && config.get('rateId')?.touched) {
+                  <div class="invalid-feedback d-block small">
+                    Seleccione una tarifa
+                  </div>
+                }
+              </div>
+
+              <!-- TOGGLE ACTIVO -->
+              <div cCol sm="1" class="text-center">
+                <label class="form-label small text-muted mb-1">Activo</label>
+                <div class="form-switch-wrapper">
+                  <div class="form-switch">
+                    <input 
+                      class="form-check-input" 
+                      type="checkbox" 
+                      formControlName="status"
+                      [id]="'status-' + idx">
+                    <label class="form-check-label" [for]="'status-' + idx"></label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- BOTÓN ELIMINAR -->
+              <div cCol sm="1" class="text-end">
+                <label class="form-label small text-muted mb-1">&nbsp;</label>
+                <button 
+                  type="button" 
+                  cButton 
+                  color="danger" 
+                  variant="ghost" 
+                  size="sm"
+                  (click)="removeConfiguration(idx)"
+                  [disabled]="configurations.length === 1"
+                  [cTooltip]="configurations.length === 1 ? 'Debe tener al menos una configuración' : 'Eliminar fila'">
+                  <c-icon name="cilTrash"></c-icon>
+                </button>
+              </div>
+
+            </div>
+          </div>
+        }
+
+        <!-- BOTÓN AGREGAR FILA -->
+        @if (canAddMore) {
+          <div class="text-center mt-3">
+            <button 
+              type="button" 
+              cButton 
+              color="primary" 
+              variant="outline" 
+              size="sm"
+              (click)="addConfiguration()">
+              <c-icon name="cilPlus" class="me-1"></c-icon>
+              Agregar turno ({{ configurations.length }}/{{ MAX_CONFIGS }})
+            </button>
+          </div>
+        }
+
+      </div>
+    </c-card-body>
+  </c-card>
+
+  <!-- FOOTER: BOTÓN SIGUIENTE -->
+  <div class="d-flex justify-content-end">
+    <button
+      cButton 
+      color="primary"
+      [disabled]="!canSubmit || loadingSave"
+      (click)="onSubmit()">
+      @if (loadingSave) {
+        <span class="spinner-border spinner-border-sm me-2"></span>
+        Guardando configuración...
+      } @else {
+        <c-icon name="cilArrowRight" class="me-2"></c-icon>
+        Siguiente: Operadores
+      }
+    </button>
+  </div>
+
+}

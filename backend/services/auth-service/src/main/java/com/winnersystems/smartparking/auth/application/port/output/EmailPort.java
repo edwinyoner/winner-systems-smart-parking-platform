@@ -1,5 +1,7 @@
 package com.winnersystems.smartparking.auth.application.port.output;
 
+import java.util.Set;
+
 /**
  * Puerto de salida para envío de emails.
  *
@@ -158,4 +160,18 @@ public interface EmailPort {
     * @param htmlBody cuerpo del email en formato HTML
     */
    void sendHtmlEmail(String toEmail, String subject, String htmlBody);
+
+   /**
+    * Envía email de bienvenida CON credenciales de acceso.
+    * Usado cuando un ADMIN crea un usuario nuevo.
+    */
+   void sendWelcomeEmailWithCredentials(
+         String toEmail,
+         String userName,
+         String email,
+         String password,
+         Set<String> roles,
+         String verificationLink,
+         int validityHours
+   );
 }

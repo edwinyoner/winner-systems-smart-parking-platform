@@ -39,9 +39,9 @@ public record UpdateUserRequest(
       @Size(max = 20, message = "Teléfono no debe exceder 20 caracteres")
       String phoneNumber,
 
-      Boolean status,  // ✅ Boolean en lugar de UserStatus enum
+      Boolean status,  // Boolean en lugar de UserStatus enum
 
       @NotEmpty(message = "Debe asignar al menos un rol")
-      Set<String> roles  // ✅ String en lugar de RoleType
+      Set<String> roles  // tring en lugar de RoleType
 ) {
 }

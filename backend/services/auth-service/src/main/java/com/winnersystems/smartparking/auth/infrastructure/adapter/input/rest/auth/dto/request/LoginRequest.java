@@ -32,6 +32,8 @@ public record LoginRequest(
       @NotBlank(message = "Password es requerido")
       String password,
 
+      String selectedRole,
+
       String captchaToken,  // Opcional
 
       boolean rememberMe    // Default false

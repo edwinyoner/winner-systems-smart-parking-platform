@@ -1,21 +1,16 @@
 import { ApplicationConfig, importProvidersFrom } from '@angular/core';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import {
   provideRouter,
   withEnabledBlockingInitialNavigation,
-  withHashLocation,
   withInMemoryScrolling,
   withRouterConfig,
   withViewTransitions
 } from '@angular/router';
-
-// ✅ AGREGAR ESTE IMPORT
+import { provideAnimations } from '@angular/platform-browser/animations'; 
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 
 import { DropdownModule, SidebarModule } from '@coreui/angular';
 import { IconSetService } from '@coreui/icons-angular';
-
-// Font Awesome Module
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 
 import { routes } from './app.routes';
@@ -36,26 +31,23 @@ export const appConfig: ApplicationConfig = {
         anchorScrolling: 'enabled'
       }),
       withEnabledBlockingInitialNavigation(),
-      withViewTransitions(),
-      //withHashLocation() // URL con hash (#)
+      withViewTransitions()
     ),
-    // Module Providers
     importProvidersFrom(
       SidebarModule, 
       DropdownModule,
-      FontAwesomeModule  // Font Awesome Module
+      FontAwesomeModule
     ),
     IconSetService,
-    provideAnimationsAsync(),
+    provideAnimations(), 
 
-    // ✅ Configurar HttpClient con interceptors
+    // Configurar HttpClient con interceptors
     provideHttpClient(
       withInterceptors([
-        loadingInterceptor,  // 1. Primero loading (empieza a contar)
-        authInterceptor,     // 2. Luego agregar token
-        errorInterceptor     // 3. Finalmente manejar errores
+        loadingInterceptor,
+        authInterceptor,
+        errorInterceptor
       ])
     )
   ]
 };
-

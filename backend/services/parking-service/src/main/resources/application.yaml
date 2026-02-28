@@ -1,0 +1,18 @@
+# ================================================================================
+# CONFIGURACIÓN LOCAL - Parking Service
+# Solo configuración mínima para conectar al Config Server
+# ================================================================================
+
+spring:
+  application:
+    name: parking-service
+
+  # ========== CONFIG SERVER CONNECTION ==========
+  config:
+    import: "configserver:http://localhost:8888"
+
+  cloud:
+    config:
+      enabled: true
+      uri: http://localhost:8888
+      fail-fast: true  # Fallar si no puede conectar al Config Server

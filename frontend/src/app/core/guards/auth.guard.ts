@@ -24,7 +24,7 @@ export const AuthGuard: CanActivateFn = (route, state) => {
 
   if (!isAuthenticated) {
     if (environment.features.showDebugInfo) {
-      console.warn('🔒 AuthGuard: Usuario no autenticado, redirigiendo a /login');
+      console.warn('AuthGuard: Usuario no autenticado, redirigiendo a /login');
     }
 
     // Guardar la URL intentada para redirigir después del login
@@ -40,7 +40,7 @@ export const AuthGuard: CanActivateFn = (route, state) => {
   }
 
   if (environment.features.showDebugInfo) {
-    console.log('✅ AuthGuard: Acceso permitido');
+    console.log('AuthGuard: Acceso permitido');
   }
 
   return true;

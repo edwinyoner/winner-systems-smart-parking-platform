@@ -8,13 +8,6 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * Entidad JPA que representa un ROL en la base de datos.
- * Mapea directamente con el modelo de dominio Role.
- *
- * @author Edwin Yoner Winner Systems - Smart Parking Platform
- * @version 1.0
- */
 @Entity
 @Table(name = "roles")
 @Getter
@@ -29,7 +22,7 @@ public class RoleEntity {
    private Long id;
 
    @Column(name = "name", nullable = false, unique = true, length = 100)
-   private String name;  // "ADMIN", "AUTORIDAD", "OPERADOR"
+   private String name;
 
    @Column(name = "description", length = 255)
    private String description;
@@ -39,7 +32,7 @@ public class RoleEntity {
 
    // ========== RELACIONES ==========
 
-   @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+   @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})  // ✅ CAMBIO AQUÍ
    @JoinTable(
          name = "role_permissions",
          joinColumns = @JoinColumn(name = "role_id"),

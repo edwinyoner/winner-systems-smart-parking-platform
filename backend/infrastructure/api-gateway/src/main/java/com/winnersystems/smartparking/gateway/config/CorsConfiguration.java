@@ -22,7 +22,8 @@ public class CorsConfiguration {
             new org.springframework.web.cors.CorsConfiguration();
 
       // Orígenes permitidos
-      corsConfig.setAllowedOriginPatterns(List.of("http://localhost:4200"));
+      //      corsConfig.setAllowedOriginPatterns(List.of("http://localhost:4200"));
+      corsConfig.setAllowedOriginPatterns(List.of("http://192.168.1.4:4200"));
 
       // Métodos HTTP permitidos
       corsConfig.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
