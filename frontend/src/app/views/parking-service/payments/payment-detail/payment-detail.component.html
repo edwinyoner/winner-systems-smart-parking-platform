@@ -1,1 +1,303 @@
-<p>payment-detail works!</p>
+<!-- src/app/views/parking-service/payments/payment-detail/payment-detail.component.html -->
+
+<c-row>
+  <c-col xs="12">
+    
+    <!-- ========================= LOADING ========================= -->
+    @if (loading) {
+      <c-card class="mb-4">
+        <c-card-body>
+          <div class="text-center py-5">
+            <c-spinner color="primary"></c-spinner>
+            <p class="mt-3 text-body-secondary">Cargando información del pago...</p>
+          </div>
+        </c-card-body>
+      </c-card>
+    }
+    
+    <!-- ========================= ERROR ========================= -->
+    @if (errorMessage && !loading) {
+      <c-card class="mb-4">
+        <c-card-body>
+          <c-alert color="danger">
+            <i class="fa-solid fa-triangle-exclamation me-2"></i>
+            {{ errorMessage }}
+          </c-alert>
+          <button 
+            cButton 
+            color="secondary"
+            (click)="goBack()">
+            <i class="fa-solid fa-arrow-left me-1"></i>
+            Volver
+          </button>
+        </c-card-body>
+      </c-card>
+    }
+    
+    <!-- ========================= DETALLE DE PAGO ========================= -->
+    @if (transaction?.payment && !loading) {
+      
+      <!-- HEADER -->
+      <c-card class="mb-4">
+        <c-card-header>
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <strong>
+                <i class="fa-solid fa-receipt me-2"></i>
+                Pago - Transacción #{{ transaction?.id }}
+              </strong>
+              <c-badge [color]="getPaymentStatusBadge(transaction?.payment?.status || '')" class="ms-2">
+                {{ getPaymentStatusText(transaction?.payment?.status || '') }}
+              </c-badge>
+            </div>
+            <div>
+              <button 
+                cButton 
+                color="secondary" 
+                size="sm"
+                class="me-2"
+                (click)="goBack()">
+                <i class="fa-solid fa-arrow-left me-1"></i>
+                Volver
+              </button>
+              <button 
+                cButton 
+                color="primary" 
+                size="sm"
+                (click)="goToTransaction()">
+                <i class="fa-solid fa-file-invoice me-1"></i>
+                Ver Transacción
+              </button>
+            </div>
+          </div>
+        </c-card-header>
+        
+        <c-card-body>
+          
+          <!-- ========================= INFORMACIÓN DEL PAGO ========================= -->
+          <c-row class="mb-4">
+            <c-col md="6">
+              <div class="payment-summary">
+                <h5>
+                  <i class="fa-solid fa-money-bill-wave me-2"></i>
+                  Información del Pago
+                </h5>
+                <dl class="row">
+                  <dt class="col-sm-5">ID Pago:</dt>
+                  <dd class="col-sm-7"><strong>#{{ transaction?.payment?.id }}</strong></dd>
+                  
+                  <dt class="col-sm-5">Fecha de Pago:</dt>
+                  <dd class="col-sm-7">{{ transaction?.payment?.paymentDate | date: 'dd/MM/yyyy HH:mm:ss' }}</dd>
+                  
+                  <dt class="col-sm-5">Monto Pagado:</dt>
+                  <dd class="col-sm-7">
+                    <strong class="text-success fs-4">
+                      S/ {{ transaction?.payment?.amount?.toFixed(2) }}
+                    </strong>
+                  </dd>
+                  
+                  <dt class="col-sm-5">Moneda:</dt>
+                  <dd class="col-sm-7">{{ transaction?.currency }}</dd>
+                  
+                  @if (transaction?.payment?.referenceNumber) {
+                    <dt class="col-sm-5">Nº Referencia:</dt>
+                    <dd class="col-sm-7">
+                      <code>{{ transaction?.payment?.referenceNumber }}</code>
+                    </dd>
+                  }
+                  
+                  <dt class="col-sm-5">Estado:</dt>
+                  <dd class="col-sm-7">
+                    <c-badge [color]="getPaymentStatusBadge(transaction?.payment?.status || '')">
+                      {{ getPaymentStatusText(transaction?.payment?.status || '') }}
+                    </c-badge>
+                  </dd>
+                </dl>
+              </div>
+            </c-col>
+            
+            <c-col md="6">
+              <div class="info-section">
+                <h5>
+                  <i class="fa-solid fa-car me-2"></i>
+                  Datos del Vehículo
+                </h5>
+                <dl class="row">
+                  <dt class="col-sm-5">Placa:</dt>
+                  <dd class="col-sm-7">
+                    <strong class="text-primary fs-5">{{ transaction?.vehicle?.plateNumber }}</strong>
+                  </dd>
+                </dl>
+              </div>
+              
+              <div class="info-section mt-4">
+                <h5>
+                  <i class="fa-solid fa-user me-2"></i>
+                  Cliente
+                </h5>
+                <dl class="row">
+                  <dt class="col-sm-5">Nombre:</dt>
+                  <dd class="col-sm-7">{{ transaction?.customer?.name }}</dd>
+                  
+                  <dt class="col-sm-5">Documento:</dt>
+                  <dd class="col-sm-7">{{ transaction?.customer?.documentNumber }}</dd>
+                  
+                  @if (transaction?.customer?.phone) {
+                    <dt class="col-sm-5">Teléfono:</dt>
+                    <dd class="col-sm-7">{{ transaction?.customer?.phone }}</dd>
+                  }
+                  
+                  @if (transaction?.customer?.email) {
+                    <dt class="col-sm-5">Email:</dt>
+                    <dd class="col-sm-7">{{ transaction?.customer?.email }}</dd>
+                  }
+                </dl>
+              </div>
+            </c-col>
+          </c-row>
+          
+          <hr class="my-4">
+          
+          <!-- ========================= DETALLES DE LA TRANSACCIÓN ========================= -->
+          <c-row class="mb-4">
+            <c-col md="6">
+              <div class="info-section">
+                <h5>
+                  <i class="fa-solid fa-map-location-dot me-2"></i>
+                  Ubicación
+                </h5>
+                <dl class="row">
+                  <dt class="col-sm-5">Parqueo:</dt>
+                  <dd class="col-sm-7">{{ transaction?.parking?.name }}</dd>
+                  
+                  <dt class="col-sm-5">Zona:</dt>
+                  <dd class="col-sm-7">{{ transaction?.zone?.name }}</dd>
+                  
+                  <dt class="col-sm-5">Espacio:</dt>
+                  <dd class="col-sm-7">
+                    <c-badge color="info">{{ transaction?.space?.code }}</c-badge>
+                  </dd>
+                </dl>
+              </div>
+            </c-col>
+            
+            <c-col md="6">
+              <div class="info-section">
+                <h5>
+                  <i class="fa-solid fa-clock me-2"></i>
+                  Duración del Estacionamiento
+                </h5>
+                <dl class="row">
+                  <dt class="col-sm-5">Entrada:</dt>
+                  <dd class="col-sm-7">{{ transaction?.entryTime | date: 'dd/MM/yyyy HH:mm' }}</dd>
+                  
+                  @if (transaction?.exitTime) {
+                    <dt class="col-sm-5">Salida:</dt>
+                    <dd class="col-sm-7">{{ transaction?.exitTime | date: 'dd/MM/yyyy HH:mm' }}</dd>
+                  }
+                  
+                  <dt class="col-sm-5">Duración:</dt>
+                  <dd class="col-sm-7">
+                    <strong class="text-info">{{ transaction?.durationFormatted }}</strong>
+                  </dd>
+                  
+                  <dt class="col-sm-5">Tarifa:</dt>
+                  <dd class="col-sm-7">S/ {{ transaction?.rate?.hourlyRate }} / hora</dd>
+                </dl>
+              </div>
+            </c-col>
+          </c-row>
+          
+          <hr class="my-4">
+          
+          <!-- ========================= DESGLOSE DE MONTOS ========================= -->
+          <c-row class="mb-4">
+            <c-col md="6">
+              <div class="amount-breakdown">
+                <h5>
+                  <i class="fa-solid fa-calculator me-2"></i>
+                  Desglose de Montos
+                </h5>
+                <dl class="row">
+                  <dt class="col-7">Monto Calculado:</dt>
+                  <dd class="col-5 text-end">S/ {{ transaction?.calculatedAmount?.toFixed(2) }}</dd>
+                  
+                  @if ((transaction?.discountAmount || 0) > 0) {
+                    <dt class="col-7">Descuento:</dt>
+                    <dd class="col-5 text-end text-success">- S/ {{ transaction?.discountAmount?.toFixed(2) }}</dd>
+                  }
+                  
+                  <dt class="col-7"><strong>Total:</strong></dt>
+                  <dd class="col-5 text-end">
+                    <strong class="text-primary">S/ {{ transaction?.totalAmount?.toFixed(2) }}</strong>
+                  </dd>
+                  
+                  <dt class="col-7"><strong>Monto Pagado:</strong></dt>
+                  <dd class="col-5 text-end">
+                    <strong class="text-success">S/ {{ transaction?.payment?.amount?.toFixed(2) }}</strong>
+                  </dd>
+                </dl>
+              </div>
+            </c-col>
+            
+            <c-col md="6">
+              @if (transaction?.receiptSent) {
+                <div class="receipt-info">
+                  <h5>
+                    <i class="fa-solid fa-envelope me-2"></i>
+                    Comprobante
+                  </h5>
+                  <dl class="row">
+                    <dt class="col-sm-5">Enviado:</dt>
+                    <dd class="col-sm-7">
+                      <c-badge color="success">SÍ</c-badge>
+                    </dd>
+                    
+                    @if (transaction?.receiptSentAt) {
+                      <dt class="col-sm-5">Fecha Envío:</dt>
+                      <dd class="col-sm-7">{{ transaction?.receiptSentAt | date: 'dd/MM/yyyy HH:mm' }}</dd>
+                    }
+                    
+                    @if (transaction?.receiptEmailStatus) {
+                      <dt class="col-sm-5">Estado Email:</dt>
+                      <dd class="col-sm-7">{{ transaction?.receiptEmailStatus }}</dd>
+                    }
+                    
+                    @if (transaction?.receiptWhatsAppStatus) {
+                      <dt class="col-sm-5">Estado WhatsApp:</dt>
+                      <dd class="col-sm-7">{{ transaction?.receiptWhatsAppStatus }}</dd>
+                    }
+                  </dl>
+                </div>
+              } @else {
+                <div class="alert alert-info">
+                  <i class="fa-solid fa-info-circle me-2"></i>
+                  <strong>Comprobante no enviado</strong>
+                </div>
+              }
+            </c-col>
+          </c-row>
+          
+          <hr class="my-4">
+          
+          <!-- ========================= AUDITORÍA ========================= -->
+          <c-row>
+            <c-col xs="12">
+              <div class="info-section">
+                <h5>
+                  <i class="fa-solid fa-clock-rotate-left me-2"></i>
+                  Auditoría
+                </h5>
+                <dl class="row">
+                  <dt class="col-sm-3">Registrado el:</dt>
+                  <dd class="col-sm-9">{{ transaction?.createdAt | date: 'dd/MM/yyyy HH:mm:ss' }}</dd>
+                </dl>
+              </div>
+            </c-col>
+          </c-row>
+          
+        </c-card-body>
+      </c-card>
+    }
+  </c-col>
+</c-row>

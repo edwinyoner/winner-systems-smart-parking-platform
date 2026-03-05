@@ -346,7 +346,7 @@ public class DataSeeder implements CommandLineRunner {
 
          verificationTokenRepository.save(tokenEntity);
 
-         String verificationLink = "http://192.168.1.4:4200/verify-email?token=" + verificationToken;
+         String verificationLink = "http://localhost:4200/verify-email?token=" + verificationToken;
 
          sendAdminWelcomeEmailWithVerification(admin, tempPassword, verificationLink);
 

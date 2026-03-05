@@ -13,9 +13,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class TransactionPersistenceMapper {
 
-   /**
-    * Convierte Transaction (dominio) a TransactionEntity (JPA).
-    */
    public TransactionEntity toEntity(Transaction transaction) {
       if (transaction == null) {
          return null;
@@ -25,8 +22,9 @@ public class TransactionPersistenceMapper {
             .id(transaction.getId())
             .vehicleId(transaction.getVehicleId())
             .customerId(transaction.getCustomerId())
-            .parkingSpaceId(transaction.getParkingSpaceId())
+            .parkingId(transaction.getParkingId())
             .zoneId(transaction.getZoneId())
+            .spaceId(transaction.getSpaceId())
             .rateId(transaction.getRateId())
             .entryDocumentTypeId(transaction.getEntryDocumentTypeId())
             .entryDocumentNumber(transaction.getEntryDocumentNumber())
@@ -59,15 +57,10 @@ public class TransactionPersistenceMapper {
             .createdBy(transaction.getCreatedBy())
             .updatedAt(transaction.getUpdatedAt())
             .updatedBy(transaction.getUpdatedBy())
-            // ✅ FIX: campos de soft delete que faltaban
-//            .deletedAt(transaction.getDeletedAt())
-//            .deletedBy(transaction.getDeletedBy())
+            // SIN deletedAt, deletedBy
             .build();
    }
 
-   /**
-    * Convierte TransactionEntity (JPA) a Transaction (dominio).
-    */
    public Transaction toDomain(TransactionEntity entity) {
       if (entity == null) {
          return null;
@@ -77,8 +70,9 @@ public class TransactionPersistenceMapper {
       transaction.setId(entity.getId());
       transaction.setVehicleId(entity.getVehicleId());
       transaction.setCustomerId(entity.getCustomerId());
-      transaction.setParkingSpaceId(entity.getParkingSpaceId());
+      transaction.setParkingId(entity.getParkingId());
       transaction.setZoneId(entity.getZoneId());
+      transaction.setSpaceId(entity.getSpaceId());
       transaction.setRateId(entity.getRateId());
       transaction.setEntryDocumentTypeId(entity.getEntryDocumentTypeId());
       transaction.setEntryDocumentNumber(entity.getEntryDocumentNumber());
@@ -111,9 +105,7 @@ public class TransactionPersistenceMapper {
       transaction.setCreatedBy(entity.getCreatedBy());
       transaction.setUpdatedAt(entity.getUpdatedAt());
       transaction.setUpdatedBy(entity.getUpdatedBy());
-      // ✅ FIX: campos de soft delete que faltaban
-//      transaction.setDeletedAt(entity.getDeletedAt());
-//      transaction.setDeletedBy(entity.getDeletedBy());
+      // SIN deletedAt, deletedBy
 
       return transaction;
    }

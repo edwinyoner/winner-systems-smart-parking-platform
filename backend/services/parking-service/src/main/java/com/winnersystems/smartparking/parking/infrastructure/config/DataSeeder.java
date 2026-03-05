@@ -43,19 +43,16 @@ public class DataSeeder implements CommandLineRunner {
    private final PaymentTypeRepository paymentTypeRepository;
    private final ShiftRepository shiftRepository;
    private final RateRepository rateRepository;
-   private final ZoneRepository zoneRepository;
 
    public DataSeeder(
          DocumentTypeRepository documentTypeRepository,
          PaymentTypeRepository paymentTypeRepository,
          ShiftRepository shiftRepository,
-         RateRepository rateRepository,
-         ZoneRepository zoneRepository) {
+         RateRepository rateRepository) {
       this.documentTypeRepository = documentTypeRepository;
       this.paymentTypeRepository = paymentTypeRepository;
       this.shiftRepository = shiftRepository;
       this.rateRepository = rateRepository;
-      this.zoneRepository = zoneRepository;
    }
 
    @Override
@@ -135,9 +132,9 @@ public class DataSeeder implements CommandLineRunner {
             .build());
 
       paymentTypeRepository.save(PaymentTypeEntity.builder()
-            .code("CARD")
-            .name("Tarjeta de Crédito/Débito")
-            .description("Pago con tarjeta Visa, Mastercard, etc.")
+            .code("YAPE")
+            .name("Yape")
+            .description("Pago con app Yape del BCP")
             .status(true)
             .build());
 
@@ -149,9 +146,9 @@ public class DataSeeder implements CommandLineRunner {
             .build());
 
       paymentTypeRepository.save(PaymentTypeEntity.builder()
-            .code("YAPE")
-            .name("Yape")
-            .description("Pago con app Yape del BCP")
+            .code("CARD")
+            .name("Tarjeta de Crédito/Débito")
+            .description("Pago con tarjeta Visa, Mastercard, etc.")
             .status(true)
             .build());
 
@@ -179,27 +176,27 @@ public class DataSeeder implements CommandLineRunner {
             .code("MORNING")
             .name("Mañana")
             .startTime(LocalTime.of(6, 0))
-            .endTime(LocalTime.of(14, 0))
+            .endTime(LocalTime.of(12, 0))
             .status(true)
-            .description("Turno matutino - 6:00 AM a 2:00 PM")
+            .description("Turno matutino - 6:00 AM a 12:00 PM")
             .build());
 
       shiftRepository.save(ShiftEntity.builder()
             .code("AFTERNOON")
             .name("Tarde")
-            .startTime(LocalTime.of(14, 0))
-            .endTime(LocalTime.of(22, 0))
+            .startTime(LocalTime.of(12, 0))
+            .endTime(LocalTime.of(18, 0))
             .status(true)
-            .description("Turno vespertino - 2:00 PM a 10:00 PM")
+            .description("Turno vespertino - 12:00 PM a 6:00 PM")
             .build());
 
       shiftRepository.save(ShiftEntity.builder()
             .code("NIGHT")
             .name("Noche")
-            .startTime(LocalTime.of(22, 0))
+            .startTime(LocalTime.of(18, 0))
             .endTime(LocalTime.of(6, 0))
             .status(true)
-            .description("Turno nocturno - 10:00 PM a 6:00 AM")
+            .description("Turno nocturno - 6:00 PM a 6:00 AM")
             .build());
 
       log.info("✓ 3 turnos cargados");
@@ -218,7 +215,7 @@ public class DataSeeder implements CommandLineRunner {
       rateRepository.save(RateEntity.builder()
             .name("Tarifa Estándar")
             .description("Tarifa estándar por hora según Ordenanza Municipal N° 011-MPH de Huaraz")
-            .amount(new BigDecimal("5.00"))
+            .amount(new BigDecimal("2.50"))
             .currency("PEN")
             .status(true)
             .build());
@@ -226,7 +223,7 @@ public class DataSeeder implements CommandLineRunner {
       rateRepository.save(RateEntity.builder()
             .name("Tarifa Nocturna")
             .description("Tarifa reducida para el turno nocturno (10:00 PM - 6:00 AM)")
-            .amount(new BigDecimal("3.00"))
+            .amount(new BigDecimal("5.00"))
             .currency("PEN")
             .status(true)
             .build());
@@ -247,15 +244,6 @@ public class DataSeeder implements CommandLineRunner {
             .status(true)
             .build());
 
-      rateRepository.save(RateEntity.builder()
-            .name("Tarifa Mensual")
-            .description("Abono mensual fijo para residentes y comerciantes de la zona")
-            .amount(new BigDecimal("150.00"))
-            .currency("PEN")
-            .status(true)
-            .build());
-
-      log.info("✓ 5 tarifas cargadas");
+      log.info("✓ 4 tarifas cargadas");
    }
-
 }

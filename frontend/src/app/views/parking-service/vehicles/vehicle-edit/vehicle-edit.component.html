@@ -1,1 +1,156 @@
-<p>vehicle-edit works!</p>
+<!-- src/app/views/parking-service/vehicles/vehicle-edit/vehicle-edit.component.html -->
+<c-row>
+  <c-col xs="12">
+    @if (loading && !vehicle) {
+      <c-card class="mb-4">
+        <c-card-body class="text-center p-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+          </div>
+        </c-card-body>
+      </c-card>
+    } @else if (error && !vehicle) {
+      <c-alert color="danger" [dismissible]="false">
+        <strong>Error:</strong> {{ error }}
+      </c-alert>
+      <button cButton color="secondary" (click)="onCancel()">
+        <svg cIcon name="cilArrowLeft" class="me-2"></svg>
+        Volver
+      </button>
+    } @else if (vehicle) {
+      <c-card class="mb-4">
+        <c-card-header>
+          <strong>Editar Vehículo</strong>
+          <small> {{ vehicle.licensePlate }}</small>
+        </c-card-header>
+
+        <c-card-body>
+          @if (error) {
+            <c-alert color="danger" [dismissible]="true">
+              {{ error }}
+            </c-alert>
+          }
+
+          <c-alert color="info" [dismissible]="false" class="mb-4">
+            <strong>Nota:</strong> Solo se puede normalizar el formato de la placa.
+            La información detallada del vehículo (marca, modelo, color) estará disponible
+            en fases futuras con la integración de SUNARP.
+          </c-alert>
+
+          <form cForm [formGroup]="vehicleForm" (ngSubmit)="onSubmit()">
+            <c-row class="mb-3">
+              <!-- Placa actual (solo lectura) -->
+              <c-col md="6">
+                <label cLabel for="currentPlate">Placa Actual</label>
+                <input
+                  cFormControl
+                  id="currentPlate"
+                  type="text"
+                  [value]="vehicle.licensePlate"
+                  readonly
+                  disabled
+                />
+                <div class="form-text">
+                  Esta es la placa registrada actualmente
+                </div>
+              </c-col>
+
+              <!-- Nueva placa (normalización) -->
+              <c-col md="6">
+                <label cLabel for="licensePlate">
+                  Placa (Normalizada) <span class="text-danger">*</span>
+                </label>
+                <input
+                  cFormControl
+                  id="licensePlate"
+                  type="text"
+                  formControlName="licensePlate"
+                  placeholder="ABC-123"
+                  maxlength="7"
+                  (input)="onLicensePlateInput($event)"
+                  [class.is-invalid]="isFieldInvalid('licensePlate')"
+                  style="text-transform: uppercase"
+                />
+                @if (isFieldInvalid('licensePlate')) {
+                  <c-form-feedback [valid]="false">
+                    {{ getErrorMessage('licensePlate') }}
+                  </c-form-feedback>
+                } @else {
+                  <div class="form-text">
+                    Formato: ABC-123 o A1B-234 (automáticamente en mayúsculas)
+                  </div>
+                }
+              </c-col>
+            </c-row>
+
+            <c-alert color="warning" [dismissible]="false" class="mb-3">
+              <svg cIcon name="cilWarning" class="me-2"></svg>
+              <strong>Advertencia:</strong> Solo use esta función para normalizar el formato
+              de una placa mal ingresada (ej: abc123 → ABC-123). NO cambie la placa a un
+              vehículo completamente diferente.
+            </c-alert>
+
+            <!-- Información adicional -->
+            <c-row class="mb-3">
+              <c-col md="12">
+                <div class="bg-light p-3 rounded">
+                  <h6 class="mb-2">
+                    <svg cIcon name="cilInfo" class="me-2"></svg>
+                    Información del Vehículo
+                  </h6>
+                  <table class="table table-sm table-borderless mb-0">
+                    <tbody>
+                      <tr>
+                        <td class="text-muted" width="30%">ID:</td>
+                        <td>{{ vehicle.id }}</td>
+                      </tr>
+                      <tr>
+                        <td class="text-muted">Total de Visitas:</td>
+                        <td>{{ vehicle.totalVisits || 0 }} visitas</td>
+                      </tr>
+                      <tr>
+                        <td class="text-muted">Primera Visita:</td>
+                        <td>{{ vehicle.firstSeenDate | date: 'dd/MM/yyyy' }}</td>
+                      </tr>
+                      <tr>
+                        <td class="text-muted">Última Visita:</td>
+                        <td>{{ vehicle.lastSeenDate | date: 'dd/MM/yyyy' }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </c-col>
+            </c-row>
+
+            <!-- Botones -->
+            <div class="d-flex justify-content-end gap-2 mt-4">
+              <button
+                cButton
+                color="secondary"
+                variant="outline"
+                type="button"
+                (click)="onCancel()"
+                [disabled]="loading"
+              >
+                <svg cIcon name="cilX" class="me-1"></svg>
+                Cancelar
+              </button>
+              <button
+                cButton
+                color="success"
+                type="submit"
+                [disabled]="vehicleForm.invalid || loading"
+              >
+                @if (loading) {
+                  <span class="spinner-border spinner-border-sm me-2"></span>
+                }
+                <svg cIcon name="cilCheckAlt" class="me-1"></svg>
+                Guardar Cambios
+              </button>
+            </div>
+          </form>
+        </c-card-body>
+      </c-card>
+    }
+  </c-col>
+</c-row>

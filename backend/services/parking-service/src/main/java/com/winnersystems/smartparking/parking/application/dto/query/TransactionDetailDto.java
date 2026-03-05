@@ -22,6 +22,7 @@ public record TransactionDetailDto(
       // ========================= ENTIDADES ANIDADAS =========================
       VehicleInfo vehicle,
       CustomerInfo customer,
+      ParkingInfo parking,
       ZoneInfo zone,
       SpaceInfo space,
 
@@ -78,11 +79,7 @@ public record TransactionDetailDto(
     */
    public record VehicleInfo(
          Long id,
-         String plateNumber,
-         String type,
-         String brand,
-         String model,
-         String color
+         String plateNumber
    ) {}
 
    /**
@@ -95,6 +92,15 @@ public record TransactionDetailDto(
          String name,
          String phone,
          String email
+   ) {}
+
+   /**
+    * Información del Lugar de estacionamiento.
+    */
+   public record ParkingInfo(
+         Long id,
+         String name,
+         String code
    ) {}
 
    /**

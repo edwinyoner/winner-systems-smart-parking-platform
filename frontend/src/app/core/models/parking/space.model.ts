@@ -1,3 +1,4 @@
+//src/app/core/models/parking/space.model.ts
 export interface Space {
   id?: number;
   zoneId: number;

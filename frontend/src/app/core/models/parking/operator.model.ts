@@ -1,3 +1,4 @@
+//src/app/core/models/parking/operator.model.ts
 /**
  * Modelo simplificado para operadores
  * Proviene del auth-service endpoint /users/operators

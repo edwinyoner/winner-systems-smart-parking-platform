@@ -9,6 +9,9 @@ import lombok.NoArgsConstructor;
 /**
  * Request DTO para registrar entrada de vehículo.
  *
+ * IMPORTANTE: Solo se registra la PLACA del vehículo.
+ * Información adicional (marca, modelo, color) se obtendría de SUNARP en futuras versiones.
+ *
  * @author Edwin Yoner - Winner Systems - Smart Parking Platform
  * @version 1.0
  */
@@ -18,16 +21,25 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class RecordEntryRequest {
 
+   // ========================= UBICACIÓN =========================
+
+   @NotNull(message = "El parking es obligatorio")
+   private Long parkingId;
+
    @NotNull(message = "La zona es obligatoria")
    private Long zoneId;
 
    @NotNull(message = "El espacio es obligatorio")
    private Long spaceId;
 
+   // ========================= VEHÍCULO - SOLO PLACA =========================
+
    @NotBlank(message = "La placa es obligatoria")
    @Size(min = 5, max = 20, message = "La placa debe tener entre 5 y 20 caracteres")
    @Pattern(regexp = "^[A-Z0-9-]+$", message = "La placa solo puede contener letras mayúsculas, números y guiones")
    private String plateNumber;
+
+   // ========================= DOCUMENTO =========================
 
    @NotNull(message = "El tipo de documento es obligatorio")
    private Long documentTypeId;
@@ -36,8 +48,15 @@ public class RecordEntryRequest {
    @Size(min = 8, max = 20, message = "El documento debe tener entre 8 y 20 caracteres")
    private String documentNumber;
 
-   // Campos opcionales del cliente
-   private String customerName;
+   // ========================= CLIENTE =========================
+
+   @NotBlank(message = "El nombre del cliente es obligatorio")
+   @Size(min = 2, max = 100, message = "El nombre debe tener entre 2 y 100 caracteres")
+   private String customerFirstName;
+
+   @NotBlank(message = "El apellido del cliente es obligatorio")
+   @Size(min = 2, max = 100, message = "El apellido debe tener entre 2 y 100 caracteres")
+   private String customerLastName;
 
    @Email(message = "El email debe ser válido")
    private String customerEmail;
@@ -45,13 +64,18 @@ public class RecordEntryRequest {
    @Pattern(regexp = "^[0-9+\\-\\s()]+$", message = "El teléfono solo puede contener números, espacios y símbolos +-()")
    private String customerPhone;
 
+   // ========================= OPERADOR =========================
+
    @NotNull(message = "El operador es obligatorio")
    private Long operatorId;
 
-   // Campos opcionales de evidencia
+   // ========================= EVIDENCIA =========================
+
    private String entryMethod;      // MANUAL, CAMERA_AI, SENSOR
    private String photoUrl;
    private Double plateConfidence;
+
+   // ========================= OBSERVACIONES =========================
 
    private String notes;
 }

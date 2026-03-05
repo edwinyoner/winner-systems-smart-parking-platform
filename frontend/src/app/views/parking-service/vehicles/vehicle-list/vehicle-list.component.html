@@ -1,1 +1,227 @@
-<p>vehicle-list works!</p>
+<!-- src/app/views/parking-service/vehicles/vehicle-list/vehicle-list.component.html -->
+<c-row>
+  <c-col xs="12">
+    <c-card class="mb-4">
+      <c-card-header>
+        <strong>Vehículos</strong>
+        <small> Gestión de vehículos del sistema</small>
+      </c-card-header>
+      <c-card-body>
+        <!-- Filtros -->
+        <form cForm class="mb-3">
+          <c-row>
+            <c-col md="4">
+              <label cLabel for="search">Buscar por Placa</label>
+              <input
+                cFormControl
+                id="search"
+                type="text"
+                placeholder="Ej: ABC-123"
+                [(ngModel)]="filters.search"
+                (keyup.enter)="onSearch()"
+                name="search"
+              />
+            </c-col>
+            <c-col md="3">
+              <label cLabel for="status">Estado</label>
+              <select
+                cFormSelect
+                id="status"
+                [(ngModel)]="filters.status"
+                (change)="onFilterChange()"
+                name="status"
+              >
+                <option value="ALL">Todos</option>
+                <option value="ACTIVE">Activos</option>
+                <option value="DELETED">Eliminados</option>
+              </select>
+            </c-col>
+            <c-col md="2">
+              <label cLabel for="pageSize">Mostrar</label>
+              <select
+                cFormSelect
+                id="pageSize"
+                [(ngModel)]="pageSize"
+                (change)="onFilterChange()"
+                name="pageSize"
+              >
+                <option [value]="5">5</option>
+                <option [value]="10">10</option>
+                <option [value]="20">20</option>
+                <option [value]="50">50</option>
+              </select>
+            </c-col>
+            <c-col md="3" class="d-flex align-items-end">
+              <button
+                cButton
+                color="primary"
+                type="button"
+                (click)="onSearch()"
+                class="me-2"
+              >
+                <svg cIcon name="cilSearch" class="me-1"></svg>
+                Buscar
+              </button>
+              <button
+                cButton
+                color="secondary"
+                variant="outline"
+                type="button"
+                (click)="clearFilters()"
+              >
+                <svg cIcon name="cilReload" class="me-1"></svg>
+                Limpiar
+              </button>
+            </c-col>
+          </c-row>
+        </form>
+
+        <!-- Tabla -->
+        @if (loading) {
+          <div class="text-center p-4">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Cargando...</span>
+            </div>
+          </div>
+        } @else if (error) {
+          <div class="alert alert-danger" role="alert">
+            {{ error }}
+          </div>
+        } @else if (vehicles.length === 0) {
+          <div class="alert alert-info" role="alert">
+            No se encontraron vehículos.
+          </div>
+        } @else {
+          <div class="table-responsive">
+            <table cTable [hover]="true" [striped]="true">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Placa</th>
+                  <th>Visitas</th>
+                  <th>Primera Visita</th>
+                  <th>Última Visita</th>
+                  <th>Estado</th>
+                  <th class="text-center">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (vehicle of vehicles; track vehicle.id) {
+                  <tr>
+                    <td>{{ vehicle.id }}</td>
+                    <td>
+                      <div class="d-flex align-items-center">
+                        <svg cIcon name="cilCar" class="me-2 text-primary"></svg>
+                        <strong>{{ vehicle.licensePlate }}</strong>
+                      </div>
+                    </td>
+                    <td>
+                      <c-badge [color]="vehicle.totalVisits && vehicle.totalVisits > 5 ? 'success' : 'secondary'">
+                        {{ vehicle.totalVisits || 0 }} visitas
+                      </c-badge>
+                    </td>
+                    <td>{{ formatDate(vehicle.firstSeenDate) }}</td>
+                    <td>{{ formatDate(vehicle.lastSeenDate) }}</td>
+                    <td>
+                      <c-badge [color]="getStatusBadgeColor(vehicle)">
+                        {{ getStatusText(vehicle) }}
+                      </c-badge>
+                    </td>
+                    <td class="text-center">
+                      <button
+                        [routerLink]="['/parking-service/vehicles', vehicle.id]"
+                        cButton
+                        color="info"
+                        variant="ghost"
+                        size="sm"
+                        class="me-1"
+                        title="Ver detalle"
+                      >
+                        <svg cIcon name="cilInfo"></svg>
+                      </button>
+                      @if (!vehicle.deletedAt) {
+                        <button
+                          [routerLink]="[
+                            '/parking-service/vehicles',
+                            vehicle.id,
+                            'edit'
+                          ]"
+                          cButton
+                          color="warning"
+                          variant="ghost"
+                          size="sm"
+                          title="Editar"
+                        >
+                          <svg cIcon name="cilPencil"></svg>
+                        </button>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Paginación -->
+          <div class="d-flex justify-content-between align-items-center mt-3">
+            <div class="text-muted">
+              Mostrando {{ vehicles.length }} de {{ totalElements }} vehículos
+              (Página {{ currentPage + 1 }} de {{ totalPages }})
+            </div>
+            <nav aria-label="Paginación">
+              <ul class="pagination mb-0">
+                <li class="page-item" [class.disabled]="currentPage === 0">
+                  <button
+                    class="page-link"
+                    (click)="goToFirstPage()"
+                    [disabled]="currentPage === 0"
+                  >
+                    Primera
+                  </button>
+                </li>
+                <li class="page-item" [class.disabled]="currentPage === 0">
+                  <button
+                    class="page-link"
+                    (click)="goToPreviousPage()"
+                    [disabled]="currentPage === 0"
+                  >
+                    Anterior
+                  </button>
+                </li>
+                <li class="page-item disabled">
+                  <span class="page-link">
+                    {{ currentPage + 1 }} / {{ totalPages }}
+                  </span>
+                </li>
+                <li
+                  class="page-item"
+                  [class.disabled]="currentPage >= totalPages - 1"
+                >
+                  <button
+                    class="page-link"
+                    (click)="goToNextPage()"
+                    [disabled]="currentPage >= totalPages - 1"
+                  >
+                    Siguiente
+                  </button>
+                </li>
+                <li
+                  class="page-item"
+                  [class.disabled]="currentPage >= totalPages - 1"
+                >
+                  <button
+                    class="page-link"
+                    (click)="goToLastPage()"
+                    [disabled]="currentPage >= totalPages - 1"
+                  >
+                    Última
+                  </button>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        }
+      </c-card-body>
+    </c-card>
+  </c-col>
+</c-row>

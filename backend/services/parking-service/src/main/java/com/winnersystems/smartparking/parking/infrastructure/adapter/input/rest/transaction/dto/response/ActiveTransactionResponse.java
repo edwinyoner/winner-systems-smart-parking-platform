@@ -25,8 +25,6 @@ public class ActiveTransactionResponse {
    // Vehículo
    private Long vehicleId;
    private String plateNumber;
-   private String vehicleBrand;
-   private String vehicleColor;
 
    // Cliente
    private Long customerId;
@@ -36,9 +34,10 @@ public class ActiveTransactionResponse {
    private String documentNumber;
 
    // Ubicación
+   private Long parkingId;
+   private String parkingName;
    private Long zoneId;
    private String zoneName;
-   private String zoneCode;
    private Long spaceId;
    private String spaceCode;
 

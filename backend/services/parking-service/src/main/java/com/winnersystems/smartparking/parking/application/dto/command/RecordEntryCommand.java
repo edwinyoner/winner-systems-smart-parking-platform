@@ -12,8 +12,6 @@ package com.winnersystems.smartparking.parking.application.dto.command;
 public record RecordEntryCommand(
       // ========================= IDENTIFICACIÓN =========================
       String plateNumber,              // Placa del vehículo (NOT NULL)
-      String vehicleColor,             // Color del vehículo (opcional)
-      String vehicleBrand,             // Marca del vehículo (opcional)
 
       // ========================= UBICACIÓN =========================
       Long parkingId,                  // ID del parking (NOT NULL)

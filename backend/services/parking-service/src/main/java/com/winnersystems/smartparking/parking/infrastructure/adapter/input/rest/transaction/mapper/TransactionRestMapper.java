@@ -17,9 +17,6 @@ import org.springframework.stereotype.Component;
 /**
  * Mapper para conversión entre Request/Response y Commands/DTOs.
  *
- * Nota: TransactionDto, TransactionDetailDto y ActiveTransactionDto son records.
- * Los records usan accessors sin prefijo "get" → dto.id(), dto.status(), etc.
- *
  * @author Edwin Yoner - Winner Systems - Smart Parking Platform
  * @version 1.0
  */
@@ -31,58 +28,57 @@ public class TransactionRestMapper {
    public RecordEntryCommand toCommand(RecordEntryRequest request) {
       if (request == null) return null;
 
-      return RecordEntryCommand.builder()
-            .zoneId(request.getZoneId())
-            .spaceId(request.getSpaceId())
-            .plateNumber(request.getPlateNumber())
-            .documentTypeId(request.getDocumentTypeId())
-            .documentNumber(request.getDocumentNumber())
-            .customerName(request.getCustomerName())
-            .customerEmail(request.getCustomerEmail())
-            .customerPhone(request.getCustomerPhone())
-            .operatorId(request.getOperatorId())
-            .entryMethod(request.getEntryMethod())
-            .photoUrl(request.getPhotoUrl())
-            .plateConfidence(request.getPlateConfidence())
-            .notes(request.getNotes())
-            .build();
+      return new RecordEntryCommand(
+            request.getPlateNumber(),
+            request.getParkingId(),
+            request.getZoneId(),
+            request.getSpaceId(),
+            request.getDocumentTypeId(),
+            request.getDocumentNumber(),
+            request.getCustomerFirstName(),
+            request.getCustomerLastName(),
+            request.getCustomerPhone(),
+            request.getCustomerEmail(),
+            request.getOperatorId(),
+            request.getEntryMethod(),
+            request.getPhotoUrl(),
+            request.getPlateConfidence(),
+            request.getNotes()
+      );
    }
 
    public RecordExitCommand toCommand(RecordExitRequest request) {
       if (request == null) return null;
 
-      return RecordExitCommand.builder()
-            .transactionId(request.getTransactionId())
-            .plateNumber(request.getPlateNumber())
-            .exitDocumentTypeId(request.getExitDocumentTypeId())
-            .exitDocumentNumber(request.getExitDocumentNumber())
-            .operatorId(request.getOperatorId())
-            .exitMethod(request.getExitMethod())
-            .photoUrl(request.getPhotoUrl())
-            .plateConfidence(request.getPlateConfidence())
-            .notes(request.getNotes())
-            .build();
+      return new RecordExitCommand(
+            request.getTransactionId(),
+            request.getPlateNumber(),
+            request.getExitDocumentTypeId(),
+            request.getExitDocumentNumber(),
+            request.getOperatorId(),
+            request.getExitMethod(),
+            request.getPhotoUrl(),
+            request.getPlateConfidence(),
+            request.getNotes()
+      );
    }
 
    public ProcessPaymentCommand toCommand(ProcessPaymentRequest request) {
       if (request == null) return null;
 
-      return ProcessPaymentCommand.builder()
-            .transactionId(request.getTransactionId())
-            .paymentTypeId(request.getPaymentTypeId())
-            .amountPaid(request.getAmountPaid())
-            .operatorId(request.getOperatorId())
-            .referenceNumber(request.getReferenceNumber())
-            .notes(request.getNotes())
-            .sendReceipt(request.getSendReceipt())
-            .build();
+      return new ProcessPaymentCommand(
+            request.getTransactionId(),
+            request.getPaymentTypeId(),
+            request.getAmountPaid(),
+            request.getReferenceNumber(),
+            request.getOperatorId(),
+            request.getSendReceipt(),
+            request.getNotes()
+      );
    }
 
    // ========================= DTO → RESPONSE =========================
 
-   /**
-    * TransactionDto es record → usar dto.campo() sin "get"
-    */
    public TransactionResponse toResponse(TransactionDto dto) {
       if (dto == null) return null;
 
@@ -90,6 +86,7 @@ public class TransactionRestMapper {
             .id(dto.id())
             .plateNumber(dto.plateNumber())
             .customerName(dto.customerName())
+            .parkingName(dto.parkingName())
             .zoneName(dto.zoneName())
             .spaceCode(dto.spaceCode())
             .entryTime(dto.entryTime())
@@ -102,9 +99,6 @@ public class TransactionRestMapper {
             .build();
    }
 
-   /**
-    * TransactionDetailDto es record con inner records → dto.campo(), dto.vehicle().id(), etc.
-    */
    public TransactionDetailResponse toDetailResponse(TransactionDetailDto dto) {
       if (dto == null) return null;
 
@@ -134,13 +128,11 @@ public class TransactionRestMapper {
             .updatedAt(dto.updatedAt())
             .build();
 
-      // Vehículo — inner record: dto.vehicle().id()
+      // Vehículo
       if (dto.vehicle() != null) {
          response.setVehicle(TransactionDetailResponse.VehicleInfo.builder()
                .id(dto.vehicle().id())
                .plateNumber(dto.vehicle().plateNumber())
-               .brand(dto.vehicle().brand())
-               .color(dto.vehicle().color())
                .build());
       }
 
@@ -152,6 +144,14 @@ public class TransactionRestMapper {
                .name(dto.customer().name())
                .phone(dto.customer().phone())
                .email(dto.customer().email())
+               .build());
+      }
+
+      if (dto.parking() != null) {
+         response.setParking(TransactionDetailResponse.ParkingInfo.builder()
+               .id(dto.parking().id())
+               .name(dto.parking().name())
+               .code(dto.parking().code())
                .build());
       }
 
@@ -209,9 +209,6 @@ public class TransactionRestMapper {
       return response;
    }
 
-   /**
-    * ActiveTransactionDto es record → usar dto.campo() sin "get"
-    */
    public ActiveTransactionResponse toActiveResponse(ActiveTransactionDto dto) {
       if (dto == null) return null;
 
@@ -219,16 +216,15 @@ public class TransactionRestMapper {
             .id(dto.id())
             .vehicleId(dto.vehicleId())
             .plateNumber(dto.plateNumber())
-            .vehicleBrand(dto.vehicleBrand())
-            .vehicleColor(dto.vehicleColor())
             .customerId(dto.customerId())
             .customerName(dto.customerName())
             .customerPhone(dto.customerPhone())
             .customerEmail(dto.customerEmail())
             .documentNumber(dto.documentNumber())
+            .parkingId(dto.parkingId())
+            .parkingName(dto.parkingName())
             .zoneId(dto.zoneId())
             .zoneName(dto.zoneName())
-            .zoneCode(dto.zoneCode())
             .spaceId(dto.spaceId())
             .spaceCode(dto.spaceCode())
             .entryTime(dto.entryTime())
@@ -236,7 +232,7 @@ public class TransactionRestMapper {
             .elapsedFormatted(dto.elapsedFormatted())
             .hourlyRate(dto.hourlyRate())
             .currentAmount(dto.currentAmount())
-            .currency(dto.currency())                       // ← campo agregado
+            .currency(dto.currency())
             .maxRecommendedMinutes(dto.maxRecommendedMinutes())
             .isOverdue(dto.isOverdue())
             .requiresAttention(dto.requiresAttention())

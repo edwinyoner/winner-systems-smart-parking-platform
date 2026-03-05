@@ -1,1 +1,324 @@
-<p>active-transactions works!</p>
+<!-- src/app/views/parking-service/transactions/active-transactions/active-transactions.component.html -->
+
+<c-row>
+  <c-col xs="12">
+    <c-card class="mb-4">
+      <c-card-header>
+        <strong>Monitoreo en Tiempo Real</strong>
+        <span class="text-body-secondary small ms-2">Haga clic en un espacio para ver detalles</span>
+        <button 
+          cButton 
+          color="primary" 
+          size="sm" 
+          class="float-end"
+          (click)="manualRefresh()"
+          [disabled]="loading || !selectedZoneId">
+          <i class="fa-solid fa-rotate me-1"></i>
+          Actualizar
+        </button>
+      </c-card-header>
+      
+      <c-card-body>
+        
+        <!-- ========================= FILTROS ========================= -->
+        <c-row class="mb-4">
+          <c-col md="6">
+            <label cFormLabel for="parkingSelect">Parqueo</label>
+            <select 
+              cFormSelect 
+              id="parkingSelect"
+              [(ngModel)]="selectedParkingId"
+              (change)="onParkingChange()">
+              <option [ngValue]="null">Seleccione un parqueo</option>
+              @for (parking of parkings; track parking.id) {
+                <option [ngValue]="parking.id">{{ parking.name }}</option>
+              }
+            </select>
+          </c-col>
+          
+          <c-col md="6">
+            <label cFormLabel for="zoneSelect">Zona</label>
+            <select 
+              cFormSelect 
+              id="zoneSelect"
+              [(ngModel)]="selectedZoneId"
+              (change)="onZoneChange()"
+              [disabled]="!selectedParkingId || loadingZones">
+              <option [ngValue]="null">Seleccione una zona</option>
+              @for (zone of zones; track zone.id) {
+                <option [ngValue]="zone.id">{{ zone.name }}</option>
+              }
+            </select>
+          </c-col>
+        </c-row>
+        
+        <!-- ========================= ESTADÍSTICAS ========================= -->
+        @if (selectedZoneId && !loading) {
+          <c-row class="mb-4 text-center">
+            <c-col sm="6" md="3" lg="2">
+              <div class="stat-card">
+                <div class="stat-value">{{ stats.total }}</div>
+                <div class="stat-label">Total Espacios</div>
+              </div>
+            </c-col>
+            <c-col sm="6" md="3" lg="2">
+              <div class="stat-card stat-success">
+                <div class="stat-value">{{ stats.available }}</div>
+                <div class="stat-label">Disponibles</div>
+              </div>
+            </c-col>
+            <c-col sm="6" md="3" lg="2">
+              <div class="stat-card stat-danger">
+                <div class="stat-value">{{ stats.occupied }}</div>
+                <div class="stat-label">Ocupados</div>
+              </div>
+            </c-col>
+            <c-col sm="6" md="3" lg="2">
+              <div class="stat-card stat-warning">
+                <div class="stat-value">{{ stats.maintenance }}</div>
+                <div class="stat-label">Mantenimiento</div>
+              </div>
+            </c-col>
+            <c-col sm="6" md="3" lg="2">
+              <div class="stat-card stat-secondary">
+                <div class="stat-value">{{ stats.outOfService }}</div>
+                <div class="stat-label">Fuera Servicio</div>
+              </div>
+            </c-col>
+            <c-col sm="6" md="3" lg="2">
+              <div class="stat-card stat-info">
+                <div class="stat-value">{{ stats.occupancyPercentage }}%</div>
+                <div class="stat-label">Ocupación</div>
+              </div>
+            </c-col>
+          </c-row>
+        }
+        
+        <!-- ========================= LOADING ========================= -->
+        @if (loading) {
+          <div class="text-center py-5">
+            <c-spinner color="primary"></c-spinner>
+            <p class="mt-3 text-body-secondary">Cargando espacios...</p>
+          </div>
+        }
+        
+        <!-- ========================= GRID DE ESPACIOS ========================= -->
+        @if (!loading && selectedZoneId && spaces.length > 0) {
+          <div class="spaces-grid">
+            @for (space of spaces; track space.id) {
+              <div 
+                class="space-card space-{{ space.status }}"
+                [class.has-camera]="space.hasCameraCoverage"
+                [class.has-transaction]="space.transaction"
+                (click)="onSpaceClick(space)">
+                
+                <!-- Ícono de cámara -->
+                @if (space.hasCameraCoverage) {
+                  <i class="fa-solid fa-video camera-icon"></i>
+                }
+                
+                <!-- Ícono de auto -->
+                <i class="fa-solid fa-car space-icon"></i>
+                
+                <!-- Código del espacio -->
+                <div class="space-code">{{ space.code }}</div>
+                
+                <!-- Info adicional para ocupados -->
+                @if (space.status === 'OCCUPIED' && space.elapsedTime) {
+                  <div class="space-time">{{ space.elapsedTime }}</div>
+                }
+              </div>
+            }
+          </div>
+        }
+        
+        <!-- ========================= EMPTY STATE ========================= -->
+        @if (!loading && selectedZoneId && spaces.length === 0) {
+          <div class="text-center py-5">
+            <i class="fa-solid fa-inbox fa-3x text-body-secondary mb-3"></i>
+            <p class="text-body-secondary">No hay espacios en esta zona</p>
+          </div>
+        }
+        
+        @if (!selectedParkingId) {
+          <div class="text-center py-5">
+            <i class="fa-solid fa-parking fa-3x text-body-secondary mb-3"></i>
+            <p class="text-body-secondary">Seleccione un parqueo para comenzar</p>
+          </div>
+        }
+        
+        @if (selectedParkingId && !selectedZoneId) {
+          <div class="text-center py-5">
+            <i class="fa-solid fa-map-location-dot fa-3x text-body-secondary mb-3"></i>
+            <p class="text-body-secondary">Seleccione una zona para ver los espacios</p>
+          </div>
+        }
+        
+      </c-card-body>
+    </c-card>
+  </c-col>
+</c-row>
+
+<!-- ========================= MODAL DE DETALLES ========================= -->
+<c-modal 
+  [visible]="isModalVisible" 
+  (visibleChange)="isModalVisible = $event"
+  size="lg">
+  <c-modal-header>
+    <h5 cModalTitle>
+      Espacio {{ selectedSpace?.code }}
+      <c-badge 
+        [color]="getSpaceStatusBadge(selectedSpace?.status || '')" 
+        class="ms-2">
+        {{ getSpaceStatusText(selectedSpace?.status || '') }}
+      </c-badge>
+    </h5>
+    <button 
+      cButtonClose 
+      (click)="closeModal()">
+    </button>
+  </c-modal-header>
+  
+  <c-modal-body>
+    @if (selectedSpace) {
+      <!-- Info del Espacio -->
+      <h6 class="mb-3">Información del Espacio</h6>
+      <dl class="row mb-4">
+        <dt class="col-sm-4">Código:</dt>
+        <dd class="col-sm-8">{{ selectedSpace.code }}</dd>
+        
+        <dt class="col-sm-4">Tipo:</dt>
+        <dd class="col-sm-8">{{ getSpaceTypeText(selectedSpace.type) }}</dd>
+        
+        <dt class="col-sm-4">Estado:</dt>
+        <dd class="col-sm-8">
+          <c-badge [color]="getSpaceStatusBadge(selectedSpace.status || '')">
+            {{ getSpaceStatusText(selectedSpace.status || '') }}
+          </c-badge>
+        </dd>
+        
+        @if (selectedSpace.hasCameraCoverage) {
+          <dt class="col-sm-4">Cámara:</dt>
+          <dd class="col-sm-8">
+            <i class="fa-solid fa-video text-success"></i> Sí
+          </dd>
+        }
+        
+        @if (selectedSpace.hasSensor) {
+          <dt class="col-sm-4">Sensor:</dt>
+          <dd class="col-sm-8">
+            <i class="fa-solid fa-signal text-info"></i> Sí
+          </dd>
+        }
+        
+        @if (selectedSpace.width && selectedSpace.length) {
+          <dt class="col-sm-4">Dimensiones:</dt>
+          <dd class="col-sm-8">{{ selectedSpace.width }}m × {{ selectedSpace.length }}m</dd>
+        }
+      </dl>
+      
+      <!-- Transacción Activa -->
+      @if (selectedSpace.transaction && selectedSpace.status === 'OCCUPIED') {
+        <hr>
+        <h6 class="mb-3">
+          <i class="fa-solid fa-clock text-warning me-2"></i>
+          Transacción Activa
+        </h6>
+        <dl class="row">
+          <dt class="col-sm-4">Placa:</dt>
+          <dd class="col-sm-8">
+            <strong class="text-primary">{{ selectedSpace.transaction.vehicle.plateNumber }}</strong>
+          </dd>
+          
+          <dt class="col-sm-4">Cliente:</dt>
+          <dd class="col-sm-8">{{ selectedSpace.transaction.customer.name }}</dd>
+          
+          <dt class="col-sm-4">Documento:</dt>
+          <dd class="col-sm-8">{{ selectedSpace.transaction.entryDocument.number }}</dd>
+          
+          @if (selectedSpace.transaction.customer.phone) {
+            <dt class="col-sm-4">Teléfono:</dt>
+            <dd class="col-sm-8">{{ selectedSpace.transaction.customer.phone }}</dd>
+          }
+          
+          <dt class="col-sm-4">Hora Entrada:</dt>
+          <dd class="col-sm-8">{{ selectedSpace.transaction.entryTime | date: 'dd/MM/yyyy HH:mm' }}</dd>
+          
+          <dt class="col-sm-4">Tiempo Transcurrido:</dt>
+          <dd class="col-sm-8">
+            <c-badge color="warning">{{ selectedSpace.elapsedTime }}</c-badge>
+          </dd>
+          
+          <dt class="col-sm-4">Tarifa:</dt>
+          <dd class="col-sm-8">S/ {{ selectedSpace.transaction.rate.hourlyRate }} / hora</dd>
+          
+          <dt class="col-sm-4">Monto Acumulado:</dt>
+          <dd class="col-sm-8">
+            <strong class="text-success fs-5">
+              S/ {{ selectedSpace.transaction.calculatedAmount?.toFixed(2) }}
+            </strong>
+          </dd>
+          
+          @if (selectedSpace.transaction.notes) {
+            <dt class="col-sm-4">Observaciones:</dt>
+            <dd class="col-sm-8">{{ selectedSpace.transaction.notes }}</dd>
+          }
+        </dl>
+      }
+      
+      @if (selectedSpace.status === 'MAINTENANCE') {
+        <div class="alert alert-warning">
+          <i class="fa-solid fa-triangle-exclamation me-2"></i>
+          Este espacio está en mantenimiento activo
+        </div>
+      }
+      
+      @if (selectedSpace.status === 'OUT_OF_SERVICE') {
+        <div class="alert alert-secondary">
+          <i class="fa-solid fa-ban me-2"></i>
+          Este espacio está fuera de servicio
+        </div>
+      }
+      
+      @if (selectedSpace.description) {
+        <hr>
+        <p class="text-body-secondary mb-0">
+          <i class="fa-solid fa-info-circle me-1"></i>
+          {{ selectedSpace.description }}
+        </p>
+      }
+    }
+  </c-modal-body>
+  
+  <c-modal-footer>
+    @if (selectedSpace?.transaction && selectedSpace?.status === 'OCCUPIED') {
+      <button 
+        cButton 
+        color="info" 
+        (click)="goToTransactionDetail()">
+        <i class="fa-solid fa-eye me-1"></i>
+        Ver Detalles
+      </button>
+      <button 
+        cButton 
+        color="warning" 
+        (click)="goToRegisterExit()">
+        <i class="fa-solid fa-right-from-bracket me-1"></i>
+        Registrar Salida
+      </button>
+      <button 
+        cButton 
+        color="success" 
+        (click)="goToProcessPayment()">
+        <i class="fa-solid fa-money-bill-wave me-1"></i>
+        Procesar Pago
+      </button>
+    }
+    <button 
+      cButton 
+      color="secondary" 
+      (click)="closeModal()">
+      Cerrar
+    </button>
+  </c-modal-footer>
+</c-modal>

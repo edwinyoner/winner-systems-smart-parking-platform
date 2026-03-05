@@ -98,8 +98,7 @@ export class DefaultHeaderComponent extends HeaderComponent implements OnInit {
     const colorMap: { [key: string]: string } = {
       'ADMIN': 'danger',
       'AUTORIDAD': 'warning',
-      'OPERADOR': 'info',
-      'SUPERVISOR': 'success'
+      'OPERADOR': 'info'
     };
     this.roleBadgeColor.set(colorMap[role] || 'secondary');
   }

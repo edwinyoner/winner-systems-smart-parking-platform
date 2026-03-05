@@ -1,7 +1,10 @@
 package com.winnersystems.smartparking.parking.application.port.output;
 
+import com.winnersystems.smartparking.parking.application.dto.query.PageRequest;
+import com.winnersystems.smartparking.parking.application.dto.query.PageResult;
 import com.winnersystems.smartparking.parking.domain.model.Vehicle;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -12,35 +15,54 @@ import java.util.Optional;
  */
 public interface VehiclePersistencePort {
 
-   /**
-    * Guarda un vehículo (crear o actualizar).
-    *
-    * @param vehicle vehículo a guardar
-    * @return vehículo guardado
-    */
+   // ========================= WRITE =========================
+
    Vehicle save(Vehicle vehicle);
 
-   /**
-    * Busca un vehículo por su ID.
-    *
-    * @param id ID del vehículo
-    * @return Optional con el vehículo si existe
-    */
+   void delete(Long id);
+
+   // ========================= FIND ÚNICO =========================
+
    Optional<Vehicle> findById(Long id);
 
-   /**
-    * Busca un vehículo por su placa.
-    *
-    * @param plateNumber placa del vehículo
-    * @return Optional con el vehículo si existe
-    */
    Optional<Vehicle> findByPlateNumber(String plateNumber);
 
-   /**
-    * Verifica si existe un vehículo con esa placa.
-    *
-    * @param plateNumber placa del vehículo
-    * @return true si existe
-    */
+   // ========================= EXISTS =========================
+
    boolean existsByPlateNumber(String plateNumber);
+
+   // ========================= LIST (paginado) =========================
+
+   /**
+    * Lista todos los vehículos con búsqueda y filtro de estado.
+    *
+    * @param pageRequest parámetros de paginación
+    * @param search búsqueda en placa, marca, color (opcional)
+    * @param status filtro: "ACTIVE", "DELETED", "ALL" (opcional)
+    * @return PageResult con vehículos
+    */
+   PageResult<Vehicle> findAll(PageRequest pageRequest, String search, String status);
+
+   /**
+    * Lista vehículos recurrentes (totalVisits > 1).
+    *
+    * @param pageRequest parámetros de paginación
+    * @return PageResult con vehículos recurrentes ordenados por totalVisits DESC
+    */
+   PageResult<Vehicle> findRecurrent(PageRequest pageRequest);
+
+   // ========================= LIST (sin paginación) =========================
+
+   /**
+    * Lista todos los vehículos activos (deletedAt IS NULL).
+    *
+    * @return Lista completa de vehículos activos
+    */
+   List<Vehicle> findAllActive();
+
+   // ========================= COUNT =========================
+
+   long count();
+
+   long countActive();
 }

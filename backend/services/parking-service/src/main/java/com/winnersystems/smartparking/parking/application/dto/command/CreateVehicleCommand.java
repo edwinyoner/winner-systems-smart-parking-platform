@@ -6,9 +6,7 @@ package com.winnersystems.smartparking.parking.application.dto.command;
  * @author Edwin Yoner - Winner Systems
  */
 public record CreateVehicleCommand(
-      String licensePlate,
-      String color,
-      String brand
+      String licensePlate
 ) {
    public CreateVehicleCommand {
       if (licensePlate == null || licensePlate.isBlank()) {

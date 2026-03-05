@@ -1,7 +1,10 @@
 package com.winnersystems.smartparking.parking.application.port.output;
 
+import com.winnersystems.smartparking.parking.application.dto.query.PageRequest;
+import com.winnersystems.smartparking.parking.application.dto.query.PageResult;
 import com.winnersystems.smartparking.parking.domain.model.Customer;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -12,44 +15,70 @@ import java.util.Optional;
  */
 public interface CustomerPersistencePort {
 
-   /**
-    * Guarda un cliente (crear o actualizar).
-    *
-    * @param customer cliente a guardar
-    * @return cliente guardado
-    */
+   // ========================= WRITE =========================
+
    Customer save(Customer customer);
 
-   /**
-    * Busca un cliente por su ID.
-    *
-    * @param id ID del cliente
-    * @return Optional con el cliente si existe
-    */
+   void delete(Long id);
+
+   // ========================= FIND ÚNICO =========================
+
    Optional<Customer> findById(Long id);
 
-   /**
-    * Busca un cliente por tipo y número de documento.
-    *
-    * @param documentTypeId tipo de documento
-    * @param documentNumber número de documento
-    * @return Optional con el cliente si existe
-    */
    Optional<Customer> findByDocument(Long documentTypeId, String documentNumber);
 
-   /**
-    * Busca un cliente por email.
-    *
-    * @param email email del cliente
-    * @return Optional con el cliente si existe
-    */
    Optional<Customer> findByEmail(String email);
 
-   /**
-    * Busca un cliente por teléfono.
-    *
-    * @param phone teléfono del cliente
-    * @return Optional con el cliente si existe
-    */
    Optional<Customer> findByPhone(String phone);
+
+   // ========================= EXISTS =========================
+
+   boolean existsByDocument(Long documentTypeId, String documentNumber);
+
+   boolean existsByEmail(String email);
+
+   boolean existsByPhone(String phone);
+
+   // ========================= LIST (paginado) =========================
+
+   /**
+    * Lista todos los clientes con búsqueda y filtro de estado.
+    *
+    * @param pageRequest parámetros de paginación
+    * @param search búsqueda en nombre, apellido, documento (opcional)
+    * @param status filtro: "ACTIVE", "DELETED", "ALL" (opcional)
+    * @return PageResult con clientes
+    */
+   PageResult<Customer> findAll(PageRequest pageRequest, String search, String status);
+
+   /**
+    * Lista clientes recurrentes (totalVisits > 1).
+    *
+    * @param pageRequest parámetros de paginación
+    * @return PageResult con clientes recurrentes ordenados por totalVisits DESC
+    */
+   PageResult<Customer> findRecurrent(PageRequest pageRequest);
+
+   /**
+    * Lista clientes con cuenta móvil vinculada (authExternalId NOT NULL).
+    *
+    * @param pageRequest parámetros de paginación
+    * @return PageResult con clientes que tienen app móvil
+    */
+   PageResult<Customer> findWithMobileAccount(PageRequest pageRequest);
+
+   // ========================= LIST (sin paginación) =========================
+
+   /**
+    * Lista todos los clientes activos (deletedAt IS NULL).
+    *
+    * @return Lista completa de clientes activos
+    */
+   List<Customer> findAllActive();
+
+   // ========================= COUNT =========================
+
+   long count();
+
+   long countActive();
 }

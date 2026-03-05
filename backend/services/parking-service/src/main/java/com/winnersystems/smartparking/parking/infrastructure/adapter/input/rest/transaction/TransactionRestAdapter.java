@@ -36,7 +36,7 @@ import java.time.LocalDateTime;
  * @version 1.0
  */
 @RestController
-@RequestMapping("/api/v1/transactions")
+@RequestMapping("/transactions")
 @RequiredArgsConstructor
 public class TransactionRestAdapter {
 
@@ -100,7 +100,7 @@ public class TransactionRestAdapter {
     */
    @GetMapping("/{id}")
    public ResponseEntity<TransactionDetailResponse> getById(@PathVariable Long id) {
-      TransactionDetailDto dto = getTransactionUseCase.getById(id);
+      TransactionDetailDto dto = getTransactionUseCase.getTransactionById(id);
       return ResponseEntity.ok(mapper.toDetailResponse(dto));
    }
 
@@ -111,7 +111,7 @@ public class TransactionRestAdapter {
     */
    @GetMapping("/active/plate/{plateNumber}")
    public ResponseEntity<TransactionDetailResponse> getActiveByPlate(@PathVariable String plateNumber) {
-      TransactionDetailDto dto = getTransactionUseCase.getActiveByPlate(plateNumber);
+      TransactionDetailDto dto = getTransactionUseCase.getActiveTransactionByPlate(plateNumber);
 
       if (dto == null) {
          return ResponseEntity.notFound().build();
@@ -132,9 +132,9 @@ public class TransactionRestAdapter {
          @RequestParam(defaultValue = "0") int page,
          @RequestParam(defaultValue = "20") int size) {
 
-      PagedResponse<ActiveTransactionDto> dtoPage = listActiveTransactionsUseCase.listAll(page, size);
+      PagedResponse<ActiveTransactionDto> dtoPage =
+            listActiveTransactionsUseCase.listAllActiveTransactions(page, size);
 
-      // ✅ Usar .map() para convertir DTOs a Responses
       PagedResponse<ActiveTransactionResponse> responsePage = dtoPage.map(mapper::toActiveResponse);
 
       return ResponseEntity.ok(responsePage);
@@ -152,9 +152,8 @@ public class TransactionRestAdapter {
          @RequestParam(defaultValue = "20") int size) {
 
       PagedResponse<ActiveTransactionDto> dtoPage =
-            listActiveTransactionsUseCase.listActiveByZone(zoneId, page, size);
+            listActiveTransactionsUseCase.listActiveTransactionsByZone(zoneId, page, size);
 
-      // ✅ Usar .map() para convertir DTOs a Responses
       PagedResponse<ActiveTransactionResponse> responsePage = dtoPage.map(mapper::toActiveResponse);
 
       return ResponseEntity.ok(responsePage);
@@ -172,9 +171,8 @@ public class TransactionRestAdapter {
          @RequestParam(defaultValue = "20") int size) {
 
       PagedResponse<ActiveTransactionDto> dtoPage =
-            listActiveTransactionsUseCase.searchActiveByPlate(plateNumber, page, size);
+            listActiveTransactionsUseCase.searchActiveTransactionsByPlate(plateNumber, page, size);
 
-      // ✅ Usar .map() para convertir DTOs a Responses
       PagedResponse<ActiveTransactionResponse> responsePage = dtoPage.map(mapper::toActiveResponse);
 
       return ResponseEntity.ok(responsePage);
@@ -191,9 +189,8 @@ public class TransactionRestAdapter {
          @RequestParam(defaultValue = "20") int size) {
 
       PagedResponse<ActiveTransactionDto> dtoPage =
-            listActiveTransactionsUseCase.listOverdue(page, size);
+            listActiveTransactionsUseCase.listOverdueTransactions(page, size);
 
-      // ✅ Usar .map() para convertir DTOs a Responses
       PagedResponse<ActiveTransactionResponse> responsePage = dtoPage.map(mapper::toActiveResponse);
 
       return ResponseEntity.ok(responsePage);
@@ -214,9 +211,8 @@ public class TransactionRestAdapter {
          @RequestParam(defaultValue = "DESC") String sortDirection) {
 
       PagedResponse<TransactionDto> dtoPage =
-            listTransactionsUseCase.listAll(page, size, sortBy, sortDirection);
+            listTransactionsUseCase.listAllTransactions(page, size, sortBy, sortDirection);
 
-      // ✅ Usar .map() para convertir DTOs a Responses
       PagedResponse<TransactionResponse> responsePage = dtoPage.map(mapper::toResponse);
 
       return ResponseEntity.ok(responsePage);
@@ -235,9 +231,8 @@ public class TransactionRestAdapter {
          @RequestParam(defaultValue = "20") int size) {
 
       PagedResponse<TransactionDto> dtoPage =
-            listTransactionsUseCase.listByDateRange(startDate, endDate, page, size);
+            listTransactionsUseCase.listTransactionsByDateRange(startDate, endDate, page, size);
 
-      // ✅ Usar .map() para convertir DTOs a Responses
       PagedResponse<TransactionResponse> responsePage = dtoPage.map(mapper::toResponse);
 
       return ResponseEntity.ok(responsePage);
@@ -255,9 +250,8 @@ public class TransactionRestAdapter {
          @RequestParam(defaultValue = "20") int size) {
 
       PagedResponse<TransactionDto> dtoPage =
-            listTransactionsUseCase.listByStatus(status, page, size);
+            listTransactionsUseCase.listTransactionsByStatus(status, page, size);
 
-      // ✅ Usar .map() para convertir DTOs a Responses
       PagedResponse<TransactionResponse> responsePage = dtoPage.map(mapper::toResponse);
 
       return ResponseEntity.ok(responsePage);
@@ -275,9 +269,8 @@ public class TransactionRestAdapter {
          @RequestParam(defaultValue = "20") int size) {
 
       PagedResponse<TransactionDto> dtoPage =
-            listTransactionsUseCase.listByPaymentStatus(paymentStatus, page, size);
+            listTransactionsUseCase.listTransactionsByPaymentStatus(paymentStatus, page, size);
 
-      // ✅ Usar .map() para convertir DTOs a Responses
       PagedResponse<TransactionResponse> responsePage = dtoPage.map(mapper::toResponse);
 
       return ResponseEntity.ok(responsePage);
@@ -295,9 +288,8 @@ public class TransactionRestAdapter {
          @RequestParam(defaultValue = "20") int size) {
 
       PagedResponse<TransactionDto> dtoPage =
-            listTransactionsUseCase.listByZone(zoneId, page, size);
+            listTransactionsUseCase.listTransactionsByZone(zoneId, page, size);
 
-      // ✅ Usar .map() para convertir DTOs a Responses
       PagedResponse<TransactionResponse> responsePage = dtoPage.map(mapper::toResponse);
 
       return ResponseEntity.ok(responsePage);
@@ -315,9 +307,8 @@ public class TransactionRestAdapter {
          @RequestParam(defaultValue = "20") int size) {
 
       PagedResponse<TransactionDto> dtoPage =
-            listTransactionsUseCase.searchByPlate(plateNumber, page, size);
+            listTransactionsUseCase.searchTransactionsByPlate(plateNumber, page, size);
 
-      // ✅ Usar .map() para convertir DTOs a Responses
       PagedResponse<TransactionResponse> responsePage = dtoPage.map(mapper::toResponse);
 
       return ResponseEntity.ok(responsePage);

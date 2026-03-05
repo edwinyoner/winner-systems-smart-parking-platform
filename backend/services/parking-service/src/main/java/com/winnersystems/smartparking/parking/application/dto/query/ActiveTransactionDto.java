@@ -22,9 +22,6 @@ public record ActiveTransactionDto(
       // ========================= VEHÍCULO =========================
       Long vehicleId,
       String plateNumber,
-      String vehicleType,
-      String vehicleBrand,
-      String vehicleColor,
 
       // ========================= CLIENTE =========================
       Long customerId,
@@ -35,12 +32,12 @@ public record ActiveTransactionDto(
       String documentNumber,
 
       // ========================= UBICACIÓN =========================
+      Long parkingId,
+      String parkingName,
       Long zoneId,
       String zoneName,
-      String zoneCode,
       Long spaceId,
       String spaceCode,
-      String spaceType,
 
       // ========================= TIEMPOS =========================
       LocalDateTime entryTime,
@@ -82,12 +79,12 @@ public record ActiveTransactionDto(
     */
    public static ActiveTransactionDto of(
          Long id,
-         Long vehicleId, String plateNumber, String vehicleType,
-         String vehicleBrand, String vehicleColor,
+         Long vehicleId, String plateNumber,
          Long customerId, String customerName, String customerPhone,
          String customerEmail, String documentType, String documentNumber,
-         Long zoneId, String zoneName, String zoneCode,
-         Long spaceId, String spaceCode, String spaceType,
+         Long parkingId, String parkingName,
+         Long zoneId, String zoneName,
+         Long spaceId, String spaceCode,
          LocalDateTime entryTime, Integer elapsedMinutes, String elapsedFormatted,
          BigDecimal hourlyRate, BigDecimal currentAmount,
          Boolean isOverdue, Integer maxRecommendedMinutes, Boolean requiresAttention,
@@ -97,10 +94,11 @@ public record ActiveTransactionDto(
    ) {
       return new ActiveTransactionDto(
             id,
-            vehicleId, plateNumber, vehicleType, vehicleBrand, vehicleColor,
+            vehicleId, plateNumber,
             customerId, customerName, customerPhone, customerEmail, documentType, documentNumber,
-            zoneId, zoneName, zoneCode,
-            spaceId, spaceCode, spaceType,
+            parkingId, parkingName,
+            zoneId, zoneName,
+            spaceId, spaceCode,
             entryTime, elapsedMinutes, elapsedFormatted,
             hourlyRate, currentAmount, "PEN",              // currency siempre "PEN"
             isOverdue != null ? isOverdue : false,

@@ -1,0 +1,45 @@
+/* src/app/views/parking-service/transactions/transaction-detail/transaction-detail.component.css */
+
+.info-section {
+  margin-bottom: 1.5rem;
+}
+
+.info-section h5 {
+  color: #4f5d73;
+  font-weight: 600;
+  border-bottom: 2px solid #e9ecef;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.payment-info {
+  background: #e7f5eb;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid #2eb85c;
+}
+
+dl.row {
+  margin-bottom: 0.5rem;
+}
+
+dt {
+  font-weight: 600;
+  color: #666;
+}
+
+dd {
+  color: #333;
+}
+
+.photo-preview {
+  max-width: 300px;
+}
+
+.photo-preview img {
+  border: 2px solid #e9ecef;
+}
+
+.gap-2 {
+  gap: 0.5rem !important;
+}

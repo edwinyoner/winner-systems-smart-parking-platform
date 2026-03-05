@@ -11,8 +11,9 @@ import java.util.Objects;
  * documento oficial (DNI, CE, Pasaporte, etc.). El sistema registra clientes
  * conforme ingresan al estacionamiento para propósitos de seguridad y auditoría.
  *
- * En Fase 1, los clientes son registrados manualmente por operadores al momento
- * de estacionar un vehículo. En fases posteriores, podrán auto-registrarse desde
+ * En Fase 1, los clientes son registrados manualmente por operadores o automaticamente(iot-service+ia-service)
+ * al momento de ingresar al parqueo.
+ * En fases posteriores, podrán tener acceso a
  * la aplicación móvil con autenticación OAuth (Google/Apple/Microsoft).
  *
  * Casos de uso:

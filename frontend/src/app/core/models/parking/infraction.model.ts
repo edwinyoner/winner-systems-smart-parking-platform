@@ -1,48 +1,88 @@
 // src/app/core/models/parking/infraction.model.ts
 
-/**
- * Modelo para Infracción.
- * Representa una violación de las reglas del estacionamiento.
- */
 export interface Infraction {
   id?: number;
+  
+  infractionCode: string;           // UNIQUE - "INF-2026-001234"
+  
+  // Relaciones completas:
+  parkingId: number;
+  parkingName?: string;
+  zoneId: number;
+  zoneName?: string;
+  spaceId?: number;
+  spaceCode?: string;
   transactionId?: number;
-  vehicleId?: number;
+  vehicleId: number;
+  vehiclePlate?: string;
   customerId?: number;
-  infractionType: string;          // "OVERSTAY", "NO_PAYMENT", "UNAUTHORIZED_PARKING"
+  customerName?: string;
+  
+  // Tipo y severidad:
+  infractionType: InfractionType;
+  severity: InfractionSeverity;
   description: string;
-  amount?: number;
+  evidence?: string;                // URLs de fotos separadas por comas
+  
+  // Detección:
+  detectedAt: string;
+  detectedBy: number;               // Operador que detectó
+  detectedByName?: string;
+  detectionMethod?: string;         // MANUAL, CAMERA_AI, SENSOR
+  
+  // Multa:
+  fineAmount?: number;
   currency?: string;
+  fineDueDate?: string;
+  finePaid?: boolean;
+  finePaidAt?: string;
+  
+  // Estado y resolución:
   status: InfractionStatus;
-  reportedAt: string;
-  reportedBy: number;
   resolvedAt?: string;
-  resolvedBy?: number;
-  notes?: string;
+  resolutionType?: string;          // PAID, DISMISSED, ESCALATED
+  resolution?: string;
+  
+  // Notificación:
+  notificationSent?: boolean;
+  
   createdAt?: string;
   updatedAt?: string;
+  deletedAt?: string;
 }
 
-/**
- * Estados posibles de una Infracción
- */
+export enum InfractionType {
+  OVERSTAY = 'OVERSTAY',
+  WRONG_SPACE = 'WRONG_SPACE',
+  DOUBLE_PARKING = 'DOUBLE_PARKING',
+  NO_PAYMENT = 'NO_PAYMENT',
+  UNAUTHORIZED = 'UNAUTHORIZED',
+  OTHER = 'OTHER'
+}
+
+export enum InfractionSeverity {
+  MINOR = 'MINOR',
+  MODERATE = 'MODERATE',
+  SEVERE = 'SEVERE',
+  CRITICAL = 'CRITICAL'
+}
+
 export enum InfractionStatus {
   PENDING = 'PENDING',
+  IN_REVIEW = 'IN_REVIEW',
   RESOLVED = 'RESOLVED',
-  CANCELLED = 'CANCELLED'
+  ESCALATED = 'ESCALATED'
 }
 
-/**
- * Request para crear/actualizar Infracción
- */
 export interface InfractionRequest {
+  parkingId: number;
+  zoneId: number;
+  spaceId?: number;
   transactionId?: number;
-  vehicleId?: number;
+  vehicleId: number;
   customerId?: number;
-  infractionType: string;
+  infractionType: InfractionType;
+  severity: InfractionSeverity;
   description: string;
-  amount?: number;
-  currency?: string;
-  reportedBy: number;
-  notes?: string;
+  evidence?: string;
 }

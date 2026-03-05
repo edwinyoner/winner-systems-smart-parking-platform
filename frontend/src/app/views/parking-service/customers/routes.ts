@@ -7,11 +7,11 @@ export const routes: Routes = [
     loadComponent: () => import('./customer-list/customer-list.component').then(m => m.CustomerListComponent),
     data: { title: 'Lista de Clientes' }
   },
-  {
-    path: 'create',
-    loadComponent: () => import('./customer-create/customer-create.component').then(m => m.CustomerCreateComponent),
-    data: { title: 'Crear Cliente' }
-  },
+  // {
+  //   path: 'create',
+  //   loadComponent: () => import('./customer-create/customer-create.component').then(m => m.CustomerCreateComponent),
+  //   data: { title: 'Crear Cliente' }
+  // },
   {
     path: ':id',
     loadComponent: () => import('./customer-detail/customer-detail.component').then(m => m.CustomerDetailComponent),

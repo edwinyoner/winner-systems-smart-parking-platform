@@ -1,1 +1,263 @@
-<p>transaction-exit works!</p>
+<!-- src/app/views/parking-service/transactions/transaction-exit/transaction-exit.component.html -->
+
+<c-row>
+  <c-col xs="12">
+    <c-card class="mb-4">
+      <c-card-header>
+        <strong>
+          <i class="fa-solid fa-right-from-bracket me-2"></i>
+          Registrar Salida de Vehículo
+        </strong>
+      </c-card-header>
+      
+      <c-card-body>
+        
+        <!-- ========================= BÚSQUEDA POR PLACA ========================= -->
+        <div class="search-section mb-4">
+          <h5 class="mb-3">
+            <i class="fa-solid fa-search me-2"></i>
+            Buscar Vehículo
+          </h5>
+          
+          @if (searchErrorMessage) {
+            <c-alert color="warning" [dismissible]="true" (visibleChange)="searchErrorMessage = ''">
+              <i class="fa-solid fa-triangle-exclamation me-2"></i>
+              {{ searchErrorMessage }}
+            </c-alert>
+          }
+          
+          <form cForm [formGroup]="searchForm" (ngSubmit)="searchByPlate()">
+            <c-row class="align-items-end">
+              <c-col md="6">
+                <label cFormLabel for="plateNumber">
+                  Placa del Vehículo <span class="text-danger">*</span>
+                </label>
+                <input 
+                  cFormControl 
+                  type="text" 
+                  id="plateNumber"
+                  formControlName="plateNumber"
+                  placeholder="Ej: ABC-123"
+                  [class.is-invalid]="isFieldInvalid(searchForm, 'plateNumber')"
+                  style="text-transform: uppercase;">
+                @if (isFieldInvalid(searchForm, 'plateNumber')) {
+                  <div class="invalid-feedback d-block">
+                    Placa requerida (mínimo 6 caracteres)
+                  </div>
+                }
+              </c-col>
+              
+              <c-col md="6">
+                <div class="d-flex gap-2">
+                  <button 
+                    cButton 
+                    color="primary" 
+                    type="submit"
+                    [disabled]="searchForm.invalid || searching">
+                    @if (searching) {
+                      <c-spinner size="sm" class="me-1"></c-spinner>
+                    } @else {
+                      <i class="fa-solid fa-search me-1"></i>
+                    }
+                    Buscar
+                  </button>
+                  
+                  @if (transaction) {
+                    <button 
+                      cButton 
+                      color="secondary" 
+                      type="button"
+                      (click)="clearSearch()">
+                      <i class="fa-solid fa-times me-1"></i>
+                      Limpiar
+                    </button>
+                  }
+                </div>
+              </c-col>
+            </c-row>
+          </form>
+        </div>
+        
+        <hr class="my-4">
+        
+        <!-- ========================= DATOS DE LA TRANSACCIÓN ========================= -->
+        @if (transaction) {
+          <div class="transaction-details mb-4">
+            <h5 class="mb-3">
+              <i class="fa-solid fa-info-circle me-2"></i>
+              Datos de la Transacción
+            </h5>
+            
+            <c-row>
+              <c-col md="6">
+                <dl class="row">
+                  <dt class="col-sm-5">Transacción ID:</dt>
+                  <dd class="col-sm-7"><strong>#{{ transaction.id }}</strong></dd>
+                  
+                  <dt class="col-sm-5">Placa:</dt>
+                  <dd class="col-sm-7">
+                    <strong class="text-primary">{{ transaction.vehicle.plateNumber }}</strong>
+                  </dd>
+                  
+                  <dt class="col-sm-5">Cliente:</dt>
+                  <dd class="col-sm-7">{{ transaction.customer.name }}</dd>
+                  
+                  <dt class="col-sm-5">Documento:</dt>
+                  <dd class="col-sm-7">{{ transaction.entryDocument.number }}</dd>
+                  
+                  <dt class="col-sm-5">Parqueo:</dt>
+                  <dd class="col-sm-7">{{ transaction.parking.name }}</dd>
+                  
+                  <dt class="col-sm-5">Zona:</dt>
+                  <dd class="col-sm-7">{{ transaction.zone.name }}</dd>
+                  
+                  <dt class="col-sm-5">Espacio:</dt>
+                  <dd class="col-sm-7">{{ transaction.space.code }}</dd>
+                </dl>
+              </c-col>
+              
+              <c-col md="6">
+                <dl class="row">
+                  <dt class="col-sm-5">Hora Entrada:</dt>
+                  <dd class="col-sm-7">{{ transaction.entryTime | date: 'dd/MM/yyyy HH:mm' }}</dd>
+                  
+                  <dt class="col-sm-5">Tiempo:</dt>
+                  <dd class="col-sm-7">
+                    <c-badge color="warning">{{ transaction.durationFormatted }}</c-badge>
+                  </dd>
+                  
+                  <dt class="col-sm-5">Tarifa:</dt>
+                  <dd class="col-sm-7">S/ {{ transaction.rate.hourlyRate }} / hora</dd>
+                  
+                  <dt class="col-sm-5">Monto Calculado:</dt>
+                  <dd class="col-sm-7">
+                    <strong class="text-success fs-5">
+                      S/ {{ transaction.calculatedAmount?.toFixed(2) }}
+                    </strong>
+                  </dd>
+                  
+                  <dt class="col-sm-5">Estado Pago:</dt>
+                  <dd class="col-sm-7">
+                    <c-badge [color]="getPaymentStatusBadge(transaction.paymentStatus)">
+                      {{ getPaymentStatusText(transaction.paymentStatus) }}
+                    </c-badge>
+                  </dd>
+                </dl>
+              </c-col>
+            </c-row>
+          </div>
+          
+          <hr class="my-4">
+          
+          <!-- ========================= FORMULARIO DE SALIDA ========================= -->
+          @if (errorMessage) {
+            <c-alert color="danger" [dismissible]="true" (visibleChange)="errorMessage = ''">
+              <i class="fa-solid fa-triangle-exclamation me-2"></i>
+              {{ errorMessage }}
+            </c-alert>
+          }
+          
+          <form cForm [formGroup]="exitForm" (ngSubmit)="onSubmit()">
+            <h5 class="mb-3">
+              <i class="fa-solid fa-clipboard-check me-2"></i>
+              Verificación de Salida
+            </h5>
+            
+            <c-row class="mb-3">
+              <c-col md="4">
+                <label cFormLabel for="exitDocumentTypeId">
+                  Tipo Documento <span class="text-danger">*</span>
+                </label>
+                <select 
+                  cFormSelect 
+                  id="exitDocumentTypeId"
+                  formControlName="exitDocumentTypeId"
+                  [class.is-invalid]="isFieldInvalid(exitForm, 'exitDocumentTypeId')">
+                  <option [ngValue]="null">Seleccione</option>
+                  @for (docType of documentTypes; track docType.id) {
+                    <option [ngValue]="docType.id">{{ docType.name }}</option>
+                  }
+                </select>
+                @if (isFieldInvalid(exitForm, 'exitDocumentTypeId')) {
+                  <div class="invalid-feedback d-block">Requerido</div>
+                }
+              </c-col>
+              
+              <c-col md="4">
+                <label cFormLabel for="exitDocumentNumber">
+                  Nº Documento <span class="text-danger">*</span>
+                </label>
+                <input 
+                  cFormControl 
+                  type="text" 
+                  id="exitDocumentNumber"
+                  formControlName="exitDocumentNumber"
+                  placeholder="12345678"
+                  [class.is-invalid]="isFieldInvalid(exitForm, 'exitDocumentNumber')">
+                <small cFormText class="text-warning">
+                  <i class="fa-solid fa-shield-halved"></i>
+                  Debe coincidir con el documento de entrada
+                </small>
+                @if (isFieldInvalid(exitForm, 'exitDocumentNumber')) {
+                  <div class="invalid-feedback d-block">
+                    Documento requerido (mínimo 8 caracteres)
+                  </div>
+                }
+              </c-col>
+            </c-row>
+            
+            <c-row class="mb-3">
+              <c-col xs="12">
+                <label cFormLabel for="notes">
+                  Observaciones
+                </label>
+                <textarea 
+                  cFormControl 
+                  id="notes"
+                  formControlName="notes"
+                  rows="3"
+                  placeholder="Comentarios adicionales (opcional)">
+                </textarea>
+              </c-col>
+            </c-row>
+            
+            <!-- ========================= BOTONES ========================= -->
+            <c-row class="mt-4">
+              <c-col xs="12" class="d-flex justify-content-end gap-2">
+                <button 
+                  cButton 
+                  color="secondary" 
+                  type="button"
+                  (click)="cancel()"
+                  [disabled]="submitting">
+                  <i class="fa-solid fa-times me-1"></i>
+                  Cancelar
+                </button>
+                <button 
+                  cButton 
+                  color="success" 
+                  type="submit"
+                  [disabled]="exitForm.invalid || submitting">
+                  @if (submitting) {
+                    <c-spinner size="sm" class="me-1"></c-spinner>
+                  } @else {
+                    <i class="fa-solid fa-check me-1"></i>
+                  }
+                  Registrar Salida
+                </button>
+              </c-col>
+            </c-row>
+          </form>
+        }
+        
+        @if (!transaction && !searching) {
+          <div class="text-center py-5">
+            <i class="fa-solid fa-search fa-3x text-body-secondary mb-3"></i>
+            <p class="text-body-secondary">Ingrese una placa para buscar la transacción activa</p>
+          </div>
+        }
+        
+      </c-card-body>
+    </c-card>
+  </c-col>
+</c-row>

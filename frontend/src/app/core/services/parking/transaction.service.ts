@@ -1,169 +1,297 @@
 // src/app/core/services/parking/transaction.service.ts
+
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { 
-  Transaction, 
-  TransactionEntryRequest, 
-  TransactionExitRequest,
+import {
   TransactionDetailResponse,
-  TransactionStatus,
-  TransactionPaymentStatus
+  ActiveTransactionDto,
+  TransactionDto,
+  TransactionEntryRequest,
+  TransactionExitRequest,
+  ProcessPaymentRequest
 } from '../../models/parking/transaction.model';
-import { PaginatedResponse } from '../../models/pagination.model';
+import { ParkingPagedResponse } from '../../models/pagination.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class TransactionService {
-  private apiUrl = `${environment.apiUrl}/parking-service/api/v1/transactions`;
+  private apiUrl = `${environment.apiUrl}/parking-service/transactions`;
 
   constructor(private http: HttpClient) {}
 
+  // ========================= OPERACIONES DE TRANSACCIÓN =========================
+
   /**
-   * Obtener todas las transacciones (con paginación)
+   * Registra la ENTRADA de un vehículo al estacionamiento.
+   * 
+   * POST /transactions/entry
    */
-  getAll(page: number = 0, size: number = 20): Observable<PaginatedResponse<Transaction>> {
-    const params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', size.toString());
-    return this.http.get<PaginatedResponse<Transaction>>(this.apiUrl, { params });
+  recordEntry(request: TransactionEntryRequest): Observable<TransactionDetailResponse> {
+    return this.http.post<TransactionDetailResponse>(
+      `${this.apiUrl}/entry`,
+      request
+    );
   }
 
   /**
-   * Obtener transacciones activas (vehículos dentro)
+   * Registra la SALIDA de un vehículo del estacionamiento.
+   * 
+   * POST /transactions/exit
    */
-  getActive(page: number = 0, size: number = 50): Observable<PaginatedResponse<TransactionDetailResponse>> {
-    const params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', size.toString());
-    return this.http.get<PaginatedResponse<TransactionDetailResponse>>(`${this.apiUrl}/active`, { params });
+  recordExit(request: TransactionExitRequest): Observable<TransactionDetailResponse> {
+    return this.http.post<TransactionDetailResponse>(
+      `${this.apiUrl}/exit`,
+      request
+    );
   }
 
   /**
-   * Obtener transacción por ID
+   * Procesa el PAGO de una transacción.
+   * 
+   * POST /transactions/{id}/payment
+   */
+  processPayment(
+    transactionId: number,
+    request: ProcessPaymentRequest
+  ): Observable<TransactionDetailResponse> {
+    return this.http.post<TransactionDetailResponse>(
+      `${this.apiUrl}/${transactionId}/payment`,
+      request
+    );
+  }
+
+  // ========================= CONSULTAS INDIVIDUALES =========================
+
+  /**
+   * Obtiene los detalles COMPLETOS de una transacción.
+   * 
+   * GET /transactions/{id}
    */
   getById(id: number): Observable<TransactionDetailResponse> {
     return this.http.get<TransactionDetailResponse>(`${this.apiUrl}/${id}`);
   }
 
   /**
-   * Buscar transacción por placa
+   * Busca transacción ACTIVA por placa de vehículo.
+   * 
+   * GET /transactions/active/plate/{plateNumber}
    */
-  searchByPlate(plateNumber: string): Observable<Transaction[]> {
-    const params = new HttpParams().set('plateNumber', plateNumber);
-    return this.http.get<Transaction[]>(`${this.apiUrl}/search/plate`, { params });
+  getActiveByPlate(plateNumber: string): Observable<TransactionDetailResponse | null> {
+    return this.http.get<TransactionDetailResponse>(
+      `${this.apiUrl}/active/plate/${plateNumber}`
+    );
   }
 
-  /**
-   * Buscar transacción activa por placa
-   */
-  getActiveByPlate(plateNumber: string): Observable<TransactionDetailResponse> {
-    return this.http.get<TransactionDetailResponse>(`${this.apiUrl}/active/plate/${plateNumber}`);
-  }
+  // ========================= LISTADOS - TRANSACCIONES ACTIVAS =========================
 
   /**
-   * Registrar entrada de vehículo
+   * Lista TODAS las transacciones activas.
+   * 
+   * GET /transactions/active?pageNumber=0&pageSize=20
    */
-  registerEntry(entry: TransactionEntryRequest): Observable<TransactionDetailResponse> {
-    return this.http.post<TransactionDetailResponse>(`${this.apiUrl}/entry`, entry);
-  }
-
-  /**
-   * Registrar salida de vehículo
-   */
-  registerExit(exit: TransactionExitRequest): Observable<TransactionDetailResponse> {
-    return this.http.post<TransactionDetailResponse>(`${this.apiUrl}/exit`, exit);
-  }
-
-  /**
-   * Calcular monto de transacción
-   */
-  calculateAmount(transactionId: number): Observable<{
-    transactionId: number;
-    durationMinutes: number;
-    calculatedAmount: number;
-    discountAmount: number;
-    totalAmount: number;
-    currency: string;
-  }> {
-    return this.http.get<any>(`${this.apiUrl}/${transactionId}/calculate`);
-  }
-
-  /**
-   * Cancelar transacción
-   */
-  cancel(id: number, cancelData: {
-    cancellationReason: string;
-    operatorId: number;
-  }): Observable<Transaction> {
-    return this.http.post<Transaction>(`${this.apiUrl}/${id}/cancel`, cancelData);
-  }
-
-  /**
-   * Enviar recibo por WhatsApp
-   */
-  sendReceiptWhatsApp(transactionId: number): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/${transactionId}/receipt/whatsapp`, {});
-  }
-
-  /**
-   * Enviar recibo por Email
-   */
-  sendReceiptEmail(transactionId: number): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/${transactionId}/receipt/email`, {});
-  }
-
-  /**
-   * Obtener transacciones por zona
-   */
-  getByZone(zoneId: number, page: number = 0, size: number = 20): Observable<PaginatedResponse<Transaction>> {
+  getActiveTransactions(
+    pageNumber: number = 0,
+    pageSize: number = 20
+  ): Observable<ParkingPagedResponse<ActiveTransactionDto>> {
     const params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', size.toString());
-    return this.http.get<PaginatedResponse<Transaction>>(`${this.apiUrl}/zone/${zoneId}`, { params });
+      .set('pageNumber', pageNumber.toString())
+      .set('pageSize', pageSize.toString());
+
+    return this.http.get<ParkingPagedResponse<ActiveTransactionDto>>(
+      `${this.apiUrl}/active`,
+      { params }
+    );
   }
 
   /**
-   * Obtener transacciones por cliente
+   * Lista transacciones activas de una ZONA.
+   * 
+   * GET /transactions/active/zone/{zoneId}
    */
-  getByCustomer(customerId: number, page: number = 0, size: number = 20): Observable<PaginatedResponse<Transaction>> {
+  getActiveByZone(
+    zoneId: number,
+    pageNumber: number = 0,
+    pageSize: number = 20
+  ): Observable<ParkingPagedResponse<ActiveTransactionDto>> {
     const params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', size.toString());
-    return this.http.get<PaginatedResponse<Transaction>>(`${this.apiUrl}/customer/${customerId}`, { params });
+      .set('pageNumber', pageNumber.toString())
+      .set('pageSize', pageSize.toString());
+
+    return this.http.get<ParkingPagedResponse<ActiveTransactionDto>>(
+      `${this.apiUrl}/active/zone/${zoneId}`,
+      { params }
+    );
   }
 
   /**
-   * Obtener transacciones por vehículo
+   * Busca transacciones activas por PLACA.
+   * 
+   * GET /transactions/active/search?plateNumber=ABC
    */
-  getByVehicle(vehicleId: number, page: number = 0, size: number = 20): Observable<PaginatedResponse<Transaction>> {
+  searchActiveByPlate(
+    plateNumber: string,
+    pageNumber: number = 0,
+    pageSize: number = 20
+  ): Observable<ParkingPagedResponse<ActiveTransactionDto>> {
     const params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', size.toString());
-    return this.http.get<PaginatedResponse<Transaction>>(`${this.apiUrl}/vehicle/${vehicleId}`, { params });
+      .set('plateNumber', plateNumber)
+      .set('pageNumber', pageNumber.toString())
+      .set('pageSize', pageSize.toString());
+
+    return this.http.get<ParkingPagedResponse<ActiveTransactionDto>>(
+      `${this.apiUrl}/active/search`,
+      { params }
+    );
   }
 
   /**
-   * Obtener transacciones por rango de fechas
+   * Lista transacciones que EXCEDEN tiempo recomendado.
+   * 
+   * GET /transactions/active/overdue
    */
-  getByDateRange(startDate: string, endDate: string, page: number = 0, size: number = 20): Observable<PaginatedResponse<Transaction>> {
+  getOverdueTransactions(
+    pageNumber: number = 0,
+    pageSize: number = 20
+  ): Observable<ParkingPagedResponse<ActiveTransactionDto>> {
+    const params = new HttpParams()
+      .set('pageNumber', pageNumber.toString())
+      .set('pageSize', pageSize.toString());
+
+    return this.http.get<ParkingPagedResponse<ActiveTransactionDto>>(
+      `${this.apiUrl}/active/overdue`,
+      { params }
+    );
+  }
+
+  // ========================= LISTADOS - HISTORIAL COMPLETO =========================
+
+  /**
+   * Lista TODAS las transacciones.
+   * 
+   * GET /transactions?pageNumber=0&pageSize=20&sortBy=...&sortDirection=...
+   */
+  getAll(
+    pageNumber: number = 0,
+    pageSize: number = 20,
+    sortBy: string = 'createdAt',
+    sortDirection: string = 'DESC'
+  ): Observable<ParkingPagedResponse<TransactionDto>> {
+    const params = new HttpParams()
+      .set('pageNumber', pageNumber.toString())
+      .set('pageSize', pageSize.toString())
+      .set('sortBy', sortBy)
+      .set('sortDirection', sortDirection);
+
+    return this.http.get<ParkingPagedResponse<TransactionDto>>(
+      this.apiUrl,
+      { params }
+    );
+  }
+
+  /**
+   * Lista transacciones por RANGO DE FECHAS.
+   * 
+   * GET /transactions/date-range
+   */
+  getByDateRange(
+    startDate: string,
+    endDate: string,
+    pageNumber: number = 0,
+    pageSize: number = 20
+  ): Observable<ParkingPagedResponse<TransactionDto>> {
     const params = new HttpParams()
       .set('startDate', startDate)
       .set('endDate', endDate)
-      .set('page', page.toString())
-      .set('size', size.toString());
-    return this.http.get<PaginatedResponse<Transaction>>(`${this.apiUrl}/date-range`, { params });
+      .set('pageNumber', pageNumber.toString())
+      .set('pageSize', pageSize.toString());
+
+    return this.http.get<ParkingPagedResponse<TransactionDto>>(
+      `${this.apiUrl}/date-range`,
+      { params }
+    );
   }
 
   /**
-   * Obtener estadísticas de transacciones
+   * Lista transacciones por ESTADO.
+   * 
+   * GET /transactions/status/{status}
    */
-  getStatistics(startDate?: string, endDate?: string): Observable<any> {
-    let params = new HttpParams();
-    if (startDate) params = params.set('startDate', startDate);
-    if (endDate) params = params.set('endDate', endDate);
-    return this.http.get<any>(`${this.apiUrl}/statistics`, { params });
+  getByStatus(
+    status: string,
+    pageNumber: number = 0,
+    pageSize: number = 20
+  ): Observable<ParkingPagedResponse<TransactionDto>> {
+    const params = new HttpParams()
+      .set('pageNumber', pageNumber.toString())
+      .set('pageSize', pageSize.toString());
+
+    return this.http.get<ParkingPagedResponse<TransactionDto>>(
+      `${this.apiUrl}/status/${status}`,
+      { params }
+    );
+  }
+
+  /**
+   * Lista transacciones por ESTADO DE PAGO.
+   * 
+   * GET /transactions/payment-status/{paymentStatus}
+   */
+  getByPaymentStatus(
+    paymentStatus: string,
+    pageNumber: number = 0,
+    pageSize: number = 20
+  ): Observable<ParkingPagedResponse<TransactionDto>> {
+    const params = new HttpParams()
+      .set('pageNumber', pageNumber.toString())
+      .set('pageSize', pageSize.toString());
+
+    return this.http.get<ParkingPagedResponse<TransactionDto>>(
+      `${this.apiUrl}/payment-status/${paymentStatus}`,
+      { params }
+    );
+  }
+
+  /**
+   * Lista transacciones de una ZONA.
+   * 
+   * GET /transactions/zone/{zoneId}
+   */
+  getByZone(
+    zoneId: number,
+    pageNumber: number = 0,
+    pageSize: number = 20
+  ): Observable<ParkingPagedResponse<TransactionDto>> {
+    const params = new HttpParams()
+      .set('pageNumber', pageNumber.toString())
+      .set('pageSize', pageSize.toString());
+
+    return this.http.get<ParkingPagedResponse<TransactionDto>>(
+      `${this.apiUrl}/zone/${zoneId}`,
+      { params }
+    );
+  }
+
+  /**
+   * Busca transacciones por PLACA (histórico).
+   * 
+   * GET /transactions/search?plateNumber=ABC
+   */
+  searchByPlate(
+    plateNumber: string,
+    pageNumber: number = 0,
+    pageSize: number = 20
+  ): Observable<ParkingPagedResponse<TransactionDto>> {
+    const params = new HttpParams()
+      .set('plateNumber', plateNumber)
+      .set('pageNumber', pageNumber.toString())
+      .set('pageSize', pageSize.toString());
+
+    return this.http.get<ParkingPagedResponse<TransactionDto>>(
+      `${this.apiUrl}/search`,
+      { params }
+    );
   }
 }

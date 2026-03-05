@@ -18,11 +18,6 @@ import java.util.Optional;
 /**
  * Adaptador de persistencia para Transaction.
  *
- * Implementa TransactionPersistencePort usando Spring Data JPA.
- * Convierte entre:
- *   - PageRequest (custom, application layer) ↔ Pageable (Spring, infrastructure)
- *   - Page<Entity> (Spring)                   ↔ PageResult<Domain> (custom)
- *
  * @author Edwin Yoner - Winner Systems - Smart Parking Platform
  * @version 1.0
  */
@@ -61,10 +56,20 @@ public class TransactionPersistenceAdapter implements TransactionPersistencePort
             .map(transactionMapper::toDomain);
    }
 
+   /**
+    * IMPLEMENTADO EN SERVICE LAYER
+    *
+    * Este método se implementa en TransactionService porque requiere:
+    * 1. Buscar vehicle por placa (VehiclePersistencePort)
+    * 2. Obtener vehicleId
+    * 3. Buscar transaction por vehicleId
+    */
    @Override
    public Optional<Transaction> findActiveByPlateNumber(String plateNumber) {
-      return transactionRepository.findActiveByPlateNumber(plateNumber)
-            .map(transactionMapper::toDomain);
+      // Implementado en TransactionService
+      throw new UnsupportedOperationException(
+            "findActiveByPlateNumber debe implementarse en TransactionService"
+      );
    }
 
    // ========================= EXISTS / COUNT =========================
@@ -95,10 +100,13 @@ public class TransactionPersistenceAdapter implements TransactionPersistencePort
       );
    }
 
+   /**
+    * IMPLEMENTADO EN SERVICE LAYER
+    */
    @Override
    public PageResult<Transaction> searchActiveByPlate(String plateNumber, PageRequest pageRequest) {
-      return toPageResult(
-            transactionRepository.searchActiveByPlate(plateNumber, toPageable(pageRequest))
+      throw new UnsupportedOperationException(
+            "searchActiveByPlate debe implementarse en TransactionService"
       );
    }
 
@@ -147,21 +155,18 @@ public class TransactionPersistenceAdapter implements TransactionPersistencePort
       );
    }
 
+   /**
+    * IMPLEMENTADO EN SERVICE LAYER
+    */
    @Override
    public PageResult<Transaction> searchByPlate(String plateNumber, PageRequest pageRequest) {
-      return toPageResult(
-            transactionRepository.searchByPlate(plateNumber, toPageable(pageRequest))
+      throw new UnsupportedOperationException(
+            "searchByPlate debe implementarse en TransactionService"
       );
    }
 
    // ========================= CONVERSIÓN PRIVADA =========================
 
-   /**
-    * Convierte PageRequest (custom, application layer) a Pageable (Spring, infrastructure).
-    *
-    * El Repository usa Spring internamente — esta conversión mantiene
-    * el dominio libre de dependencias de framework.
-    */
    private org.springframework.data.domain.PageRequest toPageable(PageRequest req) {
       if (req.hasSorting()) {
          Sort sort = req.isDescending()
@@ -172,12 +177,6 @@ public class TransactionPersistenceAdapter implements TransactionPersistencePort
       return org.springframework.data.domain.PageRequest.of(req.page(), req.size());
    }
 
-   /**
-    * Convierte Page<TransactionEntity> (Spring) a PageResult<Transaction> (custom).
-    *
-    * Mapea cada entidad JPA al modelo de dominio y encapsula
-    * la metadata de paginación en el tipo custom del proyecto.
-    */
    private PageResult<Transaction> toPageResult(Page<TransactionEntity> page) {
       return PageResult.of(
             page.getContent().stream()

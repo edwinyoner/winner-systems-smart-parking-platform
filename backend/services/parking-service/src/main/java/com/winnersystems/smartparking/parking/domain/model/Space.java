@@ -1,4 +1,3 @@
-// domain/model/Space.java
 package com.winnersystems.smartparking.parking.domain.model;
 
 import java.time.LocalDateTime;
@@ -406,7 +405,7 @@ public class Space {
     *
     * @param newType nuevo tipo (PARALLEL, DIAGONAL, PERPENDICULAR)
     */
-   public void updateSpaceType(String newType) {
+   public void updateType(String newType) {
       this.type = newType;
       this.updatedAt = LocalDateTime.now();
    }

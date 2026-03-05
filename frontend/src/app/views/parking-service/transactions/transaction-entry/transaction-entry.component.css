@@ -1,0 +1,22 @@
+/* src/app/views/parking-service/transactions/transaction-entry/transaction-entry.component.css */
+
+h5 {
+  color: #4f5d73;
+  font-weight: 600;
+  border-bottom: 2px solid #e9ecef;
+  padding-bottom: 0.5rem;
+}
+
+.text-danger {
+  color: #e55353 !important;
+}
+
+.gap-2 {
+  gap: 0.5rem !important;
+}
+
+/* Mejorar inputs inválidos */
+input.ng-invalid.ng-touched,
+select.ng-invalid.ng-touched {
+  border-color: #e55353 !important;
+}

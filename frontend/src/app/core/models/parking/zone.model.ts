@@ -1,3 +1,4 @@
+//src/app/core/models/parking/zone.model.ts
 export interface Zone {
   id?: number;
   parkingId: number;

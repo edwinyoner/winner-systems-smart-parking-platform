@@ -1,0 +1,43 @@
+/* src/app/views/parking-service/transactions/transaction-exit/transaction-exit.component.css */
+
+h5 {
+  color: #4f5d73;
+  font-weight: 600;
+  border-bottom: 2px solid #e9ecef;
+  padding-bottom: 0.5rem;
+}
+
+.search-section {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.transaction-details {
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.text-danger {
+  color: #e55353 !important;
+}
+
+.gap-2 {
+  gap: 0.5rem !important;
+}
+
+dl.row {
+  margin-bottom: 0;
+}
+
+dt {
+  font-weight: 600;
+  color: #666;
+}
+
+dd {
+  color: #333;
+}

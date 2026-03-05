@@ -78,7 +78,7 @@ public class SpaceService implements
       Space space = findSpaceOrThrow(spaceId);
 
       if (command.getType() != null) {
-         space.updateSpaceType(command.getType());
+         space.updateType(command.getType());
       }
 
       if (command.getDescription() != null) {

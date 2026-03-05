@@ -26,10 +26,12 @@ public class TransactionDetailResponse {
 
    // Vehículo
    private VehicleInfo vehicle;
-   private String type;
 
    // Cliente
    private CustomerInfo customer;
+
+   // Parking
+   private ParkingInfo parking;
 
    // Zona
    private ZoneInfo zone;
@@ -102,6 +104,16 @@ public class TransactionDetailResponse {
       private String name;
       private String phone;
       private String email;
+   }
+
+   @Data
+   @Builder
+   @NoArgsConstructor
+   @AllArgsConstructor
+   public static class ParkingInfo {
+      private Long id;
+      private String name;
+      private String code;
    }
 
    @Data

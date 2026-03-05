@@ -1,78 +1,57 @@
 // src/app/core/services/parking/payment.service.ts
-import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { environment } from '../../../../environments/environment';
-import { Payment, PaymentRequest, PaymentStatus } from '../../models/parking/payment.model';
-import { PaginatedResponse } from '../../models/pagination.model';
 
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, throwError } from 'rxjs';
+
+/**
+ * Servicio para gestión de PAGOS.
+ * 
+ * ⚠️ IMPORTANTE: ESTE SERVICIO NO FUNCIONA ACTUALMENTE
+ * 
+ * El backend NO tiene endpoints REST para Payment.
+ * Payment se crea automáticamente en TransactionService.processPayment().
+ * 
+ * Para obtener información de pagos:
+ * - Usa TransactionService.getById() → response.payment
+ * - O TransactionService.getActiveByPlate() → response.payment
+ * 
+ * Este servicio está preparado para cuando se implementen
+ * endpoints REST de consulta de Payment en el futuro.
+ */
 @Injectable({
   providedIn: 'root'
 })
 export class PaymentService {
-  private apiUrl = `${environment.apiUrl}/parking-service/api/v1/payments`;
+  
+  constructor(private http: HttpClient) {
+    console.warn(
+      '⚠️ PaymentService: Backend NO tiene endpoints REST para Payment. ' +
+      'Usa TransactionService.getById() para obtener payment info.'
+    );
+  }
 
-  constructor(private http: HttpClient) {}
+  // ========================= FUTURO - NO IMPLEMENTADO =========================
 
   /**
-   * Obtener todos los pagos (con paginación)
+   * ⚠️ ENDPOINT NO EXISTE EN BACKEND
+   * Usar TransactionService.getById() → response.payment
    */
-  getAll(page: number = 0, size: number = 20): Observable<PaginatedResponse<Payment>> {
-    const params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', size.toString());
-    return this.http.get<PaginatedResponse<Payment>>(this.apiUrl, { params });
+  getById(id: number): Observable<never> {
+    return throwError(() => new Error(
+      'Payment endpoints no implementados. Usa TransactionService.getById()'
+    ));
   }
 
   /**
-   * Obtener pagos por transacción
+   * ⚠️ ENDPOINT NO EXISTE EN BACKEND
+   * Usar TransactionService.getById() → response.payment
    */
-  getByTransaction(transactionId: number): Observable<Payment[]> {
-    return this.http.get<Payment[]>(`${this.apiUrl}/transaction/${transactionId}`);
+  getByTransaction(transactionId: number): Observable<never> {
+    return throwError(() => new Error(
+      'Payment endpoints no implementados. Usa TransactionService.getById()'
+    ));
   }
 
-  /**
-   * Obtener pago por ID
-   */
-  getById(id: number): Observable<Payment> {
-    return this.http.get<Payment>(`${this.apiUrl}/${id}`);
-  }
-
-  /**
-   * Procesar pago
-   */
-  processPayment(payment: PaymentRequest): Observable<Payment> {
-    return this.http.post<Payment>(`${this.apiUrl}/process`, payment);
-  }
-
-  /**
-   * Reembolsar pago
-   */
-  refund(id: number, refundData: {
-    refundAmount: number;
-    refundReason: string;
-    operatorId: number;
-  }): Observable<Payment> {
-    return this.http.post<Payment>(`${this.apiUrl}/${id}/refund`, refundData);
-  }
-
-  /**
-   * Cancelar pago
-   */
-  cancel(id: number, cancelData: {
-    cancelReason: string;
-    operatorId: number;
-  }): Observable<Payment> {
-    return this.http.post<Payment>(`${this.apiUrl}/${id}/cancel`, cancelData);
-  }
-
-  /**
-   * Obtener reporte de pagos por rango de fechas
-   */
-  getReportByDateRange(startDate: string, endDate: string): Observable<any> {
-    const params = new HttpParams()
-      .set('startDate', startDate)
-      .set('endDate', endDate);
-    return this.http.get<any>(`${this.apiUrl}/report/date-range`, { params });
-  }
+  // TODO: Implementar cuando backend tenga REST adapter para Payment
 }

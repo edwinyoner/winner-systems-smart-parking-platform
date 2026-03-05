@@ -20,7 +20,7 @@ import java.util.Objects;
  * Esta entidad conecta TODO el sistema:
  * - Vehículo (qué auto)
  * - Cliente (quién lo dejó/retiró)
- * - Zona y Espacio (dónde se estacionó)
+ * - Ubicación (dónde se estacionó: Parking > Zone > Space)
  * - Tarifa (cuánto cuesta)
  * - Operadores (quién registró entrada/salida)
  * - Pago (cómo y cuándo pagó)
@@ -42,8 +42,16 @@ public class Transaction {
 
    private Long vehicleId;                                // FK a Vehicle (NOT NULL)
    private Long customerId;                               // FK a Customer (NOT NULL)
+
+   // ========================= JERARQUÍA DE UBICACIÓN =========================
+   // Parking > Zone > Space (jerarquía completa para referencia y reportes)
+
    private Long parkingId;                                // FK a Parking (NOT NULL)
-   private Long zoneId;                                   // FK a ParkingZone (NOT NULL)
+   private Long zoneId;                                   // FK a Zone (NOT NULL)
+   private Long spaceId;                                  // FK a Space (NOT NULL)
+
+   // ========================= TARIFA =========================
+
    private Long rateId;                                   // FK a Rate (NOT NULL)
    // Tarifa aplicada al momento de ENTRADA
 
@@ -147,19 +155,21 @@ public class Transaction {
     *
     * @param vehicleId ID del vehículo
     * @param customerId ID del cliente
-    * @param parkingId ID del espacio
+    * @param parkingId ID del parking
     * @param zoneId ID de la zona
+    * @param spaceId ID del espacio específico
     * @param rateId ID de la tarifa
     * @param entryDocumentTypeId tipo de documento entrada
     * @param entryDocumentNumber número de documento entrada
     */
-   public Transaction(Long vehicleId, Long customerId, Long parkingId, Long zoneId,
+   public Transaction(Long vehicleId, Long customerId, Long parkingId, Long zoneId, Long spaceId,
                       Long rateId, Long entryDocumentTypeId, String entryDocumentNumber) {
       this();
       this.vehicleId = vehicleId;
       this.customerId = customerId;
       this.parkingId = parkingId;
       this.zoneId = zoneId;
+      this.spaceId = spaceId;
       this.rateId = rateId;
       this.entryDocumentTypeId = entryDocumentTypeId;
       this.entryDocumentNumber = entryDocumentNumber;
@@ -475,7 +485,7 @@ public class Transaction {
     */
    public boolean hasCompleteEntryData() {
       return vehicleId != null && customerId != null && parkingId != null &&
-            zoneId != null && rateId != null && entryTime != null &&
+            zoneId != null && spaceId != null && rateId != null && entryTime != null &&
             entryDocumentTypeId != null && entryDocumentNumber != null;
    }
 
@@ -538,6 +548,14 @@ public class Transaction {
 
    public void setZoneId(Long zoneId) {
       this.zoneId = zoneId;
+   }
+
+   public Long getSpaceId() {
+      return spaceId;
+   }
+
+   public void setSpaceId(Long spaceId) {
+      this.spaceId = spaceId;
    }
 
    public Long getRateId() {
@@ -826,6 +844,9 @@ public class Transaction {
             "id=" + id +
             ", vehicleId=" + vehicleId +
             ", customerId=" + customerId +
+            ", parkingId=" + parkingId +
+            ", zoneId=" + zoneId +
+            ", spaceId=" + spaceId +
             ", status='" + status + '\'' +
             ", paymentStatus='" + paymentStatus + '\'' +
             ", entryTime=" + entryTime +

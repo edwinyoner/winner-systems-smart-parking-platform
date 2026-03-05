@@ -5,17 +5,30 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
 /**
  * Entidad JPA para Vehicle.
  *
+ * Mapeo Oracle:
+ * - Tabla: VEHICLES (mayúsculas para Oracle)
+ * - PK: VEHICLE_ID con SEQUENCE
+ * - UK: LICENSE_PLATE
+ *
+ * SÍ tiene soft delete (deletedAt, deletedBy)
+ *
  * @author Edwin Yoner - Winner Systems - Smart Parking Platform
  * @version 1.0
  */
 @Entity
-@Table(name = "vehicles")
+@Table(name = "VEHICLES")
+@EntityListeners(AuditingEntityListener.class)
 @Data
 @Builder
 @NoArgsConstructor
@@ -23,45 +36,47 @@ import java.time.LocalDateTime;
 public class VehicleEntity {
 
    @Id
-   @GeneratedValue(strategy = GenerationType.IDENTITY)
+   @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "vehicle_seq")
+   @SequenceGenerator(name = "vehicle_seq", sequenceName = "VEHICLE_SEQ", allocationSize = 1)
+   @Column(name = "VEHICLE_ID")
    private Long id;
 
-   @Column(name = "license_plate", nullable = false, unique = true, length = 20)
+   @Column(name = "LICENSE_PLATE", nullable = false, unique = true, length = 20)
    private String licensePlate;
 
-   @Column(name = "color", length = 50)
-   private String color;
+   // ========================= TRACKING =========================
 
-   @Column(name = "brand", length = 50)
-   private String brand;
-
-   @Column(name = "first_seen_date")
+   @Column(name = "FIRST_SEEN_DATE")
    private LocalDateTime firstSeenDate;
 
-   @Column(name = "last_seen_date")
+   @Column(name = "LAST_SEEN_DATE")
    private LocalDateTime lastSeenDate;
 
-   @Column(name = "total_visits")
+   @Column(name = "TOTAL_VISITS")
    private Integer totalVisits;
 
-   // ========================= CAMPOS DE AUDITORÍA (igual que en UserEntity, CustomerEntity, etc.) =========================
+   // ========================= AUDITORÍA =========================
 
-   @Column(name = "created_at", nullable = false, updatable = false)
+   @CreatedDate
+   @Column(name = "CREATED_AT", nullable = false, updatable = false)
    private LocalDateTime createdAt;
 
-   @Column(name = "created_by")
+   @CreatedBy
+   @Column(name = "CREATED_BY", updatable = false)
    private Long createdBy;
 
-   @Column(name = "updated_at", nullable = false)
+   @LastModifiedDate
+   @Column(name = "UPDATED_AT")
    private LocalDateTime updatedAt;
 
-   @Column(name = "updated_by")
+   @LastModifiedBy
+   @Column(name = "UPDATED_BY")
    private Long updatedBy;
 
-   @Column(name = "deleted_at")
-   private LocalDateTime deletedAt;        // Soft delete
+   @Column(name = "DELETED_AT")
+   private LocalDateTime deletedAt;
 
-   @Column(name = "deleted_by")
+   @Column(name = "DELETED_BY")
    private Long deletedBy;
 
    // ========================= LIFECYCLE CALLBACKS =========================
@@ -71,6 +86,12 @@ public class VehicleEntity {
       LocalDateTime now = LocalDateTime.now();
       this.createdAt = now;
       this.updatedAt = now;
+      if (this.firstSeenDate == null) {
+         this.firstSeenDate = now;
+      }
+      if (this.lastSeenDate == null) {
+         this.lastSeenDate = now;
+      }
       if (this.totalVisits == null) {
          this.totalVisits = 0;
       }

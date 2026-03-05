@@ -6,6 +6,5 @@ package com.winnersystems.smartparking.parking.application.dto.command;
  * @author Edwin Yoner - Winner Systems
  */
 public record UpdateVehicleCommand(
-      String color,
-      String brand
+      String licensePlate
 ) {}

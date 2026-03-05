@@ -10,8 +10,7 @@ import java.util.Objects;
  * el identificador legal oficial. El sistema registra vehículos conforme
  * ingresan al estacionamiento, sin requerir registro previo.
  *
- * Información adicional como marca y color son opcionales y sirven como
- * ayuda visual para operadores. La fuente oficial de datos vehiculares es
+ * La fuente oficial de datos vehiculares es
  * SUNARP (a integrarse en fases posteriores).
  *
  * @author Edwin Yoner - Winner Systems - Smart Parking Platform
@@ -23,11 +22,6 @@ public class Vehicle {
 
    private Long id;
    private String licensePlate;                           // Placa única (ej: "ABC-123")
-
-   // ========================= CAMPOS OPCIONALES (Ayuda Visual) =========================
-
-   private String color;                                  // Color del vehículo (opcional)
-   private String brand;                                  // Marca (opcional)
 
    // ========================= CAMPOS DE TRACKING =========================
 
@@ -68,19 +62,6 @@ public class Vehicle {
       this.lastSeenDate = LocalDateTime.now();
    }
 
-   /**
-    * Constructor completo.
-    *
-    * @param licensePlate placa del vehículo
-    * @param color color del vehículo
-    * @param brand marca del vehículo
-    */
-   public Vehicle(String licensePlate, String color, String brand) {
-      this(licensePlate);
-      this.color = color;
-      this.brand = brand;
-   }
-
    // ========================= MÉTODOS DE NEGOCIO - INFORMACIÓN =========================
 
    // OPCIONAL: Mejorar validación de placa peruana
@@ -112,16 +93,6 @@ public class Vehicle {
    public String getDisplayName() {
       StringBuilder sb = new StringBuilder();
       sb.append(licensePlate);
-
-      if (brand != null && !brand.isEmpty()) {
-         sb.append(" (").append(brand);
-         if (color != null && !color.isEmpty()) {
-            sb.append(" ").append(color);
-         }
-         sb.append(")");
-      } else if (color != null && !color.isEmpty()) {
-         sb.append(" (").append(color).append(")");
-      }
 
       return sb.toString();
    }
@@ -203,38 +174,6 @@ public class Vehicle {
    // ========================= MÉTODOS DE NEGOCIO - ACTUALIZACIÓN DE DATOS =========================
 
    /**
-    * Actualiza la información visual del vehículo.
-    *
-    * @param color nuevo color
-    * @param brand nueva marca
-    */
-   public void updateVisualInfo(String color, String brand) {
-      this.color = color;
-      this.brand = brand;
-      this.updatedAt = LocalDateTime.now();
-   }
-
-   /**
-    * Actualiza solo el color.
-    *
-    * @param color nuevo color
-    */
-   public void updateColor(String color) {
-      this.color = color;
-      this.updatedAt = LocalDateTime.now();
-   }
-
-   /**
-    * Actualiza solo la marca.
-    *
-    * @param brand nueva marca
-    */
-   public void updateBrand(String brand) {
-      this.brand = brand;
-      this.updatedAt = LocalDateTime.now();
-   }
-
-   /**
     * Normaliza la placa a formato estándar (mayúsculas, sin espacios).
     */
    public void normalizeLicensePlate() {
@@ -255,33 +194,6 @@ public class Vehicle {
    }
 
    // ========================= MÉTODOS DE VALIDACIÓN =========================
-
-   /**
-    * Verifica si el vehículo tiene información visual completa.
-    *
-    * @return true si tiene color Y marca
-    */
-   public boolean hasCompleteVisualInfo() {
-      return color != null && !color.isEmpty() && brand != null && !brand.isEmpty();
-   }
-
-   /**
-    * Verifica si tiene color registrado.
-    *
-    * @return true si color no es null ni vacío
-    */
-   public boolean hasColor() {
-      return color != null && !color.isEmpty();
-   }
-
-   /**
-    * Verifica si tiene marca registrada.
-    *
-    * @return true si brand no es null ni vacío
-    */
-   public boolean hasBrand() {
-      return brand != null && !brand.isEmpty();
-   }
 
    /**
     * Verifica si la placa tiene formato válido básico.
@@ -314,22 +226,6 @@ public class Vehicle {
 
    public void setLicensePlate(String licensePlate) {
       this.licensePlate = licensePlate != null ? licensePlate.toUpperCase().trim() : null;
-   }
-
-   public String getColor() {
-      return color;
-   }
-
-   public void setColor(String color) {
-      this.color = color;
-   }
-
-   public String getBrand() {
-      return brand;
-   }
-
-   public void setBrand(String brand) {
-      this.brand = brand;
    }
 
    public LocalDateTime getFirstSeenDate() {
@@ -434,8 +330,6 @@ public class Vehicle {
       return "Vehicle{" +
             "id=" + id +
             ", licensePlate='" + licensePlate + '\'' +
-            ", color='" + color + '\'' +
-            ", brand='" + brand + '\'' +
             ", totalVisits=" + totalVisits +
             ", isRecurrent=" + isRecurrent() +
             '}';

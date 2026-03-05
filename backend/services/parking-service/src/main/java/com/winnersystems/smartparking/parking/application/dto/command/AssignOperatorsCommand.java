@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * Command para asignar operadores a una zona específica.
  *
- * Este command permite asignar múltiples operadores a una zona en un solo turno.
+ * Este command permite asignar múltiples operadores a una zona en distintos turnos.
  * Cada operador puede tener un período de asignación específico.
  *
  * @param zoneId ID de la zona donde se asignarán los operadores

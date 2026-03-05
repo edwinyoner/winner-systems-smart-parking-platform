@@ -13,6 +13,8 @@ import java.time.LocalDateTime;
  * Entidad JPA para Transaction.
  * Configurada para Oracle Database.
  *
+ * IMPORTANTE: Transaction NO tiene soft delete.
+ *
  * @author Edwin Yoner - Winner Systems - Smart Parking Platform
  * @version 1.0
  */
@@ -23,8 +25,6 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TransactionEntity {
-
-   // ========================= IDENTIFICADOR =========================
 
    @Id
    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "transaction_seq")
@@ -44,11 +44,14 @@ public class TransactionEntity {
    @Column(name = "CUSTOMER_ID", nullable = false)
    private Long customerId;
 
-   @Column(name = "PARKING_SPACE_ID", nullable = false)
-   private Long parkingSpaceId;
+   @Column(name = "PARKING_ID", nullable = false)
+   private Long parkingId;
 
    @Column(name = "ZONE_ID", nullable = false)
    private Long zoneId;
+
+   @Column(name = "SPACE_ID", nullable = false)
+   private Long spaceId;
 
    @Column(name = "RATE_ID", nullable = false)
    private Long rateId;
@@ -164,11 +167,7 @@ public class TransactionEntity {
    @Column(name = "UPDATED_BY")
    private Long updatedBy;
 
-   @Column(name = "DELETED_AT")
-   private LocalDateTime deletedAt;
-
-   @Column(name = "DELETED_BY")
-   private Long deletedBy;
+   // SIN soft delete (deletedAt, deletedBy ELIMINADOS)
 
    // ========================= LIFECYCLE CALLBACKS =========================
 
@@ -183,6 +182,6 @@ public class TransactionEntity {
 
    @PreUpdate
    protected void onUpdate() {
-      if (this.updatedAt == null) this.updatedAt = LocalDateTime.now();
+      this.updatedAt = LocalDateTime.now();
    }
 }

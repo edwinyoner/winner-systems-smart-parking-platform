@@ -10,8 +10,6 @@ import java.time.LocalDateTime;
 public record VehicleDto(
       Long id,
       String licensePlate,
-      String color,
-      String brand,
       String displayName,
       LocalDateTime firstSeenDate,
       LocalDateTime lastSeenDate,

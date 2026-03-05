@@ -5,6 +5,11 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -12,11 +17,19 @@ import java.time.LocalDateTime;
 /**
  * Entidad JPA para Payment.
  *
+ * Mapeo Oracle:
+ * - Tabla: PAYMENTS (mayúsculas para Oracle)
+ * - PK: PAYMENT_ID con SEQUENCE
+ * - FK: TRANSACTION_ID (UNIQUE - relación 1:1)
+ *
+ * NO tiene soft delete - histórico permanente
+ *
  * @author Edwin Yoner - Winner Systems - Smart Parking Platform
  * @version 1.0
  */
 @Entity
-@Table(name = "payments")
+@Table(name = "PAYMENTS")
+@EntityListeners(AuditingEntityListener.class)
 @Data
 @Builder
 @NoArgsConstructor
@@ -24,71 +37,71 @@ import java.time.LocalDateTime;
 public class PaymentEntity {
 
    @Id
-   @GeneratedValue(strategy = GenerationType.IDENTITY)
+   @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "payment_seq")
+   @SequenceGenerator(name = "payment_seq", sequenceName = "PAYMENT_SEQ", allocationSize = 1)
+   @Column(name = "PAYMENT_ID")
    private Long id;
 
-   @Column(name = "transaction_id", nullable = false, unique = true)
+   @Column(name = "TRANSACTION_ID", nullable = false, unique = true)
    private Long transactionId;
 
-   @Column(name = "payment_type_id", nullable = false)
+   @Column(name = "PAYMENT_TYPE_ID", nullable = false)
    private Long paymentTypeId;
 
-   @Column(name = "amount", nullable = false, precision = 10, scale = 2)
+   @Column(name = "AMOUNT", nullable = false, precision = 10, scale = 2)
    private BigDecimal amount;
 
-   @Column(name = "currency", length = 3)
+   @Column(name = "CURRENCY", nullable = false, length = 10)
    private String currency;
 
-   @Column(name = "payment_date", nullable = false)
+   @Column(name = "PAYMENT_DATE", nullable = false)
    private LocalDateTime paymentDate;
 
-   @Column(name = "reference_number", length = 100)
+   @Column(name = "REFERENCE_NUMBER", length = 100)
    private String referenceNumber;
 
-   @Column(name = "operator_id", nullable = false)
+   @Column(name = "OPERATOR_ID", nullable = false)
    private Long operatorId;
 
-   @Column(name = "status", nullable = false, length = 20)
+   @Column(name = "STATUS", nullable = false, length = 20)
    private String status;
 
    // ========================= CAMPOS DE DEVOLUCIÓN =========================
 
-   @Column(name = "refund_amount", precision = 10, scale = 2)
+   @Column(name = "REFUND_AMOUNT", precision = 10, scale = 2)
    private BigDecimal refundAmount;
 
-   @Column(name = "refund_date")
+   @Column(name = "REFUND_DATE")
    private LocalDateTime refundDate;
 
-   @Column(name = "refund_reason", length = 500)
+   @Column(name = "REFUND_REASON", length = 500)
    private String refundReason;
 
-   @Column(name = "refund_operator_id")
+   @Column(name = "REFUND_OPERATOR_ID")
    private Long refundOperatorId;
 
    // ========================= OBSERVACIONES =========================
 
-   @Column(name = "notes", columnDefinition = "CLOB")
+   @Column(name = "NOTES", length = 1000)
    private String notes;
 
-   // ========================= CAMPOS DE AUDITORÍA (igual que UserEntity y CustomerEntity) =========================
+   // ========================= CAMPOS DE AUDITORÍA =========================
 
-   @Column(name = "created_at", nullable = false, updatable = false)
+   @CreatedDate
+   @Column(name = "CREATED_AT", nullable = false, updatable = false)
    private LocalDateTime createdAt;
 
-   @Column(name = "created_by")
+   @CreatedBy
+   @Column(name = "CREATED_BY", updatable = false)
    private Long createdBy;
 
-   @Column(name = "updated_at", nullable = false)
+   @LastModifiedDate
+   @Column(name = "UPDATED_AT")
    private LocalDateTime updatedAt;
 
-   @Column(name = "updated_by")
+   @LastModifiedBy
+   @Column(name = "UPDATED_BY")
    private Long updatedBy;
-
-   @Column(name = "deleted_at")
-   private LocalDateTime deletedAt;        // Soft delete
-
-   @Column(name = "deleted_by")
-   private Long deletedBy;
 
    // ========================= LIFECYCLE CALLBACKS =========================
 

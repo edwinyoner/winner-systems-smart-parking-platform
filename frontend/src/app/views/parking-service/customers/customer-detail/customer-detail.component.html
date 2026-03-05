@@ -1,1 +1,282 @@
-<p>customer-detail works!</p>
+<!-- src/app/views/parking-service/customers/customer-detail/customer-detail.component.html -->
+<c-row>
+  <c-col xs="12">
+    @if (loading) {
+      <c-card class="mb-4">
+        <c-card-body class="text-center p-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando cliente...</span>
+          </div>
+        </c-card-body>
+      </c-card>
+    } @else if (error) {
+      <c-alert color="danger" [dismissible]="false">
+        <strong>Error:</strong> {{ error }}
+      </c-alert>
+      <button cButton color="secondary" (click)="goBack()">
+        <svg cIcon name="cilArrowLeft" class="me-2"></svg>
+        Volver al listado
+      </button>
+    } @else if (customer) {
+      <!-- Header con acciones -->
+      <c-card class="mb-4">
+        <c-card-header class="d-flex justify-content-between align-items-center">
+          <div>
+            <strong>Detalle del Cliente</strong>
+            <div class="small text-muted">ID: {{ customer.id }}</div>
+          </div>
+          <div>
+            <c-badge [color]="getStatusBadgeColor()" class="me-2">
+              {{ getStatusText() }}
+            </c-badge>
+
+            <button cButton color="secondary" variant="outline" size="sm" (click)="goBack()" class="me-2">
+              <svg cIcon name="cilArrowLeft" class="me-1"></svg>
+              Volver
+            </button>
+
+            @if (!customer.deletedAt) {
+              <button
+                [routerLink]="['/parking-service/customers', customer.id, 'edit']"
+                cButton
+                color="warning"
+                size="sm"
+                class="me-2"
+              >
+                <svg cIcon name="cilPencil" class="me-1"></svg>
+                Editar
+              </button>
+
+              <button cButton color="danger" size="sm" (click)="onDelete()">
+                <svg cIcon name="cilTrash" class="me-1"></svg>
+                Eliminar
+              </button>
+            } @else {
+              <button cButton color="success" size="sm" (click)="onRestore()">
+                <svg cIcon name="cilReload" class="me-1"></svg>
+                Restaurar
+              </button>
+            }
+          </div>
+        </c-card-header>
+
+        <c-card-body>
+          <c-row>
+            <!-- Información Personal -->
+            <c-col md="6">
+              <h5 class="mb-3">
+                <svg cIcon name="cilUser" class="me-2"></svg>
+                Información Personal
+              </h5>
+              <table class="table table-sm">
+                <tbody>
+                  <tr>
+                    <td class="text-muted" width="40%">Documento:</td>
+                    <td>
+                      <strong>{{ customer.documentTypeName || 'N/A' }}</strong><br>
+                      {{ customer.documentNumber }}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="text-muted">Nombre Completo:</td>
+                    <td><strong>{{ customer.fullName }}</strong></td>
+                  </tr>
+                  <tr>
+                    <td class="text-muted">Nombres:</td>
+                    <td>{{ customer.firstName }}</td>
+                  </tr>
+                  <tr>
+                    <td class="text-muted">Apellidos:</td>
+                    <td>{{ customer.lastName }}</td>
+                  </tr>
+                  @if (customer.address) {
+                    <tr>
+                      <td class="text-muted">Dirección:</td>
+                      <td>{{ customer.address }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </c-col>
+
+            <!-- Información de Contacto -->
+            <c-col md="6">
+              <h5 class="mb-3">
+                <svg cIcon name="cilPhone" class="me-2"></svg>
+                Información de Contacto
+              </h5>
+              <table class="table table-sm">
+                <tbody>
+                  <tr>
+                    <td class="text-muted" width="40%">Teléfono:</td>
+                    <td>
+                      @if (customer.phone) {
+                        <svg cIcon name="cilPhone" size="sm" class="me-1"></svg>
+                        {{ customer.phone }}
+                      } @else {
+                        <span class="text-muted">No registrado</span>
+                      }
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="text-muted">Email:</td>
+                    <td>
+                      @if (customer.email) {
+                        <svg cIcon name="cilEnvelopeClosed" size="sm" class="me-1"></svg>
+                        {{ customer.email }}
+                      } @else {
+                        <span class="text-muted">No registrado</span>
+                      }
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="text-muted">App Móvil:</td>
+                    <td>
+                      @if (customer.hasMobileAccount) {
+                        <c-badge color="success">Vinculada</c-badge>
+                      } @else {
+                        <c-badge color="secondary">No vinculada</c-badge>
+                      }
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </c-col>
+          </c-row>
+
+          <hr class="my-4">
+
+          <c-row>
+            <!-- Estadísticas de Uso -->
+            <c-col md="6">
+              <h5 class="mb-3">
+                <svg cIcon name="cilChartLine" class="me-2"></svg>
+                Estadísticas de Uso
+              </h5>
+              <table class="table table-sm">
+                <tbody>
+                  <tr>
+                    <td class="text-muted" width="40%">Total de Visitas:</td>
+                    <td>
+                      <c-badge [color]="(customer.totalVisits || 0) > 5 ? 'success' : 'secondary'">
+                        {{ customer.totalVisits || 0 }} visitas
+                      </c-badge>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="text-muted">Tipo de Cliente:</td>
+                    <td>
+                      @if (customer.isRecurrent) {
+                        <c-badge color="success">Recurrente</c-badge>
+                      } @else {
+                        <c-badge color="info">Nuevo</c-badge>
+                      }
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="text-muted">Fecha de Registro:</td>
+                    <td>{{ formatDateShort(customer.registrationDate) }}</td>
+                  </tr>
+                  <tr>
+                    <td class="text-muted">Primera Visita:</td>
+                    <td>{{ formatDateShort(customer.firstSeenDate) }}</td>
+                  </tr>
+                  <tr>
+                    <td class="text-muted">Última Visita:</td>
+                    <td>{{ formatDateShort(customer.lastSeenDate) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </c-col>
+
+            <!-- Auditoría -->
+            <c-col md="6">
+              <h5 class="mb-3">
+                <svg cIcon name="cilInfo" class="me-2"></svg>
+                Información de Auditoría
+              </h5>
+              <table class="table table-sm">
+                <tbody>
+                  <tr>
+                    <td class="text-muted" width="40%">Creado:</td>
+                    <td>{{ formatDate(customer.createdAt) }}</td>
+                  </tr>
+                  <tr>
+                    <td class="text-muted">Actualizado:</td>
+                    <td>{{ formatDate(customer.updatedAt) }}</td>
+                  </tr>
+                  @if (customer.deletedAt) {
+                    <tr>
+                      <td class="text-muted">Eliminado:</td>
+                      <td class="text-danger">{{ formatDate(customer.deletedAt) }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </c-col>
+          </c-row>
+        </c-card-body>
+      </c-card>
+
+      <!-- Vehículos Asociados -->
+      <c-card class="mb-4">
+        <c-card-header>
+          <strong>Vehículos Utilizados</strong>
+          <small class="text-muted ms-2">Historial de vehículos usados por este cliente</small>
+        </c-card-header>
+
+        <c-card-body>
+          @if (vehicles.length === 0) {
+            <c-alert color="info" [dismissible]="false">
+              Este cliente aún no ha utilizado ningún vehículo en el sistema.
+            </c-alert>
+          } @else {
+            <div class="table-responsive">
+              <table cTable hover striped>
+                <thead>
+                  <tr>
+                    <th>Placa</th>
+                    <th>Primera Vez</th>
+                    <th>Usos</th>
+                    <th class="text-center">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (vehicle of vehicles; track vehicle.id) {
+                    <tr>
+                      <td>
+                        <strong>{{ vehicle.vehiclePlate }}</strong>
+                      </td>
+                      <td>{{ formatDate(vehicle.createdAt) }}</td>
+                      <td>
+                        @if ((vehicle.usageCount || 0) > 0) {
+                          <c-badge [color]="(vehicle.usageCount || 0) > 5 ? 'success' : 'secondary'">
+                            {{ vehicle.usageCount }} veces
+                          </c-badge>
+                        } @else {
+                          <span class="text-muted">1 vez</span>
+                        }
+                      </td>
+                      <td class="text-center">
+                        <button
+                          [routerLink]="['/parking-service/vehicles', vehicle.vehicleId]"
+                          cButton
+                          color="info"
+                          variant="ghost"
+                          size="sm"
+                          title="Ver detalle del vehículo"
+                        >
+                          <svg cIcon name="cilCar"></svg>
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </c-card-body>
+      </c-card>
+    }
+  </c-col>
+</c-row>

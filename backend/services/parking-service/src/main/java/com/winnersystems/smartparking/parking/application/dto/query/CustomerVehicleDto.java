@@ -14,8 +14,6 @@ public record CustomerVehicleDto(
       String customerDocument,
       Long vehicleId,
       String vehiclePlate,
-      String vehicleBrand,
-      String vehicleColor,
       LocalDateTime createdAt,
       Long createdBy
 ) {}

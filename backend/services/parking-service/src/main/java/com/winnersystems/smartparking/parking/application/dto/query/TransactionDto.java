@@ -14,6 +14,7 @@ public record TransactionDto(
       Long id,
       String plateNumber,
       String customerName,
+      String parkingName,
       String zoneName,
       String spaceCode,
       LocalDateTime entryTime,

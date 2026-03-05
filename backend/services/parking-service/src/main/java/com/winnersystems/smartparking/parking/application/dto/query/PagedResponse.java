@@ -10,8 +10,8 @@ import java.util.function.Function;
  */
 public record PagedResponse<T>(
       List<T> content,
-      int pageNumber,        // ó "number" como en auth
-      int pageSize,          // ó "size" como en auth
+      int pageNumber,
+      int pageSize,
       long totalElements,
       int totalPages,
       boolean first,

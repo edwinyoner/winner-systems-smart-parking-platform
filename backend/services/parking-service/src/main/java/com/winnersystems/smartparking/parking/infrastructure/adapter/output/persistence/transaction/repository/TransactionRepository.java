@@ -16,6 +16,10 @@ import java.util.Optional;
  *
  * OPTIMIZADO PARA ORACLE DATABASE
  *
+ * NOTA: Las búsquedas por placa (findByPlateNumber, searchByPlate)
+ * se implementan en el SERVICE layer, NO aquí, porque requieren
+ * primero buscar el vehicleId desde VehiclePersistencePort.
+ *
  * @author Edwin Yoner - Winner Systems - Smart Parking Platform
  * @version 1.0
  */
@@ -27,38 +31,27 @@ public interface TransactionRepository extends JpaRepository<TransactionEntity, 
    @Query("SELECT t FROM TransactionEntity t WHERE t.vehicleId = :vehicleId AND t.status = 'ACTIVE'")
    Optional<TransactionEntity> findActiveByVehicleId(@Param("vehicleId") Long vehicleId);
 
-   @Query("SELECT t FROM TransactionEntity t " +
-         "WHERE t.vehicleId IN (SELECT v.id FROM VehicleEntity v WHERE v.licensePlate = :plateNumber) " +
-         "AND t.status = 'ACTIVE'")
-   Optional<TransactionEntity> findActiveByPlateNumber(@Param("plateNumber") String plateNumber);
-
    @Query("SELECT t FROM TransactionEntity t WHERE t.status = 'ACTIVE'")
    Page<TransactionEntity> findAllActive(Pageable pageable);
 
    @Query("SELECT t FROM TransactionEntity t WHERE t.zoneId = :zoneId AND t.status = 'ACTIVE'")
    Page<TransactionEntity> findActiveByZoneId(@Param("zoneId") Long zoneId, Pageable pageable);
 
-   @Query("SELECT t FROM TransactionEntity t " +
-         "WHERE t.vehicleId IN (SELECT v.id FROM VehicleEntity v WHERE UPPER(v.licensePlate) LIKE UPPER(CONCAT('%', :plateNumber, '%'))) " +
-         "AND t.status = 'ACTIVE'")
-   Page<TransactionEntity> searchActiveByPlate(@Param("plateNumber") String plateNumber, Pageable pageable);
-
    /**
     * Lista transacciones activas que superan el tiempo máximo permitido.
     *
-    * Oracle: la resta de TIMESTAMP produce INTERVAL DAY TO SECOND,
-    * por lo que EXTRACT(DAY/HOUR/MINUTE FROM interval) es la sintaxis correcta.
+    * Oracle: EXTRACT(DAY/HOUR/MINUTE FROM interval) para calcular minutos transcurridos.
     */
-   @Query(value = "SELECT * FROM transactions t " +
-         "WHERE t.status = 'ACTIVE' " +
-         "AND EXTRACT(DAY FROM (CURRENT_TIMESTAMP - t.entry_time)) * 24 * 60 + " +
-         "    EXTRACT(HOUR FROM (CURRENT_TIMESTAMP - t.entry_time)) * 60 + " +
-         "    EXTRACT(MINUTE FROM (CURRENT_TIMESTAMP - t.entry_time)) > :maxMinutes",
-         countQuery = "SELECT COUNT(*) FROM transactions t " +
-               "WHERE t.status = 'ACTIVE' " +
-               "AND EXTRACT(DAY FROM (CURRENT_TIMESTAMP - t.entry_time)) * 24 * 60 + " +
-               "    EXTRACT(HOUR FROM (CURRENT_TIMESTAMP - t.entry_time)) * 60 + " +
-               "    EXTRACT(MINUTE FROM (CURRENT_TIMESTAMP - t.entry_time)) > :maxMinutes",
+   @Query(value = "SELECT * FROM TRANSACTIONS t " +
+         "WHERE t.STATUS = 'ACTIVE' " +
+         "AND EXTRACT(DAY FROM (CURRENT_TIMESTAMP - t.ENTRY_TIME)) * 24 * 60 + " +
+         "    EXTRACT(HOUR FROM (CURRENT_TIMESTAMP - t.ENTRY_TIME)) * 60 + " +
+         "    EXTRACT(MINUTE FROM (CURRENT_TIMESTAMP - t.ENTRY_TIME)) > :maxMinutes",
+         countQuery = "SELECT COUNT(*) FROM TRANSACTIONS t " +
+               "WHERE t.STATUS = 'ACTIVE' " +
+               "AND EXTRACT(DAY FROM (CURRENT_TIMESTAMP - t.ENTRY_TIME)) * 24 * 60 + " +
+               "    EXTRACT(HOUR FROM (CURRENT_TIMESTAMP - t.ENTRY_TIME)) * 60 + " +
+               "    EXTRACT(MINUTE FROM (CURRENT_TIMESTAMP - t.ENTRY_TIME)) > :maxMinutes",
          nativeQuery = true)
    Page<TransactionEntity> findOverdue(@Param("maxMinutes") int maxMinutes, Pageable pageable);
 
@@ -71,10 +64,6 @@ public interface TransactionRepository extends JpaRepository<TransactionEntity, 
 
    // ========================= HISTORIAL COMPLETO =========================
 
-   /**
-    * ✅ FIX: ORDER BY eliminado — el sort lo controla Pageable para evitar
-    * conflictos entre ORDER BY explícito y el Sort de Pageable en Hibernate.
-    */
    @Query("SELECT t FROM TransactionEntity t " +
          "WHERE t.entryTime >= :startDate AND t.entryTime <= :endDate")
    Page<TransactionEntity> findByDateRange(@Param("startDate") LocalDateTime startDate,
@@ -89,8 +78,4 @@ public interface TransactionRepository extends JpaRepository<TransactionEntity, 
 
    @Query("SELECT t FROM TransactionEntity t WHERE t.zoneId = :zoneId")
    Page<TransactionEntity> findByZoneId(@Param("zoneId") Long zoneId, Pageable pageable);
-
-   @Query("SELECT t FROM TransactionEntity t " +
-         "WHERE t.vehicleId IN (SELECT v.id FROM VehicleEntity v WHERE UPPER(v.licensePlate) LIKE UPPER(CONCAT('%', :plateNumber, '%')))")
-   Page<TransactionEntity> searchByPlate(@Param("plateNumber") String plateNumber, Pageable pageable);
 }

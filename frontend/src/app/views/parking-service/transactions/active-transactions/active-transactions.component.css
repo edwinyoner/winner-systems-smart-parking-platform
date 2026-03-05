@@ -1,0 +1,224 @@
+/* src/app/views/parking-service/transactions/active-transactions/active-transactions.component.css */
+
+/* ========================= ESTADÍSTICAS ========================= */
+.stat-card {
+  padding: 1.25rem;
+  border-radius: 10px;
+  background: #f8f9fa;
+  border: 2px solid #e0e0e0;
+  margin-bottom: 1rem;
+  transition: transform 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+}
+
+.stat-card.stat-success {
+  background: #e7f5eb;
+  border-color: #2eb85c;
+}
+
+.stat-card.stat-danger {
+  background: #fce8e8;
+  border-color: #e55353;
+}
+
+.stat-card.stat-warning {
+  background: #fef8e7;
+  border-color: #f9b115;
+}
+
+.stat-card.stat-secondary {
+  background: #f0f1f2;
+  border-color: #636f83;
+}
+
+.stat-card.stat-info {
+  background: #e7f3ff;
+  border-color: #39f;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: bold;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: #666;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ========================= GRID DE ESPACIOS ========================= */
+.spaces-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1rem;
+  padding: 1rem 0;
+}
+
+.space-card {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: #1e2838;
+  padding: 1rem;
+}
+
+/* ========================= ESTADOS CON COLORES ÚNICOS ========================= */
+
+.space-card.space-AVAILABLE {
+  border: 3px solid #2eb85c;
+}
+
+.space-card.space-OCCUPIED {
+  border: 3px solid #e55353;
+}
+
+.space-card.space-MAINTENANCE {
+  border: 3px solid #f9b115;
+}
+
+.space-card.space-OUT_OF_SERVICE {
+  border: 3px solid #636f83;
+}
+
+/* Hover effect */
+.space-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* Efecto de pulso para espacios ocupados por mucho tiempo */
+.space-card.space-OCCUPIED.has-transaction {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(229, 83, 83, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(229, 83, 83, 0);
+  }
+}
+
+/* ========================= ÍCONOS ========================= */
+
+.space-icon {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+  transition: transform 0.3s ease;
+}
+
+.space-card:hover .space-icon {
+  transform: scale(1.1);
+}
+
+.space-card.space-AVAILABLE .space-icon {
+  color: #2eb85c;
+}
+
+.space-card.space-OCCUPIED .space-icon {
+  color: #e55353;
+}
+
+.space-card.space-MAINTENANCE .space-icon {
+  color: #f9b115;
+}
+
+.space-card.space-OUT_OF_SERVICE .space-icon {
+  color: #636f83;
+}
+
+/* Ícono de cámara */
+.camera-icon {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 1.2rem;
+  color: #2eb85c;
+  filter: drop-shadow(0 0 3px rgba(46, 184, 92, 0.5));
+}
+
+/* ========================= TEXTO ========================= */
+
+.space-code {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #fff;
+  text-align: center;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.space-time {
+  font-size: 0.75rem;
+  color: #f9b115;
+  margin-top: 0.25rem;
+  text-align: center;
+  font-weight: 600;
+  background: rgba(249, 177, 21, 0.2);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+/* ========================= RESPONSIVE ========================= */
+
+@media (max-width: 1200px) {
+  .spaces-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .spaces-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.75rem;
+  }
+  
+  .space-icon {
+    font-size: 2.5rem;
+  }
+  
+  .space-code {
+    font-size: 1.1rem;
+  }
+  
+  .stat-value {
+    font-size: 1.5rem;
+  }
+  
+  .stat-label {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .spaces-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 0.5rem;
+  }
+  
+  .space-icon {
+    font-size: 2rem;
+  }
+  
+  .space-code {
+    font-size: 0.9rem;
+  }
+  
+  .space-card {
+    padding: 0.75rem;
+  }
+}

@@ -1,3 +1,4 @@
+//src/app/core/models/parking/parking-shift-rate.model.ts
 /**
  * Modelo para la configuración de tarifas por turno en un parqueo.
  * Esta configuración se aplica a TODAS las zonas del parqueo.

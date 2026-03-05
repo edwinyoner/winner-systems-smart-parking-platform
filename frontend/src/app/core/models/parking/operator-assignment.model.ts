@@ -1,3 +1,4 @@
+//src/app/core/models/parking/operator-assignment.model.ts
 /**
  * Modelo para la asignación de operadores a zonas
  * Representa la relación entre un operador, una zona y un turno

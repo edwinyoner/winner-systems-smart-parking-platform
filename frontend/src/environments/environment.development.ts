@@ -8,10 +8,10 @@ export const environment = {
   production: false,
 
   // URLs de servicios backend
-  // apiUrl: 'http://localhost:8080/api',        // API Gateway (puerto principal)
-  // authServiceUrl: 'http://localhost:8081',    // Auth Service directo (para testing)
-  apiUrl: "http://192.168.1.4:8080/api",
-  authServiceUrl: "http://192.168.1.4:8081",
+  apiUrl: 'http://localhost:8080/api',        // API Gateway (puerto principal)
+  authServiceUrl: 'http://localhost:8081',    // Auth Service directo (para testing)
+  // apiUrl: "http://192.168.1.6:8080/api",
+  // authServiceUrl: "http://192.168.1.6:8081",
 
   // reCAPTCHA v3 (clave de prueba de Google)
   recaptchaSiteKey: "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI",

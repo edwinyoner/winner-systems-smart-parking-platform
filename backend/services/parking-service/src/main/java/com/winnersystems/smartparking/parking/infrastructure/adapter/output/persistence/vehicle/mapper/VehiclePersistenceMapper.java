@@ -5,7 +5,7 @@ import com.winnersystems.smartparking.parking.infrastructure.adapter.output.pers
 import org.springframework.stereotype.Component;
 
 /**
- * Mapper entre Vehicle (dominio) y VehicleEntity (JPA).
+ * Mapper bidireccional entre Vehicle (dominio) y VehicleEntity (persistencia).
  *
  * @author Edwin Yoner - Winner Systems - Smart Parking Platform
  * @version 1.0
@@ -13,41 +13,56 @@ import org.springframework.stereotype.Component;
 @Component
 public class VehiclePersistenceMapper {
 
+   /**
+    * Convierte Vehicle (dominio) → VehicleEntity (JPA).
+    */
    public VehicleEntity toEntity(Vehicle vehicle) {
       if (vehicle == null) {
          return null;
       }
 
-      return VehicleEntity.builder()
-            .id(vehicle.getId())
-            .licensePlate(vehicle.getLicensePlate())
-            .color(vehicle.getColor())
-            .brand(vehicle.getBrand())
-            .firstSeenDate(vehicle.getFirstSeenDate())
-            .lastSeenDate(vehicle.getLastSeenDate())
-            .totalVisits(vehicle.getTotalVisits())
-            .createdAt(vehicle.getCreatedAt())
-            .createdBy(vehicle.getCreatedBy())
-            .updatedAt(vehicle.getUpdatedAt())
-            .updatedBy(vehicle.getUpdatedBy())
-            .deletedAt(vehicle.getDeletedAt())
-            .deletedBy(vehicle.getDeletedBy())
-            .build();
+      VehicleEntity entity = new VehicleEntity();
+
+      // ID
+      entity.setId(vehicle.getId());
+      entity.setLicensePlate(vehicle.getLicensePlate());
+
+      // Tracking
+      entity.setFirstSeenDate(vehicle.getFirstSeenDate());
+      entity.setLastSeenDate(vehicle.getLastSeenDate());
+      entity.setTotalVisits(vehicle.getTotalVisits());
+
+      // Auditoría
+      entity.setCreatedAt(vehicle.getCreatedAt());
+      entity.setCreatedBy(vehicle.getCreatedBy());
+      entity.setUpdatedAt(vehicle.getUpdatedAt());
+      entity.setUpdatedBy(vehicle.getUpdatedBy());
+      entity.setDeletedAt(vehicle.getDeletedAt());
+      entity.setDeletedBy(vehicle.getDeletedBy());
+
+      return entity;
    }
 
+   /**
+    * Convierte VehicleEntity (JPA) → Vehicle (dominio).
+    */
    public Vehicle toDomain(VehicleEntity entity) {
       if (entity == null) {
          return null;
       }
 
       Vehicle vehicle = new Vehicle();
+
+      // ID
       vehicle.setId(entity.getId());
       vehicle.setLicensePlate(entity.getLicensePlate());
-      vehicle.setColor(entity.getColor());
-      vehicle.setBrand(entity.getBrand());
+
+      // Tracking
       vehicle.setFirstSeenDate(entity.getFirstSeenDate());
       vehicle.setLastSeenDate(entity.getLastSeenDate());
       vehicle.setTotalVisits(entity.getTotalVisits());
+
+      // Auditoría
       vehicle.setCreatedAt(entity.getCreatedAt());
       vehicle.setCreatedBy(entity.getCreatedBy());
       vehicle.setUpdatedAt(entity.getUpdatedAt());

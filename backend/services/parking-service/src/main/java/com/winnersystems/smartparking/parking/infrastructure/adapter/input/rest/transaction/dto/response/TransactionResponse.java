@@ -23,6 +23,7 @@ public class TransactionResponse {
    private Long id;
    private String plateNumber;
    private String customerName;
+   private String parkingName;
    private String zoneName;
    private String spaceCode;
    private LocalDateTime entryTime;

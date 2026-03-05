@@ -1,1 +1,204 @@
-<p>payment-list works!</p>
+<!-- src/app/views/parking-service/payments/payment-list/payment-list.component.html -->
+
+<c-row>
+  <c-col xs="12">
+    <c-card class="mb-4">
+      <c-card-header>
+        <strong>
+          <i class="fa-solid fa-credit-card me-2"></i>
+          Historial de Pagos
+        </strong>
+        <small class="text-body-secondary ms-2">
+          Vista de solo lectura - Los pagos se generan automáticamente al procesar transacciones
+        </small>
+      </c-card-header>
+      
+      <c-card-body>
+        
+        <!-- ========================= FILTROS ========================= -->
+        <div class="filters-section mb-4">
+          <h6 class="mb-3">
+            <i class="fa-solid fa-filter me-2"></i>
+            Filtros de Búsqueda
+          </h6>
+          
+          <c-row class="mb-3">
+            <c-col md="4">
+              <label for="plateFilter" class="form-label">Placa</label>
+              <input 
+                cFormControl 
+                type="text" 
+                id="plateFilter"
+                [(ngModel)]="filters.plateNumber"
+                placeholder="ABC-123"
+                style="text-transform: uppercase;">
+            </c-col>
+            
+            <c-col md="3">
+              <label for="startDateFilter" class="form-label">Fecha Inicio</label>
+              <input 
+                cFormControl 
+                type="date" 
+                id="startDateFilter"
+                [(ngModel)]="filters.startDate">
+            </c-col>
+            
+            <c-col md="3">
+              <label for="endDateFilter" class="form-label">Fecha Fin</label>
+              <input 
+                cFormControl 
+                type="date" 
+                id="endDateFilter"
+                [(ngModel)]="filters.endDate">
+            </c-col>
+            
+            <c-col md="2" class="d-flex align-items-end gap-2">
+              <button 
+                cButton 
+                color="primary" 
+                (click)="applyFilters()"
+                [disabled]="loading">
+                <i class="fa-solid fa-search me-1"></i>
+                Buscar
+              </button>
+              <button 
+                cButton 
+                color="secondary" 
+                (click)="clearFilters()"
+                [disabled]="loading">
+                <i class="fa-solid fa-times"></i>
+              </button>
+            </c-col>
+          </c-row>
+        </div>
+        
+        <hr class="my-3">
+        
+        <!-- ========================= LOADING ========================= -->
+        @if (loading) {
+          <div class="text-center py-5">
+            <c-spinner color="primary"></c-spinner>
+            <p class="mt-3 text-body-secondary">Cargando pagos...</p>
+          </div>
+        }
+        
+        <!-- ========================= TABLA ========================= -->
+        @if (!loading && payments.length > 0) {
+          <div class="table-responsive">
+            <table cTable striped hover [small]="true">
+              <thead>
+                <tr>
+                  <th>Transacción ID</th>
+                  <th>Fecha Pago</th>
+                  <th>Placa</th>
+                  <th>Cliente</th>
+                  <th>Parqueo</th>
+                  <th>Zona</th>
+                  <th>Monto</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (payment of payments; track payment.paymentId) {
+                  <tr>
+                    <td><strong>#{{ payment.transactionId }}</strong></td>
+                    <td>
+                      <small>{{ payment.paymentDate | date: 'dd/MM/yyyy HH:mm' }}</small>
+                    </td>
+                    <td>
+                      <strong class="text-primary">{{ payment.plateNumber }}</strong>
+                    </td>
+                    <td>{{ payment.customerName }}</td>
+                    <td>{{ payment.parkingName }}</td>
+                    <td>{{ payment.zoneName }}</td>
+                    <td>
+                      <strong class="text-success">
+                        {{ payment.currency }} {{ payment.amount.toFixed(2) }}
+                      </strong>
+                    </td>
+                    <td>
+                      <c-badge [color]="getPaymentStatusBadge(payment.paymentStatus)">
+                        {{ getPaymentStatusText(payment.paymentStatus) }}
+                      </c-badge>
+                    </td>
+                    <td>
+                      <div class="btn-group" role="group">
+                        <button 
+                          cButton 
+                          color="info" 
+                          size="sm"
+                          (click)="viewDetail(payment.transactionId)"
+                          title="Ver pago">
+                          <i class="fa-solid fa-eye"></i>
+                        </button>
+                        <button 
+                          cButton 
+                          color="primary" 
+                          size="sm"
+                          (click)="viewTransaction(payment.transactionId)"
+                          title="Ver transacción">
+                          <i class="fa-solid fa-file-invoice"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- ========================= PAGINACIÓN ========================= -->
+          @if (totalPages > 1) {
+            <div class="d-flex justify-content-between align-items-center mt-3">
+              <div class="text-body-secondary">
+                Mostrando {{ payments.length }} de {{ totalElements }} pagos
+              </div>
+              
+              <nav aria-label="Paginación">
+                <ul class="pagination justify-content-center mb-0">
+                  <li class="page-item" [class.disabled]="currentPage === 0">
+                    <a class="page-link" (click)="onPageChange(currentPage - 1)" style="cursor: pointer;">
+                      Anterior
+                    </a>
+                  </li>
+                  
+                  @for (page of [].constructor(totalPages); track $index) {
+                    <li class="page-item" [class.active]="currentPage === $index">
+                      <a class="page-link" (click)="onPageChange($index)" style="cursor: pointer;">
+                        {{ $index + 1 }}
+                      </a>
+                    </li>
+                  }
+                  
+                  <li class="page-item" [class.disabled]="currentPage === totalPages - 1">
+                    <a class="page-link" (click)="onPageChange(currentPage + 1)" style="cursor: pointer;">
+                      Siguiente
+                    </a>
+                  </li>
+                </ul>
+              </nav>
+            </div>
+          }
+        }
+        
+        <!-- ========================= EMPTY STATE ========================= -->
+        @if (!loading && payments.length === 0) {
+          <div class="text-center py-5">
+            <i class="fa-solid fa-inbox fa-3x text-body-secondary mb-3"></i>
+            <p class="text-body-secondary">No se encontraron pagos registrados</p>
+            <button 
+              cButton 
+              color="primary" 
+              size="sm"
+              (click)="clearFilters()">
+              <i class="fa-solid fa-rotate me-1"></i>
+              Limpiar Filtros
+            </button>
+          </div>
+        }
+        
+      </c-card-body>
+    </c-card>
+  </c-col>
+</c-row>

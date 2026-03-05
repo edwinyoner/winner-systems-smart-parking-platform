@@ -1,1 +1,220 @@
-<p>customer-edit works!</p>
+<!-- src/app/views/parking-service/customers/customer-edit/customer-edit.component.html -->
+<c-row>
+  <c-col xs="12">
+    @if (loading && !customer) {
+      <c-card class="mb-4">
+        <c-card-body class="text-center p-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando cliente...</span>
+          </div>
+        </c-card-body>
+      </c-card>
+    } @else if (error && !customer) {
+      <c-alert color="danger" [dismissible]="false">
+        <strong>Error:</strong> {{ error }}
+      </c-alert>
+      <button
+        cButton
+        color="secondary"
+        variant="outline"
+        (click)="onCancel()"
+      >
+        <svg cIcon name="cilArrowLeft" class="me-2"></svg>
+        Volver
+      </button>
+    } @else if (customer) {
+      <c-card class="mb-4">
+        <c-card-header class="d-flex justify-content-between align-items-center">
+          <div>
+            <strong>Editar Cliente</strong>
+            <small class="text-muted ms-2">
+              {{ customer.fullName }} ({{ customer.documentNumber || 'N/A' }})
+            </small>
+          </div>
+          <button
+            cButton
+            color="secondary"
+            variant="outline"
+            size="sm"
+            (click)="onCancel()"
+          >
+            <svg cIcon name="cilX" class="me-1"></svg>
+            Cancelar
+          </button>
+        </c-card-header>
+
+        <c-card-body>
+          @if (error) {
+            <c-alert color="danger" [dismissible]="true" class="mb-4">
+              {{ error }}
+            </c-alert>
+          }
+
+          <c-alert color="info" [dismissible]="false" class="mb-4">
+            <strong>Nota:</strong> El tipo y número de documento no se pueden modificar.
+            Solo se pueden actualizar los datos personales y de contacto.
+          </c-alert>
+
+          <form [formGroup]="customerForm" (ngSubmit)="onSubmit()">
+            <c-row class="g-3 mb-4">
+              <!-- Documento (solo lectura) -->
+              <c-col md="6">
+                <label cLabel for="documentType">Tipo de Documento</label>
+                <input
+                  cFormControl
+                  id="documentType"
+                  type="text"
+                  [value]="customer.documentTypeName || 'N/A'"
+                  readonly
+                  disabled
+                />
+              </c-col>
+
+              <c-col md="6">
+                <label cLabel for="documentNumber">Número de Documento</label>
+                <input
+                  cFormControl
+                  id="documentNumber"
+                  type="text"
+                  [value]="customer.documentNumber || ''"
+                  readonly
+                  disabled
+                />
+              </c-col>
+            </c-row>
+
+            <hr class="my-4">
+
+            <c-row class="g-3 mb-4">
+              <!-- Nombres -->
+              <c-col md="6">
+                <label cLabel for="firstName">
+                  Nombres <span class="text-danger">*</span>
+                </label>
+                <input
+                  cFormControl
+                  id="firstName"
+                  type="text"
+                  formControlName="firstName"
+                  placeholder="Ej: Juan Carlos"
+                  [class.is-invalid]="isFieldInvalid('firstName')"
+                />
+                @if (isFieldInvalid('firstName')) {
+                  <c-form-feedback [valid]="false">
+                    {{ getErrorMessage('firstName') }}
+                  </c-form-feedback>
+                }
+              </c-col>
+
+              <!-- Apellidos -->
+              <c-col md="6">
+                <label cLabel for="lastName">
+                  Apellidos <span class="text-danger">*</span>
+                </label>
+                <input
+                  cFormControl
+                  id="lastName"
+                  type="text"
+                  formControlName="lastName"
+                  placeholder="Ej: Pérez García"
+                  [class.is-invalid]="isFieldInvalid('lastName')"
+                />
+                @if (isFieldInvalid('lastName')) {
+                  <c-form-feedback [valid]="false">
+                    {{ getErrorMessage('lastName') }}
+                  </c-form-feedback>
+                }
+              </c-col>
+            </c-row>
+
+            <c-row class="g-3 mb-4">
+              <!-- Teléfono -->
+              <c-col md="6">
+                <label cLabel for="phone">Teléfono</label>
+                <input
+                  cFormControl
+                  id="phone"
+                  type="text"
+                  formControlName="phone"
+                  placeholder="Ej: 987654321"
+                  maxlength="9"
+                  [class.is-invalid]="isFieldInvalid('phone')"
+                />
+                @if (isFieldInvalid('phone')) {
+                  <c-form-feedback [valid]="false">
+                    {{ getErrorMessage('phone') }}
+                  </c-form-feedback>
+                } @else {
+                  <div class="form-text text-muted">9 dígitos, sin espacios ni guiones</div>
+                }
+              </c-col>
+
+              <!-- Email -->
+              <c-col md="6">
+                <label cLabel for="email">Email</label>
+                <input
+                  cFormControl
+                  id="email"
+                  type="email"
+                  formControlName="email"
+                  placeholder="ejemplo@correo.com"
+                  [class.is-invalid]="isFieldInvalid('email')"
+                />
+                @if (isFieldInvalid('email')) {
+                  <c-form-feedback [valid]="false">
+                    {{ getErrorMessage('email') }}
+                  </c-form-feedback>
+                }
+              </c-col>
+            </c-row>
+
+            <c-row class="mb-4">
+              <!-- Dirección -->
+              <c-col md="12">
+                <label cLabel for="address">Dirección</label>
+                <input
+                  cFormControl
+                  id="address"
+                  type="text"
+                  formControlName="address"
+                  placeholder="Ej: Av. Luzuriaga 123, Huaraz, Ancash"
+                />
+              </c-col>
+            </c-row>
+
+            <!-- Botones de acción -->
+            <div class="d-flex justify-content-end gap-3 mt-4">
+              <button
+                cButton
+                color="secondary"
+                variant="outline"
+                type="button"
+                (click)="onCancel()"
+                [disabled]="loading"
+              >
+                <svg cIcon name="cilX" class="me-2"></svg>
+                Cancelar
+              </button>
+
+              <button
+                cButton
+                color="success"
+                type="submit"
+                [disabled]="customerForm.invalid || loading"
+              >
+                @if (loading) {
+                  <span class="spinner-border spinner-border-sm me-2" role="status">
+                    <span class="visually-hidden">Guardando...</span>
+                  </span>
+                } @else {
+                  <svg cIcon name="cilCheckAlt" class="me-2"></svg>
+                }
+                Guardar Cambios
+              </button>
+            </div>
+          </form>
+        </c-card-body>
+      </c-card>
+    }
+  </c-col>
+</c-row>

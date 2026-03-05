@@ -20,6 +20,16 @@ import java.util.List;
 /**
  * Servicio de aplicación para gestión de transacciones de estacionamiento.
  *
+ * Implementa todos los casos de uso relacionados con el ciclo completo:
+ * Entrada → Salida → Pago
+ *
+ * Responsabilidades:
+ * - Orquestar operaciones entre múltiples agregados (Vehicle, Customer, Space, etc.)
+ * - Validar reglas de negocio complejas
+ * - Coordinar persistencia de múltiples entidades
+ * - Calcular montos y tiempos
+ * - Construir DTOs con datos relacionados
+ *
  * @author Edwin Yoner - Winner Systems - Smart Parking Platform
  * @version 1.0
  */
@@ -38,14 +48,17 @@ public class TransactionService implements
    private final TransactionPersistencePort transactionPersistencePort;
    private final VehiclePersistencePort vehiclePersistencePort;
    private final CustomerPersistencePort customerPersistencePort;
+   private final CustomerVehiclePersistencePort customerVehiclePersistencePort;
+   private final ParkingPersistencePort parkingPersistencePort;
    private final SpacePersistencePort spacePersistencePort;
    private final ZonePersistencePort zonePersistencePort;
    private final RatePersistencePort ratePersistencePort;
    private final PaymentPersistencePort paymentPersistencePort;
+   private final ParkingShiftRatePersistencePort parkingShiftRatePersistencePort;
 
    // ========================= CONSTANTES =========================
 
-   private static final int MAX_RECOMMENDED_MINUTES = 480; // 8 horas — TODO: hacer configurable
+   private static final int MAX_RECOMMENDED_MINUTES = 480; // 8 horas
 
    // ========================= CONSTRUCTOR =========================
 
@@ -53,94 +66,71 @@ public class TransactionService implements
          TransactionPersistencePort transactionPersistencePort,
          VehiclePersistencePort vehiclePersistencePort,
          CustomerPersistencePort customerPersistencePort,
+         CustomerVehiclePersistencePort customerVehiclePersistencePort,
+         ParkingPersistencePort parkingPersistencePort,
          SpacePersistencePort spacePersistencePort,
          ZonePersistencePort zonePersistencePort,
          RatePersistencePort ratePersistencePort,
-         PaymentPersistencePort paymentPersistencePort) {
+         PaymentPersistencePort paymentPersistencePort,
+         ParkingShiftRatePersistencePort parkingShiftRatePersistencePort) {
       this.transactionPersistencePort = transactionPersistencePort;
       this.vehiclePersistencePort = vehiclePersistencePort;
       this.customerPersistencePort = customerPersistencePort;
+      this.customerVehiclePersistencePort = customerVehiclePersistencePort;
+      this.parkingPersistencePort = parkingPersistencePort;
       this.spacePersistencePort = spacePersistencePort;
       this.zonePersistencePort = zonePersistencePort;
       this.ratePersistencePort = ratePersistencePort;
       this.paymentPersistencePort = paymentPersistencePort;
+      this.parkingShiftRatePersistencePort = parkingShiftRatePersistencePort;
    }
 
    // ========================= RecordEntryUseCase =========================
 
    @Override
    public TransactionDetailDto recordEntry(RecordEntryCommand command) {
-      // 1. Validar zona
-      Zone zone = zonePersistencePort.findById(command.getZoneId())
-            .orElseThrow(() -> new IllegalArgumentException("Zona no encontrada"));
-      if (!zone.isOperational()) {
-         throw new ZoneNotOperationalException(zone.getName(), "La zona no está operativa");
-      }
+      // 1. Validar y cargar parking
+      Parking parking = loadParking(command.parkingId());
+      validateParkingOperational(parking);
 
-      // 2. Validar espacio
-      Space space = spacePersistencePort.findById(command.getSpaceId())
-            .orElseThrow(() -> new IllegalArgumentException("Espacio no encontrado"));
-      if (!space.isAvailable()) {
-         throw new SpaceNotAvailableException(space.getCode(), space.getStatus());
-      }
+      // 2. Validar y cargar zona
+      Zone zone = loadZone(command.zoneId());
+      validateZoneOperational(zone);
 
-      // 3. Buscar o crear vehículo
-      Vehicle vehicle = vehiclePersistencePort.findByPlateNumber(command.getPlateNumber())
-            .orElseGet(() -> {
-               Vehicle v = new Vehicle(command.getPlateNumber().trim().toUpperCase());
-               return vehiclePersistencePort.save(v);
-            });
+      // 3. Validar y cargar espacio
+      Space space = loadSpace(command.spaceId());
+      validateSpaceAvailable(space);
 
-      // 4. Verificar que el vehículo no esté ya dentro
-      if (transactionPersistencePort.existsActiveByVehicleId(vehicle.getId())) {
-         Transaction active = transactionPersistencePort
-               .findActiveByVehicleId(vehicle.getId()).orElseThrow();
-         throw new VehicleAlreadyInsideException(vehicle.getLicensePlate(), active.getId());
-      }
+      // 4. Buscar o crear vehículo
+      Vehicle vehicle = findOrCreateVehicle(command);
 
-      // 5. Buscar o crear cliente
-      Customer customer = customerPersistencePort
-            .findByDocument(command.getDocumentTypeId(), command.getDocumentNumber())
-            .orElseGet(() -> {
-               Customer c = new Customer();
-               c.setDocumentTypeId(command.getDocumentTypeId());
-               c.setDocumentNumber(command.getDocumentNumber().trim());
-               if (command.getCustomerName() != null) {
-                  String[] parts = command.getCustomerName().trim().split("\\s+", 2);
-                  c.setFirstName(parts[0]);
-                  if (parts.length > 1) c.setLastName(parts[1]);
-               }
-               if (command.getCustomerPhone() != null) c.setPhone(command.getCustomerPhone().trim());
-               if (command.getCustomerEmail() != null) c.setEmail(command.getCustomerEmail().trim().toLowerCase());
-               return customerPersistencePort.save(c);
-            });
+      // 5. Verificar que el vehículo no esté ya dentro
+      validateVehicleNotInside(vehicle);
 
-      // 6. Obtener tarifa aplicable
-      // TODO: Implementar lógica con ZoneShiftRate (zona + turno actual)
-      List<Rate> activeRates = ratePersistencePort.findAllActive();
-      if (activeRates.isEmpty()) {
-         throw new IllegalArgumentException("No hay tarifas activas configuradas");
-      }
-      Rate rate = activeRates.get(0);
+      // 6. Buscar o crear cliente
+      Customer customer = findOrCreateCustomer(command);
 
-      // 7. Crear y guardar transacción
-      Transaction transaction = new Transaction(
-            vehicle.getId(), customer.getId(), space.getId(), zone.getId(), rate.getId(),
-            command.getDocumentTypeId(), command.getDocumentNumber()
-      );
-      transaction.recordEntry(command.getOperatorId());
-      transaction.setEntryMethod(command.getEntryMethod() != null ? command.getEntryMethod() : Transaction.METHOD_MANUAL);
-      if (command.getPhotoUrl() != null) transaction.recordEntryPhoto(command.getPhotoUrl(), command.getPlateConfidence());
-      if (command.getNotes() != null) transaction.setNotes(command.getNotes());
-      transaction.setCreatedBy(command.getOperatorId());
+      // 7. Registrar o actualizar relación Cliente-Vehículo
+      registerCustomerVehicleRelation(customer.getId(), vehicle.getId());
 
+      // 8. Obtener tarifa aplicable
+      Rate rate = findApplicableRate(parking.getId(), zone.getId());
+
+      // 9. Crear y guardar transacción
+      Transaction transaction = buildEntryTransaction(command, vehicle, customer, zone, space, rate);
       Transaction saved = transactionPersistencePort.save(transaction);
 
-      // 8. Marcar espacio como ocupado
+      // 10. Marcar espacio como ocupado
       space.markAsOccupied();
       spacePersistencePort.save(space);
 
-      return buildDetailDto(saved, vehicle, customer, zone, space, rate, null);
+      // 11. Actualizar contadores de vehículo y cliente
+      vehicle.recordVisit();
+      vehiclePersistencePort.save(vehicle);
+      customer.recordVisit();
+      customerPersistencePort.save(customer);
+
+      return buildTransactionDetailDto(saved, vehicle, customer, parking, zone, space, rate, null);
    }
 
    // ========================= RecordExitUseCase =========================
@@ -148,126 +138,80 @@ public class TransactionService implements
    @Override
    public TransactionDetailDto recordExit(RecordExitCommand command) {
       // 1. Buscar transacción activa
-      Transaction transaction;
-      if (command.getTransactionId() != null) {
-         transaction = transactionPersistencePort.findById(command.getTransactionId())
-               .orElseThrow(() -> new IllegalArgumentException("Transacción no encontrada"));
-      } else if (command.getPlateNumber() != null) {
-         transaction = transactionPersistencePort.findActiveByPlateNumber(command.getPlateNumber())
-               .orElseThrow(() -> new IllegalArgumentException(
-                     "No hay transacción activa para: " + command.getPlateNumber()));
-      } else {
-         throw new IllegalArgumentException("Debe proporcionar ID de transacción o placa");
-      }
+      Transaction transaction = findActiveTransaction(command);
 
       // 2. Validar estado
-      if (!transaction.isActive()) {
-         throw new InvalidTransactionStateException(transaction.getId(),
-               transaction.getStatus(), Transaction.STATUS_ACTIVE, "registrar salida");
-      }
+      validateTransactionActive(transaction);
 
-      // 3. Registrar salida y validar documentos (anti-robo)
-      transaction.recordExit(command.getExitDocumentTypeId(), command.getExitDocumentNumber(), command.getOperatorId());
-      if (!transaction.verifyDocumentMatch()) {
-         throw new DocumentMismatchException(
-               transaction.getEntryDocumentNumber(), transaction.getExitDocumentNumber(), transaction.getId());
-      }
+      // 3. Cargar entidades relacionadas
+      Vehicle vehicle = loadVehicle(transaction.getVehicleId());
+      Customer customer = loadCustomer(transaction.getCustomerId());
+      Parking parking = loadParking(transaction.getParkingId());
+      Zone zone = loadZone(transaction.getZoneId());
+      Space space = loadSpace(transaction.getSpaceId());
+      Rate rate = loadRate(transaction.getRateId());
 
-      transaction.setExitMethod(command.getExitMethod() != null ? command.getExitMethod() : Transaction.METHOD_MANUAL);
-      if (command.getPhotoUrl() != null) transaction.recordExitPhoto(command.getPhotoUrl(), command.getPlateConfidence());
-      if (command.getNotes() != null) {
-         String notes = transaction.getNotes() != null
-               ? transaction.getNotes() + " | " + command.getNotes()
-               : command.getNotes();
-         transaction.setNotes(notes);
-      }
+      // 4. Registrar salida y validar documentos (anti-robo)
+      processExit(transaction, command);
+      validateDocumentMatch(transaction);
 
-      // 4. Calcular monto
-      Rate rate = ratePersistencePort.findById(transaction.getRateId())
-            .orElseThrow(() -> new IllegalArgumentException("Tarifa no encontrada"));
-      transaction.calculateAmount(rate.getAmount());
-      transaction.setUpdatedBy(command.getOperatorId());
+      // 5. Calcular monto a pagar
+      calculateTransactionAmount(transaction, rate);
 
+      // 6. Guardar transacción actualizada
+      transaction.setUpdatedBy(command.operatorId());
       Transaction saved = transactionPersistencePort.save(transaction);
 
-      // 5. Liberar espacio
-      Space space = spacePersistencePort.findById(transaction.getParkingSpaceId())
-            .orElseThrow(() -> new IllegalArgumentException("Espacio no encontrado"));
+      // 7. Liberar espacio
       space.markAsAvailable();
       spacePersistencePort.save(space);
 
-      Vehicle vehicle = vehiclePersistencePort.findById(transaction.getVehicleId()).orElseThrow();
-      Customer customer = customerPersistencePort.findById(transaction.getCustomerId()).orElseThrow();
-      Zone zone = zonePersistencePort.findById(transaction.getZoneId()).orElseThrow();
-
-      return buildDetailDto(saved, vehicle, customer, zone, space, rate, null);
+      return buildTransactionDetailDto(saved, vehicle, customer, parking, zone, space, rate, null);
    }
 
    // ========================= ProcessPaymentUseCase =========================
 
    @Override
    public TransactionDetailDto processPayment(ProcessPaymentCommand command) {
-      Transaction transaction = transactionPersistencePort.findById(command.getTransactionId())
-            .orElseThrow(() -> new IllegalArgumentException("Transacción no encontrada"));
+      // 1. Cargar transacción
+      Transaction transaction = loadTransaction(command.transactionId());
 
-      if (!transaction.isCompleted()) {
-         throw new InvalidTransactionStateException(transaction.getId(),
-               transaction.getStatus(), Transaction.STATUS_COMPLETED, "procesar pago");
-      }
-      if (!transaction.isPending()) {
-         throw new InvalidTransactionStateException(transaction.getId(),
-               transaction.getPaymentStatus(), Transaction.PAYMENT_STATUS_PENDING, "procesar pago");
-      }
-      if (command.getAmountPaid().compareTo(transaction.getTotalAmount()) < 0) {
-         throw new IllegalArgumentException(
-               String.format("Monto insuficiente. Requerido: %s, recibido: %s",
-                     transaction.getTotalAmount(), command.getAmountPaid()));
-      }
+      // 2. Validar estado para pago
+      validateTransactionForPayment(transaction, command);
 
-      // Crear pago
-      Payment payment = new Payment(
-            transaction.getId(), command.getPaymentTypeId(),
-            command.getAmountPaid(), command.getOperatorId());
-      if (command.getReferenceNumber() != null) payment.setReferenceNumber(command.getReferenceNumber());
-      if (command.getNotes() != null) payment.setNotes(command.getNotes());
-      payment.setCreatedBy(command.getOperatorId());
-
+      // 3. Crear y guardar pago
+      Payment payment = buildPayment(command);
       Payment savedPayment = paymentPersistencePort.save(payment);
 
-      // Actualizar transacción
+      // 4. Actualizar transacción como pagada
       transaction.markAsPaid();
-      transaction.setUpdatedBy(command.getOperatorId());
-      if (Boolean.TRUE.equals(command.getSendReceipt())) {
-         transaction.markReceiptAsSent();
-         transaction.updateWhatsAppStatus("PENDING");
-         transaction.updateEmailStatus("PENDING");
+      transaction.setUpdatedBy(command.operatorId());
+
+      // 5. Enviar comprobante si está configurado
+      if (Boolean.TRUE.equals(command.sendReceipt())) {
+         markReceiptForSending(transaction);
       }
 
       Transaction saved = transactionPersistencePort.save(transaction);
 
-      Vehicle vehicle = vehiclePersistencePort.findById(transaction.getVehicleId()).orElseThrow();
-      Customer customer = customerPersistencePort.findById(transaction.getCustomerId()).orElseThrow();
-      Zone zone = zonePersistencePort.findById(transaction.getZoneId()).orElseThrow();
-      Space space = spacePersistencePort.findById(transaction.getParkingSpaceId()).orElseThrow();
-      Rate rate = ratePersistencePort.findById(transaction.getRateId()).orElseThrow();
-
-      return buildDetailDto(saved, vehicle, customer, zone, space, rate, savedPayment);
+      // 6. Cargar entidades relacionadas y construir DTO
+      return buildTransactionDetailDtoWithPayment(saved, savedPayment);
    }
 
    // ========================= GetTransactionUseCase =========================
 
    @Override
    @Transactional(readOnly = true)
-   public TransactionDetailDto getById(Long transactionId) {
-      return loadDetailDto(transactionPersistencePort.findById(transactionId)
-            .orElseThrow(() -> new IllegalArgumentException("Transacción no encontrada")));
+   public TransactionDetailDto getTransactionById(Long transactionId) {
+      Transaction transaction = loadTransaction(transactionId);
+      return loadTransactionDetailDto(transaction);
    }
 
    @Override
    @Transactional(readOnly = true)
-   public TransactionDetailDto getActiveByPlate(String plateNumber) {
+   public TransactionDetailDto getActiveTransactionByPlate(String plateNumber) {
       return transactionPersistencePort.findActiveByPlateNumber(plateNumber)
-            .map(this::loadDetailDto)
+            .map(this::loadTransactionDetailDto)
             .orElse(null);
    }
 
@@ -275,206 +219,556 @@ public class TransactionService implements
 
    @Override
    @Transactional(readOnly = true)
-   public PagedResponse<ActiveTransactionDto> listAll(int pageNumber, int pageSize) {
-      PageRequest req = PageRequest.of(pageNumber, pageSize, "entryTime", "DESC");
-      PageResult<Transaction> result = transactionPersistencePort.findAllActive(req);
-      return toActivePagedResponse(result);
+   public PagedResponse<ActiveTransactionDto> listAllActiveTransactions(int pageNumber, int pageSize) {
+      PageRequest request = PageRequest.of(pageNumber, pageSize, "entryTime", "DESC");
+      PageResult<Transaction> result = transactionPersistencePort.findAllActive(request);
+      return toActiveTransactionPagedResponse(result);
    }
 
    @Override
    @Transactional(readOnly = true)
-   public PagedResponse<ActiveTransactionDto> listActiveByZone(Long zoneId, int pageNumber, int pageSize) {
-      PageRequest req = PageRequest.of(pageNumber, pageSize, "entryTime", "DESC");
-      PageResult<Transaction> result = transactionPersistencePort.findActiveByZoneId(zoneId, req);
-      return toActivePagedResponse(result);
+   public PagedResponse<ActiveTransactionDto> listActiveTransactionsByZone(Long zoneId, int pageNumber, int pageSize) {
+      PageRequest request = PageRequest.of(pageNumber, pageSize, "entryTime", "DESC");
+      PageResult<Transaction> result = transactionPersistencePort.findActiveByZoneId(zoneId, request);
+      return toActiveTransactionPagedResponse(result);
    }
 
    @Override
    @Transactional(readOnly = true)
-   public PagedResponse<ActiveTransactionDto> searchActiveByPlate(String plateNumber, int pageNumber, int pageSize) {
-      PageRequest req = PageRequest.of(pageNumber, pageSize, "entryTime", "DESC");
-      PageResult<Transaction> result = transactionPersistencePort.searchActiveByPlate(plateNumber, req);
-      return toActivePagedResponse(result);
+   public PagedResponse<ActiveTransactionDto> searchActiveTransactionsByPlate(String plateNumber, int pageNumber, int pageSize) {
+      PageRequest request = PageRequest.of(pageNumber, pageSize, "entryTime", "DESC");
+      PageResult<Transaction> result = transactionPersistencePort.searchActiveByPlate(plateNumber, request);
+      return toActiveTransactionPagedResponse(result);
    }
 
    @Override
    @Transactional(readOnly = true)
-   public PagedResponse<ActiveTransactionDto> listOverdue(int pageNumber, int pageSize) {
-      PageRequest req = PageRequest.of(pageNumber, pageSize, "entryTime", "ASC");
-      PageResult<Transaction> result = transactionPersistencePort.findOverdue(MAX_RECOMMENDED_MINUTES, req);
-      return toActivePagedResponse(result);
+   public PagedResponse<ActiveTransactionDto> listOverdueTransactions(int pageNumber, int pageSize) {
+      PageRequest request = PageRequest.of(pageNumber, pageSize, "entryTime", "ASC");
+      PageResult<Transaction> result = transactionPersistencePort.findOverdue(MAX_RECOMMENDED_MINUTES, request);
+      return toActiveTransactionPagedResponse(result);
    }
 
    // ========================= ListTransactionsUseCase =========================
 
    @Override
    @Transactional(readOnly = true)
-   public PagedResponse<TransactionDto> listAll(int pageNumber, int pageSize, String sortBy, String sortDirection) {
-      PageRequest req = PageRequest.of(pageNumber, pageSize, sortBy, sortDirection);
-      PageResult<Transaction> result = transactionPersistencePort.findAll(req);
+   public PagedResponse<TransactionDto> listAllTransactions(int pageNumber, int pageSize, String sortBy, String sortDirection) {
+      PageRequest request = PageRequest.of(pageNumber, pageSize, sortBy, sortDirection);
+      PageResult<Transaction> result = transactionPersistencePort.findAll(request);
       return toTransactionPagedResponse(result);
    }
 
    @Override
    @Transactional(readOnly = true)
-   public PagedResponse<TransactionDto> listByDateRange(LocalDateTime start, LocalDateTime end,
-                                                        int pageNumber, int pageSize) {
-      PageRequest req = PageRequest.of(pageNumber, pageSize, "entryTime", "DESC");
-      PageResult<Transaction> result = transactionPersistencePort.findByDateRange(start, end, req);
+   public PagedResponse<TransactionDto> listTransactionsByDateRange(LocalDateTime startDate, LocalDateTime endDate,
+                                                                    int pageNumber, int pageSize) {
+      PageRequest request = PageRequest.of(pageNumber, pageSize, "entryTime", "DESC");
+      PageResult<Transaction> result = transactionPersistencePort.findByDateRange(startDate, endDate, request);
       return toTransactionPagedResponse(result);
    }
 
    @Override
    @Transactional(readOnly = true)
-   public PagedResponse<TransactionDto> listByStatus(String status, int pageNumber, int pageSize) {
-      PageRequest req = PageRequest.of(pageNumber, pageSize, "createdAt", "DESC");
-      PageResult<Transaction> result = transactionPersistencePort.findByStatus(status, req);
+   public PagedResponse<TransactionDto> listTransactionsByStatus(String status, int pageNumber, int pageSize) {
+      PageRequest request = PageRequest.of(pageNumber, pageSize, "createdAt", "DESC");
+      PageResult<Transaction> result = transactionPersistencePort.findByStatus(status, request);
       return toTransactionPagedResponse(result);
    }
 
    @Override
    @Transactional(readOnly = true)
-   public PagedResponse<TransactionDto> listByPaymentStatus(String paymentStatus, int pageNumber, int pageSize) {
-      PageRequest req = PageRequest.of(pageNumber, pageSize, "createdAt", "DESC");
-      PageResult<Transaction> result = transactionPersistencePort.findByPaymentStatus(paymentStatus, req);
+   public PagedResponse<TransactionDto> listTransactionsByPaymentStatus(String paymentStatus, int pageNumber, int pageSize) {
+      PageRequest request = PageRequest.of(pageNumber, pageSize, "createdAt", "DESC");
+      PageResult<Transaction> result = transactionPersistencePort.findByPaymentStatus(paymentStatus, request);
       return toTransactionPagedResponse(result);
    }
 
    @Override
    @Transactional(readOnly = true)
-   public PagedResponse<TransactionDto> listByZone(Long zoneId, int pageNumber, int pageSize) {
-      PageRequest req = PageRequest.of(pageNumber, pageSize, "entryTime", "DESC");
-      PageResult<Transaction> result = transactionPersistencePort.findByZoneId(zoneId, req);
+   public PagedResponse<TransactionDto> listTransactionsByZone(Long zoneId, int pageNumber, int pageSize) {
+      PageRequest request = PageRequest.of(pageNumber, pageSize, "entryTime", "DESC");
+      PageResult<Transaction> result = transactionPersistencePort.findByZoneId(zoneId, request);
       return toTransactionPagedResponse(result);
    }
 
    @Override
    @Transactional(readOnly = true)
-   public PagedResponse<TransactionDto> searchByPlate(String plateNumber, int pageNumber, int pageSize) {
-      PageRequest req = PageRequest.of(pageNumber, pageSize, "entryTime", "DESC");
-      PageResult<Transaction> result = transactionPersistencePort.searchByPlate(plateNumber, req);
+   public PagedResponse<TransactionDto> searchTransactionsByPlate(String plateNumber, int pageNumber, int pageSize) {
+      PageRequest request = PageRequest.of(pageNumber, pageSize, "entryTime", "DESC");
+      PageResult<Transaction> result = transactionPersistencePort.searchByPlate(plateNumber, request);
       return toTransactionPagedResponse(result);
    }
 
-   // ========================= BUILDERS PRIVADOS — RECORDS =========================
+   // ========================= HELPERS - CARGA DE ENTIDADES =========================
+
+   private Parking loadParking(Long parkingId) {
+      return parkingPersistencePort.findById(parkingId)
+            .orElseThrow(() -> new IllegalArgumentException("Parking no encontrado: " + parkingId));
+   }
+
+   private Transaction loadTransaction(Long transactionId) {
+      return transactionPersistencePort.findById(transactionId)
+            .orElseThrow(() -> new IllegalArgumentException("Transacción no encontrada: " + transactionId));
+   }
+
+   private Zone loadZone(Long zoneId) {
+      return zonePersistencePort.findById(zoneId)
+            .orElseThrow(() -> new IllegalArgumentException("Zona no encontrada: " + zoneId));
+   }
+
+   private Space loadSpace(Long spaceId) {
+      return spacePersistencePort.findById(spaceId)
+            .orElseThrow(() -> new IllegalArgumentException("Espacio no encontrado: " + spaceId));
+   }
+
+   private Vehicle loadVehicle(Long vehicleId) {
+      return vehiclePersistencePort.findById(vehicleId)
+            .orElseThrow(() -> new IllegalArgumentException("Vehículo no encontrado: " + vehicleId));
+   }
+
+   private Customer loadCustomer(Long customerId) {
+      return customerPersistencePort.findById(customerId)
+            .orElseThrow(() -> new IllegalArgumentException("Cliente no encontrado: " + customerId));
+   }
+
+   private Rate loadRate(Long rateId) {
+      return ratePersistencePort.findById(rateId)
+            .orElseThrow(() -> new IllegalArgumentException("Tarifa no encontrada: " + rateId));
+   }
+
+   // ========================= HELPERS - VALIDACIONES =========================
+
+   private void validateParkingOperational(Parking parking) {
+      if (!parking.isOperational()) {
+         throw new ParkingNotOperationalException(parking.getName(), "El parking no está operativo");
+      }
+   }
+
+   private void validateZoneOperational(Zone zone) {
+      if (!zone.isOperational()) {
+         throw new ZoneNotOperationalException(zone.getName(), "La zona no está operativa");
+      }
+   }
+
+   private void validateSpaceAvailable(Space space) {
+      if (!space.isAvailable()) {
+         throw new SpaceNotAvailableException(space.getCode(), space.getStatus());
+      }
+   }
+
+   private void validateVehicleNotInside(Vehicle vehicle) {
+      if (transactionPersistencePort.existsActiveByVehicleId(vehicle.getId())) {
+         Transaction activeTransaction = transactionPersistencePort
+               .findActiveByVehicleId(vehicle.getId())
+               .orElseThrow();
+         throw new VehicleAlreadyInsideException(vehicle.getLicensePlate(), activeTransaction.getId());
+      }
+   }
+
+   private void validateTransactionActive(Transaction transaction) {
+      if (!transaction.isActive()) {
+         throw new InvalidTransactionStateException(
+               transaction.getId(),
+               transaction.getStatus(),
+               Transaction.STATUS_ACTIVE,
+               "registrar salida"
+         );
+      }
+   }
+
+   private void validateDocumentMatch(Transaction transaction) {
+      if (!transaction.verifyDocumentMatch()) {
+         throw new DocumentMismatchException(
+               transaction.getEntryDocumentNumber(),
+               transaction.getExitDocumentNumber(),
+               transaction.getId()
+         );
+      }
+   }
+
+   private void validateTransactionForPayment(Transaction transaction, ProcessPaymentCommand command) {
+      if (!transaction.isCompleted()) {
+         throw new InvalidTransactionStateException(
+               transaction.getId(),
+               transaction.getStatus(),
+               Transaction.STATUS_COMPLETED,
+               "procesar pago"
+         );
+      }
+
+      if (!transaction.isPending()) {
+         throw new InvalidTransactionStateException(
+               transaction.getId(),
+               transaction.getPaymentStatus(),
+               Transaction.PAYMENT_STATUS_PENDING,
+               "procesar pago"
+         );
+      }
+
+      if (command.amountPaid().compareTo(transaction.getTotalAmount()) < 0) {
+         throw new IllegalArgumentException(
+               String.format("Monto insuficiente. Requerido: %s, recibido: %s",
+                     transaction.getTotalAmount(), command.amountPaid())
+         );
+      }
+   }
+
+   // ========================= HELPERS - BUSCAR O CREAR =========================
+
+   private Vehicle findOrCreateVehicle(RecordEntryCommand command) {
+      String normalizedPlate = command.plateNumber().trim().toUpperCase();
+
+      return vehiclePersistencePort.findByPlateNumber(normalizedPlate)
+            .orElseGet(() -> {
+               Vehicle vehicle = new Vehicle(normalizedPlate);
+               vehicle.setCreatedBy(command.operatorId());
+               return vehiclePersistencePort.save(vehicle);
+            });
+   }
+
+   private Customer findOrCreateCustomer(RecordEntryCommand command) {
+      String normalizedDocument = command.documentNumber().trim().toUpperCase();
+
+      return customerPersistencePort.findByDocument(command.documentTypeId(), normalizedDocument)
+            .orElseGet(() -> {
+               Customer customer = new Customer(
+                     command.documentTypeId(),
+                     normalizedDocument,
+                     command.customerFirstName(),
+                     command.customerLastName()
+               );
+
+               if (command.customerPhone() != null) {
+                  customer.setPhone(command.customerPhone().trim());
+               }
+               if (command.customerEmail() != null) {
+                  customer.setEmail(command.customerEmail().trim().toLowerCase());
+               }
+
+               customer.setCreatedBy(command.operatorId());
+               return customerPersistencePort.save(customer);
+            });
+   }
+
+   // ========================= HELPERS - TRANSACCIONES =========================
+
+   private Transaction findActiveTransaction(RecordExitCommand command) {
+      if (command.transactionId() != null) {
+         return loadTransaction(command.transactionId());
+      }
+
+      if (command.plateNumber() != null) {
+         return transactionPersistencePort.findActiveByPlateNumber(command.plateNumber())
+               .orElseThrow(() -> new IllegalArgumentException(
+                     "No hay transacción activa para la placa: " + command.plateNumber()
+               ));
+      }
+
+      throw new IllegalArgumentException("Debe proporcionar ID de transacción o placa");
+   }
+
+   private Transaction buildEntryTransaction(RecordEntryCommand command, Vehicle vehicle,
+                                             Customer customer, Zone zone, Space space, Rate rate) {
+      Transaction transaction = new Transaction(
+            vehicle.getId(),
+            customer.getId(),
+            command.parkingId(),
+            zone.getId(),
+            space.getId(),
+            rate.getId(),
+            command.documentTypeId(),
+            command.documentNumber()
+      );
+
+      transaction.recordEntry(command.operatorId());
+      transaction.setEntryMethod(
+            command.entryMethod() != null ? command.entryMethod() : Transaction.METHOD_MANUAL
+      );
+
+      if (command.photoUrl() != null) {
+         transaction.recordEntryPhoto(command.photoUrl(), command.plateConfidence());
+      }
+
+      if (command.notes() != null) {
+         transaction.setNotes(command.notes());
+      }
+
+      transaction.setCreatedBy(command.operatorId());
+
+      return transaction;
+   }
+
+   private void processExit(Transaction transaction, RecordExitCommand command) {
+      transaction.recordExit(
+            command.exitDocumentTypeId(),
+            command.exitDocumentNumber(),
+            command.operatorId()
+      );
+
+      transaction.setExitMethod(
+            command.exitMethod() != null ? command.exitMethod() : Transaction.METHOD_MANUAL
+      );
+
+      if (command.photoUrl() != null) {
+         transaction.recordExitPhoto(command.photoUrl(), command.plateConfidence());
+      }
+
+      if (command.notes() != null) {
+         String existingNotes = transaction.getNotes();
+         String newNotes = existingNotes != null
+               ? existingNotes + " | " + command.notes()
+               : command.notes();
+         transaction.setNotes(newNotes);
+      }
+   }
+
+   private void calculateTransactionAmount(Transaction transaction, Rate rate) {
+      transaction.calculateAmount(rate.getAmount());
+   }
+
+   private Payment buildPayment(ProcessPaymentCommand command) {
+      Payment payment = new Payment(
+            command.transactionId(),
+            command.paymentTypeId(),
+            command.amountPaid(),
+            command.operatorId()
+      );
+
+      if (command.referenceNumber() != null) {
+         payment.setReferenceNumber(command.referenceNumber());
+      }
+
+      if (command.notes() != null) {
+         payment.setNotes(command.notes());
+      }
+
+      payment.setCreatedBy(command.operatorId());
+
+      return payment;
+   }
+
+   private void markReceiptForSending(Transaction transaction) {
+      transaction.markReceiptAsSent();
+      transaction.updateWhatsAppStatus("PENDING");
+      transaction.updateEmailStatus("PENDING");
+   }
+
+   // ========================= HELPERS - TARIFAS =========================
 
    /**
-    * Construye TransactionDetailDto (record) con todos los datos relacionados.
-    * Usa el constructor del record directamente con inner records.
+    * Obtiene la tarifa aplicable para un parking y zona.
+    *
+    * FASE 1: Usa la primera tarifa activa del sistema.
+    * FASE 2: Usará ParkingShiftRate basado en turno actual.
     */
-   private TransactionDetailDto buildDetailDto(Transaction t, Vehicle v, Customer c,
-                                               Zone z, Space sp, Rate r, Payment p) {
+   private Rate findApplicableRate(Long parkingId, Long zoneId) {
+      // TODO FASE 2: Implementar lógica con ParkingShiftRate
+      // 1. Determinar turno actual basado en hora
+      // 2. Buscar configuración parking + shift
+      // 3. Obtener rate de la configuración
+
+      // FASE 1: Usar primera tarifa activa
+      List<Rate> activeRates = ratePersistencePort.findAllActive();
+      if (activeRates.isEmpty()) {
+         throw new IllegalArgumentException("No hay tarifas activas configuradas en el sistema");
+      }
+
+      return activeRates.get(0);
+   }
+
+   // ========================= HELPERS - CUSTOMER-VEHICLE =========================
+
+   private void registerCustomerVehicleRelation(Long customerId, Long vehicleId) {
+      customerVehiclePersistencePort.findByCustomerAndVehicle(customerId, vehicleId)
+            .ifPresentOrElse(
+                  // Si existe, incrementar usageCount
+                  relation -> {
+                     relation.incrementUsage();
+                     customerVehiclePersistencePort.save(relation);
+                  },
+                  // Si no existe, crear nueva relación
+                  () -> {
+                     CustomerVehicle relation = new CustomerVehicle(customerId, vehicleId);
+                     relation.incrementUsage(); // Inicializa en 1
+                     customerVehiclePersistencePort.save(relation);
+                  }
+            );
+   }
+
+   // ========================= BUILDERS - DTOs =========================
+
+   /**
+    * Construye TransactionDetailDto con todos los datos relacionados.
+    *
+    * IMPORTANTE: Incluye ParkingInfo completo.
+    */
+   private TransactionDetailDto buildTransactionDetailDto(Transaction t, Vehicle v, Customer c,
+                                                          Parking p, Zone z, Space sp, Rate r, Payment pay) {
       return new TransactionDetailDto(
             t.getId(),
             t.getStatus(),
             t.getPaymentStatus(),
 
-            // VehicleInfo (record interno)
+            // VehicleInfo - SOLO placa
             new TransactionDetailDto.VehicleInfo(
-                  v.getId(), v.getLicensePlate(), null, v.getBrand(), null, v.getColor()
+                  v.getId(),
+                  v.getLicensePlate()
             ),
 
-            // CustomerInfo (record interno)
+            // CustomerInfo
             new TransactionDetailDto.CustomerInfo(
-                  c.getId(), c.getDocumentNumber(), null,
-                  c.getFullName(), c.getPhone(), c.getEmail()
+                  c.getId(),
+                  null,                                     // documentType - nullable
+                  c.getDocumentNumber(),
+                  c.getFullName(),
+                  c.getPhone(),
+                  c.getEmail()
             ),
 
-            // ZoneInfo (record interno)
-            new TransactionDetailDto.ZoneInfo(z.getId(), z.getName(), z.getCode()),
+            // ParkingInfo
+            new TransactionDetailDto.ParkingInfo(
+                  p.getId(),
+                  p.getName(),
+                  p.getCode()
+            ),
 
-            // SpaceInfo (record interno)
-            new TransactionDetailDto.SpaceInfo(sp.getId(), sp.getCode(), sp.getType()),
+            // ZoneInfo
+            new TransactionDetailDto.ZoneInfo(
+                  z.getId(),
+                  z.getName(),
+                  z.getCode()
+            ),
 
+            // SpaceInfo
+            new TransactionDetailDto.SpaceInfo(
+                  sp.getId(),
+                  sp.getCode(),
+                  sp.getType()
+            ),
+
+            // Tiempos
             t.getEntryTime(),
             t.getExitTime(),
             t.getDurationMinutes(),
             t.getFormattedDuration(),
 
-            // DocumentInfo entrada
+            // Documentos
             new TransactionDetailDto.DocumentInfo(null, t.getEntryDocumentNumber()),
-
-            // DocumentInfo salida (nullable)
             t.getExitDocumentNumber() != null
                   ? new TransactionDetailDto.DocumentInfo(null, t.getExitDocumentNumber())
                   : null,
 
-            // RateInfo (record interno)
-            new TransactionDetailDto.RateInfo(r.getId(), r.getName(), r.getAmount()),
+            // RateInfo
+            new TransactionDetailDto.RateInfo(
+                  r.getId(),
+                  r.getName(),
+                  r.getAmount()
+            ),
 
+            // Montos
             t.getCalculatedAmount(),
             t.getDiscountAmount(),
             t.getTotalAmount(),
             t.getCurrency(),
 
             // PaymentInfo (nullable)
-            p != null ? new TransactionDetailDto.PaymentInfo(
-                  p.getId(), null, p.getAmount(),
-                  p.getReferenceNumber(), p.getPaymentDate(), p.getStatus()
+            pay != null ? new TransactionDetailDto.PaymentInfo(
+                  pay.getId(),
+                  null,                                      // paymentType - nullable
+                  pay.getAmount(),
+                  pay.getReferenceNumber(),
+                  pay.getPaymentDate(),
+                  pay.getStatus()
             ) : null,
 
-            // OperatorInfo entrada/salida (nullable — se carga desde auth-service en fases futuras)
+            // OperatorInfo - nullable (auth-service en futuro)
             new TransactionDetailDto.OperatorInfo(t.getEntryOperatorId(), null, null),
             t.getExitOperatorId() != null
                   ? new TransactionDetailDto.OperatorInfo(t.getExitOperatorId(), null, null)
                   : null,
 
+            // Evidencia
             t.getEntryPhotoUrl(),
             t.getExitPhotoUrl(),
             t.getEntryPlateConfidence(),
             t.getExitPlateConfidence(),
 
+            // Comprobante
             t.getReceiptSent(),
             t.getReceiptSentAt(),
             t.getReceiptWhatsAppStatus(),
             t.getReceiptEmailStatus(),
 
+            // Observaciones
             t.getNotes(),
             t.getCancellationReason(),
+
+            // Auditoría
             t.getCreatedAt(),
             t.getUpdatedAt()
       );
    }
 
    /**
-    * Carga datos relacionados y construye TransactionDetailDto.
+    * Carga todos los datos relacionados y construye TransactionDetailDto.
     */
-   private TransactionDetailDto loadDetailDto(Transaction t) {
-      Vehicle v = vehiclePersistencePort.findById(t.getVehicleId()).orElseThrow();
-      Customer c = customerPersistencePort.findById(t.getCustomerId()).orElseThrow();
-      Zone z = zonePersistencePort.findById(t.getZoneId()).orElseThrow();
-      Space sp = spacePersistencePort.findById(t.getParkingSpaceId()).orElseThrow();
-      Rate r = ratePersistencePort.findById(t.getRateId()).orElseThrow();
-      Payment p = paymentPersistencePort.findByTransactionId(t.getId()).orElse(null);
-      return buildDetailDto(t, v, c, z, sp, r, p);
+   private TransactionDetailDto loadTransactionDetailDto(Transaction t) {
+      Vehicle vehicle = loadVehicle(t.getVehicleId());
+      Customer customer = loadCustomer(t.getCustomerId());
+      Parking parking = loadParking(t.getParkingId());
+      Zone zone = loadZone(t.getZoneId());
+      Space space = loadSpace(t.getSpaceId());
+      Rate rate = loadRate(t.getRateId());
+      Payment payment = paymentPersistencePort.findByTransactionId(t.getId()).orElse(null);
+
+      return buildTransactionDetailDto(t, vehicle, customer, parking, zone, space, rate, payment);
    }
 
    /**
-    * Construye ActiveTransactionDto (record) usando el factory method of().
-    * Calcula tiempo transcurrido y monto en tiempo real.
+    * Construye TransactionDetailDto cargando payment.
     */
-   private ActiveTransactionDto buildActiveDto(Transaction t) {
-      Vehicle v = vehiclePersistencePort.findById(t.getVehicleId()).orElseThrow();
-      Customer c = customerPersistencePort.findById(t.getCustomerId()).orElseThrow();
-      Zone z = zonePersistencePort.findById(t.getZoneId()).orElseThrow();
-      Space sp = spacePersistencePort.findById(t.getParkingSpaceId()).orElseThrow();
-      Rate r = ratePersistencePort.findById(t.getRateId()).orElseThrow();
+   private TransactionDetailDto buildTransactionDetailDtoWithPayment(Transaction transaction, Payment payment) {
+      Vehicle vehicle = loadVehicle(transaction.getVehicleId());
+      Customer customer = loadCustomer(transaction.getCustomerId());
+      Parking parking = loadParking(transaction.getParkingId());
+      Zone zone = loadZone(transaction.getZoneId());
+      Space space = loadSpace(transaction.getSpaceId());
+      Rate rate = loadRate(transaction.getRateId());
 
+      return buildTransactionDetailDto(transaction, vehicle, customer, parking, zone, space, rate, payment);
+   }
+
+   /**
+    * Construye ActiveTransactionDto para monitoreo en tiempo real.
+    */
+   private ActiveTransactionDto buildActiveTransactionDto(Transaction t) {
+      Vehicle vehicle = loadVehicle(t.getVehicleId());
+      Customer customer = loadCustomer(t.getCustomerId());
+      Parking parking = loadParking(t.getParkingId());
+      Zone zone = loadZone(t.getZoneId());
+      Space space = loadSpace(t.getSpaceId());
+      Rate rate = loadRate(t.getRateId());
+
+      // Calcular tiempo transcurrido y monto actual
       int elapsedMinutes = (int) Duration.between(t.getEntryTime(), LocalDateTime.now()).toMinutes();
-      BigDecimal currentAmount = r.getAmount()
+      BigDecimal currentAmount = rate.getAmount()
             .multiply(BigDecimal.valueOf(elapsedMinutes / 60.0))
             .setScale(2, RoundingMode.HALF_UP);
 
+      boolean isOverdue = elapsedMinutes > MAX_RECOMMENDED_MINUTES;
+
       return ActiveTransactionDto.of(
             t.getId(),
-            v.getId(), v.getLicensePlate(), null, v.getBrand(), v.getColor(),
-            c.getId(), c.getFullName(), c.getPhone(), c.getEmail(), null, c.getDocumentNumber(),
-            z.getId(), z.getName(), z.getCode(),
-            sp.getId(), sp.getCode(), sp.getType(),
+            vehicle.getId(), vehicle.getLicensePlate(),
+            customer.getId(), customer.getFullName(), customer.getPhone(), customer.getEmail(),
+            null, customer.getDocumentNumber(),
+            parking.getId(), parking.getName(),
+            zone.getId(), zone.getName(),
+            space.getId(), space.getCode(),
             t.getEntryTime(), elapsedMinutes, formatDuration(elapsedMinutes),
-            r.getAmount(), currentAmount,
-            elapsedMinutes > MAX_RECOMMENDED_MINUTES, MAX_RECOMMENDED_MINUTES,
-            elapsedMinutes > MAX_RECOMMENDED_MINUTES,
+            rate.getAmount(), currentAmount,
+            isOverdue, MAX_RECOMMENDED_MINUTES, isOverdue,
             t.getEntryOperatorId(), null, t.getEntryMethod(),
             t.getEntryPhotoUrl(), t.getEntryPlateConfidence(),
             t.getNotes(), t.getCreatedAt()
@@ -482,20 +776,22 @@ public class TransactionService implements
    }
 
    /**
-    * Construye TransactionDto (record) simplificado para listados.
+    * Construye TransactionDto simplificado para listados.
     */
    private TransactionDto buildTransactionDto(Transaction t) {
-      Vehicle v = vehiclePersistencePort.findById(t.getVehicleId()).orElseThrow();
-      Customer c = customerPersistencePort.findById(t.getCustomerId()).orElseThrow();
-      Zone z = zonePersistencePort.findById(t.getZoneId()).orElseThrow();
-      Space sp = spacePersistencePort.findById(t.getParkingSpaceId()).orElseThrow();
+      Vehicle vehicle = loadVehicle(t.getVehicleId());
+      Customer customer = loadCustomer(t.getCustomerId());
+      Parking parking = loadParking(t.getParkingId());
+      Zone zone = loadZone(t.getZoneId());
+      Space space = loadSpace(t.getSpaceId());
 
       return new TransactionDto(
             t.getId(),
-            v.getLicensePlate(),
-            c.getFullName(),
-            z.getName(),
-            sp.getCode(),
+            vehicle.getLicensePlate(),
+            customer.getFullName(),
+            parking.getName(),
+            zone.getName(),
+            space.getCode(),
             t.getEntryTime(),
             t.getExitTime(),
             t.getFormattedDuration(),
@@ -506,11 +802,11 @@ public class TransactionService implements
       );
    }
 
-   // ========================= HELPERS DE PAGINACIÓN =========================
+   // ========================= HELPERS - PAGINACIÓN =========================
 
-   private PagedResponse<ActiveTransactionDto> toActivePagedResponse(PageResult<Transaction> result) {
+   private PagedResponse<ActiveTransactionDto> toActiveTransactionPagedResponse(PageResult<Transaction> result) {
       List<ActiveTransactionDto> content = result.content().stream()
-            .map(this::buildActiveDto)
+            .map(this::buildActiveTransactionDto)
             .toList();
       return PagedResponse.of(content, result.pageNumber(), result.pageSize(), result.totalElements());
    }
@@ -522,12 +818,16 @@ public class TransactionService implements
       return PagedResponse.of(content, result.pageNumber(), result.pageSize(), result.totalElements());
    }
 
-   // ========================= HELPER DE FORMATO =========================
+   // ========================= HELPERS - FORMATO =========================
 
    private String formatDuration(int minutes) {
       if (minutes == 0) return "0min";
-      int h = minutes / 60, m = minutes % 60;
-      if (h > 0 && m > 0) return h + "h " + m + "min";
-      return h > 0 ? h + "h" : m + "min";
+      int hours = minutes / 60;
+      int mins = minutes % 60;
+
+      if (hours > 0 && mins > 0) {
+         return hours + "h " + mins + "min";
+      }
+      return hours > 0 ? hours + "h" : mins + "min";
    }
 }

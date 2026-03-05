@@ -1,1 +1,269 @@
-<p>customer-list works!</p>
+<!-- src/app/views/parking-service/customers/customer-list/customer-list.component.html -->
+<c-row>
+  <c-col xs="12">
+    <c-card class="mb-4">
+      <c-card-header>
+        <strong>Clientes</strong>
+        <small class="text-muted ms-2">Gestión de clientes del sistema</small>
+      </c-card-header>
+
+      <c-card-body>
+        <!-- Filtros -->
+        <form cForm class="mb-4">
+          <c-row class="g-3">
+            <c-col md="4">
+              <label cLabel for="search">Buscar</label>
+              <input
+                cFormControl
+                id="search"
+                type="text"
+                placeholder="Nombre, apellido o documento..."
+                [(ngModel)]="filters.search"
+                (keyup.enter)="onSearch()"
+                name="search"
+              />
+            </c-col>
+
+            <c-col md="3">
+              <label cLabel for="status">Estado</label>
+              <select
+                cSelect
+                id="status"
+                [(ngModel)]="filters.status"
+                (change)="onFilterChange()"
+                name="status"
+              >
+                <option value="ALL">Todos</option>
+                <option value="ACTIVE">Activos</option>
+                <option value="DELETED">Eliminados</option>
+              </select>
+            </c-col>
+
+            <c-col md="2">
+              <label cLabel for="pageSize">Mostrar</label>
+              <select
+                cSelect
+                id="pageSize"
+                [(ngModel)]="pageSize"
+                (change)="onFilterChange()"
+                name="pageSize"
+              >
+                <option [value]="5">5</option>
+                <option [value]="10">10</option>
+                <option [value]="20">20</option>
+                <option [value]="50">50</option>
+              </select>
+            </c-col>
+
+            <c-col md="3" class="d-flex align-items-end">
+              <button
+                cButton
+                color="primary"
+                class="me-2 w-50"
+                type="button"
+                (click)="onSearch()"
+              >
+                <svg cIcon name="cilSearch" class="me-1"></svg>
+                Buscar
+              </button>
+
+              <button
+                cButton
+                color="secondary"
+                variant="outline"
+                class="w-50"
+                type="button"
+                (click)="clearFilters()"
+              >
+                <svg cIcon name="cilReload" class="me-1"></svg>
+                Limpiar
+              </button>
+            </c-col>
+          </c-row>
+        </form>
+
+        <!-- Tabla -->
+        @if (loading) {
+          <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="text-muted mt-2">Cargando clientes...</p>
+          </div>
+        } @else if (error) {
+          <c-alert color="danger" [dismissible]="true" (visibleChange)="error = ''">
+            {{ error }}
+          </c-alert>
+        } @else if (customers.length === 0) {
+          <c-alert color="info" [dismissible]="false">
+            No se encontraron clientes que coincidan con los filtros.
+            @if (filters.search || filters.status !== 'ALL') {
+              <button cButton color="link" (click)="clearFilters()" class="ms-2">
+                Limpiar filtros
+              </button>
+            }
+          </c-alert>
+        } @else {
+          <div class="table-responsive">
+            <table cTable hover striped responsive>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Documento</th>
+                  <th>Cliente</th>
+                  <th>Contacto</th>
+                  <th>Visitas</th>
+                  <th>Última Visita</th>
+                  <th>Estado</th>
+                  <th class="text-center">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (customer of customers; track customer.id) {
+                  <tr>
+                    <td>{{ customer.id }}</td>
+
+                    <td>
+                      <div class="small text-muted">
+                        {{ customer.documentTypeName || 'N/A' }}
+                      </div>
+                      <strong>{{ customer.documentNumber }}</strong>
+                    </td>
+
+                    <td>
+                      <strong>{{ customer.fullName }}</strong>
+                      <div class="small text-muted">
+                        {{ customer.firstName }} {{ customer.lastName }}
+                      </div>
+                    </td>
+
+                    <td>
+                      @if (customer.phone) {
+                        <div>
+                          <svg cIcon name="cilPhone" size="sm" class="me-1"></svg>
+                          {{ customer.phone }}
+                        </div>
+                      }
+                      @if (customer.email) {
+                        <div class="small text-muted">
+                          <svg cIcon name="cilEnvelopeClosed" size="sm" class="me-1"></svg>
+                          {{ customer.email }}
+                        </div>
+                      }
+                      @if (!customer.phone && !customer.email) {
+                        <span class="text-muted">Sin contacto</span>
+                      }
+                    </td>
+
+                    <td>
+                      <c-badge
+                        [color]="customer.totalVisits && customer.totalVisits > 5 ? 'success' : 'secondary'"
+                      >
+                        {{ customer.totalVisits || 0 }} visitas
+                      </c-badge>
+                    </td>
+
+                    <td>{{ formatDate(customer.lastSeenDate) }}</td>
+
+                    <td>
+                      <c-badge [color]="getStatusBadgeColor(customer)">
+                        {{ getStatusText(customer) }}
+                      </c-badge>
+                    </td>
+
+                    <td class="text-center">
+                      <button
+                        [routerLink]="['/parking-service/customers', customer.id]"
+                        cButton
+                        color="info"
+                        variant="ghost"
+                        size="sm"
+                        class="me-1"
+                        title="Ver detalle"
+                      >
+                        <svg cIcon name="cilInfo"></svg>
+                      </button>
+
+                      @if (!customer.deletedAt) {
+                        <button
+                          [routerLink]="['/parking-service/customers', customer.id, 'edit']"
+                          cButton
+                          color="warning"
+                          variant="ghost"
+                          size="sm"
+                          title="Editar"
+                        >
+                          <svg cIcon name="cilPencil"></svg>
+                        </button>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Paginación -->
+          <div class="d-flex justify-content-between align-items-center mt-3">
+            <div class="text-muted">
+              Mostrando {{ customers.length }} de {{ totalElements }} clientes
+              (Página {{ currentPage + 1 }} de {{ totalPages }})
+            </div>
+
+            <nav aria-label="Paginación de clientes">
+              <ul class="pagination mb-0">
+                <li class="page-item" [class.disabled]="currentPage === 0">
+                  <button
+                    class="page-link"
+                    (click)="goToFirstPage()"
+                    [disabled]="currentPage === 0"
+                  >
+                    Primera
+                  </button>
+                </li>
+                <li class="page-item" [class.disabled]="currentPage === 0">
+                  <button
+                    class="page-link"
+                    (click)="goToPreviousPage()"
+                    [disabled]="currentPage === 0"
+                  >
+                    Anterior
+                  </button>
+                </li>
+                <li class="page-item disabled">
+                  <span class="page-link">
+                    {{ currentPage + 1 }} / {{ totalPages }}
+                  </span>
+                </li>
+                <li
+                  class="page-item"
+                  [class.disabled]="currentPage >= totalPages - 1"
+                >
+                  <button
+                    class="page-link"
+                    (click)="goToNextPage()"
+                    [disabled]="currentPage >= totalPages - 1"
+                  >
+                    Siguiente
+                  </button>
+                </li>
+                <li
+                  class="page-item"
+                  [class.disabled]="currentPage >= totalPages - 1"
+                >
+                  <button
+                    class="page-link"
+                    (click)="goToLastPage()"
+                    [disabled]="currentPage >= totalPages - 1"
+                  >
+                    Última
+                  </button>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        }
+      </c-card-body>
+    </c-card>
+  </c-col>
+</c-row>

@@ -5,18 +5,30 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
 /**
  * Entidad JPA para Customer.
  *
+ * Mapeo Oracle:
+ * - Tabla: CUSTOMERS (mayúsculas para Oracle)
+ * - PK: CUSTOMER_ID con SEQUENCE
+ * - UK: DOCUMENT_TYPE_ID + DOCUMENT_NUMBER
+ *
+ * SÍ tiene soft delete (deletedAt, deletedBy)
+ *
  * @author Edwin Yoner - Winner Systems - Smart Parking Platform
  * @version 1.0
  */
 @Entity
-@Table(name = "customers",
-      uniqueConstraints = @UniqueConstraint(columnNames = {"document_type_id", "document_number"}))
+@Table(name = "CUSTOMERS")
+@EntityListeners(AuditingEntityListener.class)
 @Data
 @Builder
 @NoArgsConstructor
@@ -24,63 +36,77 @@ import java.time.LocalDateTime;
 public class CustomerEntity {
 
    @Id
-   @GeneratedValue(strategy = GenerationType.IDENTITY)
+   @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "customer_seq")
+   @SequenceGenerator(name = "customer_seq", sequenceName = "CUSTOMER_SEQ", allocationSize = 1)
+   @Column(name = "CUSTOMER_ID")
    private Long id;
 
-   @Column(name = "document_type_id", nullable = false)
+   @Column(name = "DOCUMENT_TYPE_ID", nullable = false)
    private Long documentTypeId;
 
-   @Column(name = "document_number", nullable = false, length = 20)
+   @Column(name = "DOCUMENT_NUMBER", nullable = false, length = 50)
    private String documentNumber;
 
-   @Column(name = "first_name", length = 100)
+   // ========================= DATOS PERSONALES =========================
+
+   @Column(name = "FIRST_NAME", nullable = false, length = 100)
    private String firstName;
 
-   @Column(name = "last_name", length = 100)
+   @Column(name = "LAST_NAME", nullable = false, length = 100)
    private String lastName;
 
-   @Column(name = "phone", length = 20)
+   // ========================= CONTACTO =========================
+
+   @Column(name = "PHONE", length = 20)
    private String phone;
 
-   @Column(name = "email", length = 100)
+   @Column(name = "EMAIL", length = 100)
    private String email;
 
-   @Column(name = "address", length = 255)
+   @Column(name = "ADDRESS", length = 500)
    private String address;
 
-   @Column(name = "registration_date")
+   // ========================= TRACKING =========================
+
+   @Column(name = "REGISTRATION_DATE", nullable = false)
    private LocalDateTime registrationDate;
 
-   @Column(name = "first_seen_date")
+   @Column(name = "FIRST_SEEN_DATE")
    private LocalDateTime firstSeenDate;
 
-   @Column(name = "last_seen_date")
+   @Column(name = "LAST_SEEN_DATE")
    private LocalDateTime lastSeenDate;
 
-   @Column(name = "total_visits")
+   @Column(name = "TOTAL_VISITS")
    private Integer totalVisits;
 
-   @Column(name = "auth_external_id")
+   // ========================= INTEGRACIÓN APP MÓVIL =========================
+
+   @Column(name = "AUTH_EXTERNAL_ID")
    private Long authExternalId;
 
-   // ========================= CAMPOS DE AUDITORÍA (igual que en UserEntity) =========================
+   // ========================= AUDITORÍA =========================
 
-   @Column(name = "created_at", nullable = false, updatable = false)
+   @CreatedDate
+   @Column(name = "CREATED_AT", nullable = false, updatable = false)
    private LocalDateTime createdAt;
 
-   @Column(name = "created_by")
+   @CreatedBy
+   @Column(name = "CREATED_BY", updatable = false)
    private Long createdBy;
 
-   @Column(name = "updated_at", nullable = false)
+   @LastModifiedDate
+   @Column(name = "UPDATED_AT")
    private LocalDateTime updatedAt;
 
-   @Column(name = "updated_by")
+   @LastModifiedBy
+   @Column(name = "UPDATED_BY")
    private Long updatedBy;
 
-   @Column(name = "deleted_at")
-   private LocalDateTime deletedAt;        // Soft delete
+   @Column(name = "DELETED_AT")
+   private LocalDateTime deletedAt;
 
-   @Column(name = "deleted_by")
+   @Column(name = "DELETED_BY")
    private Long deletedBy;
 
    // ========================= LIFECYCLE CALLBACKS =========================
@@ -90,11 +116,17 @@ public class CustomerEntity {
       LocalDateTime now = LocalDateTime.now();
       this.createdAt = now;
       this.updatedAt = now;
-      if (this.totalVisits == null) {
-         this.totalVisits = 0;
-      }
       if (this.registrationDate == null) {
          this.registrationDate = now;
+      }
+      if (this.firstSeenDate == null) {
+         this.firstSeenDate = now;
+      }
+      if (this.lastSeenDate == null) {
+         this.lastSeenDate = now;
+      }
+      if (this.totalVisits == null) {
+         this.totalVisits = 0;
       }
    }
 
